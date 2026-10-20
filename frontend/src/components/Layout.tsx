@@ -1,12 +1,13 @@
 import { NavLink, Outlet, useParams } from "react-router-dom";
 
 import { useProjects } from "../api/queries";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth, useCan } from "../auth/AuthContext";
 
 export default function Layout() {
   const { me, workspace, switchWorkspace, logout } = useAuth();
   const { data: projects = [] } = useProjects();
   const { projectId } = useParams();
+  const isAdmin = useCan("admin");
 
   return (
     <div className="app">
@@ -37,6 +38,7 @@ export default function Layout() {
               </span>
               <NavLink to={`/projects/${p.id}/board`}>Board</NavLink>
               <NavLink to={`/projects/${p.id}/backlog`}>Backlog</NavLink>
+              {isAdmin && <NavLink to={`/projects/${p.id}/settings`}>Workflow</NavLink>}
             </div>
           ))}
         </nav>

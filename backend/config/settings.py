@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.tenancy",
     "apps.projects",
+    "apps.activity",
 ]
 
 MIDDLEWARE = [
@@ -88,6 +89,9 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MAX_ATTACHMENT_MB = int(os.environ.get("MAX_ATTACHMENT_MB", "10"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 CORS_ALLOW_HEADERS = (

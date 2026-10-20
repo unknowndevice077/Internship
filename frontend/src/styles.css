@@ -624,6 +624,10 @@ label {
   color: var(--muted);
 }
 
+.column.blocked {
+  opacity: 0.45;
+}
+
 /* drawer + modal */
 
 .drawer-backdrop,
@@ -739,4 +743,129 @@ label {
     grid-template-columns: 1fr;
     flex-direction: column;
   }
+}
+
+.drawer-section {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.attachment-list,
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachment-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.attachment-list .btn {
+  margin-left: auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs button {
+  font: inherit;
+  background: none;
+  border: 0;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tabs button.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 500;
+}
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.comment {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.comment-body {
+  white-space: pre-wrap;
+  margin-top: 2px;
+}
+
+.history li {
+  font-size: 13px;
+}
+
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.table th,
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--sunken);
+  text-align: left;
+}
+
+.table .actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.matrix-wrap {
+  overflow-x: auto;
+}
+
+.matrix td,
+.matrix thead th {
+  text-align: center;
+}
+
+.matrix input {
+  width: auto;
 }

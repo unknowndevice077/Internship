@@ -10,7 +10,10 @@ from apps.tenancy.models import Role
 from apps.tenancy.views import TenantViewSet
 
 from . import ranking
-from .models import Board, Issue, Project, Sprint, Status
+from apps.activity import audit
+from apps.activity.models import AuditLog
+
+from .models import Board, Issue, Project, Sprint, Status, Transition, transition_allowed
 from .serializers import (
     BoardIssueSerializer,
     BoardSerializer,
@@ -20,6 +23,7 @@ from .serializers import (
     SprintCompleteSerializer,
     SprintSerializer,
     StatusSerializer,
+    TransitionSerializer,
 )
 
 
@@ -53,7 +57,12 @@ class ProjectViewSet(TenantViewSet):
              "issues": BoardIssueSerializer(by_status.get(s.id, []), many=True).data}
             for s in project.statuses.all()
         ]
-        return Response({"project": ProjectSerializer(project, context={"request": request}).data, "columns": columns})
+        transitions = list(project.transitions.values_list("from_status_id", "to_status_id"))
+        return Response({
+            "project": ProjectSerializer(project, context={"request": request}).data,
+            "columns": columns,
+            "transitions": transitions,
+        })
 
 
 class StatusViewSet(TenantViewSet):
@@ -66,7 +75,16 @@ class StatusViewSet(TenantViewSet):
     def perform_destroy(self, instance):
         if instance.issues.exists():
             raise exceptions.ValidationError({"detail": "Move the issues out of this status first."})
-        instance.delete()
+        super().perform_destroy(instance)
+
+
+class TransitionViewSet(TenantViewSet):
+    queryset = Transition.objects.select_related("from_status", "to_status")
+    serializer_class = TransitionSerializer
+    write_role = Role.ADMIN
+    filterset_fields = ["project"]
+    pagination_class = None
+    http_method_names = ["get", "post", "delete"]
 
 
 class BoardViewSet(TenantViewSet):
@@ -96,6 +114,7 @@ class SprintViewSet(TenantViewSet):
         sprint.state = Sprint.State.ACTIVE
         sprint.start_date = sprint.start_date or timezone.localdate()
         sprint.save()
+        audit.record(request.user, AuditLog.Action.UPDATED, sprint, {"state": ["planned", "active"]})
         return Response(self.get_serializer(sprint).data)
 
     @action(detail=True, methods=["post"])
@@ -115,6 +134,7 @@ class SprintViewSet(TenantViewSet):
             sprint.state = Sprint.State.CLOSED
             sprint.end_date = sprint.end_date or timezone.localdate()
             sprint.save()
+            audit.record(request.user, AuditLog.Action.UPDATED, sprint, {"state": ["active", "closed"]})
         return Response(self.get_serializer(sprint).data)
 
 
@@ -138,7 +158,7 @@ class IssueViewSet(TenantViewSet):
         return super().get_queryset().select_related("project", "assignee", "reporter")
 
     def perform_create(self, serializer):
-        serializer.save(workspace=self.request.workspace, reporter=self.request.user)
+        return super().perform_create(serializer, reporter=self.request.user)
 
     @action(detail=True, methods=["post"])
     def move(self, request, pk=None):
@@ -146,5 +166,12 @@ class IssueViewSet(TenantViewSet):
         body = IssueMoveSerializer(data=request.data, context={"request": request, "issue": issue})
         body.is_valid(raise_exception=True)
         data = body.validated_data
+        old_status = issue.status
+        if not transition_allowed(issue.project, old_status.id, data["status"].id):
+            raise exceptions.ValidationError(
+                {"status": f"The workflow doesn't allow moving from {old_status.name} to {data['status'].name}."}
+            )
         ranking.move_issue(issue, data["status"], data.get("before"), data.get("after"))
+        if old_status.id != data["status"].id:
+            audit.record(request.user, AuditLog.Action.MOVED, issue, {"status": [old_status.name, data["status"].name]})
         return Response(self.get_serializer(issue).data)

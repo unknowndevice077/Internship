@@ -37,3 +37,10 @@ export function neighbours(map: ColumnMap, issueId: number) {
     after: list[index + 1]?.id ?? null,
   };
 }
+
+// open workflow when no transitions are configured
+export function allowedTargets(transitions: [number, number][], from: number) {
+  if (transitions.length === 0) return () => true;
+  const targets = new Set(transitions.filter(([f]) => f === from).map(([, t]) => t));
+  return (to: number) => to === from || targets.has(to);
+}

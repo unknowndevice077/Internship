@@ -35,6 +35,7 @@ export default function BoardPage() {
       <KanbanBoard
         projectId={projectId}
         columns={board.columns}
+        transitions={board.transitions}
         canEdit={canEdit}
         onOpen={setOpenIssue}
         onMoveError={(msg) => {
@@ -46,7 +47,7 @@ export default function BoardPage() {
       {toast && <div className="toast">{toast}</div>}
       {creating && <CreateIssueModal projectId={projectId} onClose={() => setCreating(false)} />}
       {openIssue !== null && (
-        <IssueDrawer issueId={openIssue} statuses={board.columns} onClose={() => setOpenIssue(null)} />
+        <IssueDrawer issueId={openIssue} statuses={board.columns} transitions={board.transitions} onClose={() => setOpenIssue(null)} />
       )}
     </div>
   );

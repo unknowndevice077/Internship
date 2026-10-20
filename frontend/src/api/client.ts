@@ -106,3 +106,23 @@ export function fieldErrors(error: unknown): Record<string, string> {
     Object.entries(error.data as Record<string, unknown>).map(([k, v]) => [k, Array.isArray(v) ? v.join(" ") : String(v)]),
   );
 }
+
+export async function downloadFile(path: string, filename: string) {
+  // attachments need the auth + workspace headers, so a plain <a href> won't work
+  const doFetch = () =>
+    fetch(path, {
+      headers: {
+        ...(session.access ? { Authorization: `Bearer ${session.access}` } : {}),
+        ...(session.workspace ? { "X-Workspace": session.workspace } : {}),
+      },
+    });
+  let res = await doFetch();
+  if (res.status === 401 && (await refreshAccess())) res = await doFetch();
+  if (!res.ok) throw new ApiError(res.status, null);
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

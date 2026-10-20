@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.tenancy.fields import MemberField, WorkspaceRelatedField
 from apps.tenancy.serializers import MemberUserSerializer
 
-from .models import Board, Issue, Project, Sprint, Status
+from .models import Board, Issue, Project, Sprint, Status, Transition, transition_allowed
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -16,6 +16,27 @@ class StatusSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if self.instance and "project" in attrs and attrs["project"] != self.instance.project:
             raise serializers.ValidationError({"project": "Cannot move a status to another project."})
+        return attrs
+
+
+class TransitionSerializer(serializers.ModelSerializer):
+    project = WorkspaceRelatedField(queryset=Project.objects.all())
+    from_status = WorkspaceRelatedField(queryset=Status.objects.all())
+    to_status = WorkspaceRelatedField(queryset=Status.objects.all())
+
+    class Meta:
+        model = Transition
+        fields = ["id", "project", "from_status", "to_status"]
+        validators = []
+
+    def validate(self, attrs):
+        project = attrs["project"]
+        if attrs["from_status"].project_id != project.id or attrs["to_status"].project_id != project.id:
+            raise serializers.ValidationError("Both statuses must belong to the project.")
+        if attrs["from_status"] == attrs["to_status"]:
+            raise serializers.ValidationError("A transition needs two different statuses.")
+        if Transition.objects.filter(from_status=attrs["from_status"], to_status=attrs["to_status"]).exists():
+            raise serializers.ValidationError("This transition already exists.")
         return attrs
 
 
@@ -93,6 +114,10 @@ class IssueSerializer(serializers.ModelSerializer):
             attrs["status"] = project.statuses.order_by("order").first()
         elif status is not None and status.project_id != project.id:
             raise serializers.ValidationError({"status": "Status belongs to another project."})
+        elif status is not None and self.instance and not transition_allowed(project, self.instance.status_id, status.id):
+            raise serializers.ValidationError(
+                {"status": f"The workflow doesn't allow moving from {self.instance.status.name} to {status.name}."}
+            )
 
         sprint = attrs.get("sprint")
         if sprint is not None and sprint.project_id != project.id:

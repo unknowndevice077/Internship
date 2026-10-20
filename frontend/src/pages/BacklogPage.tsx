@@ -71,7 +71,7 @@ export default function BacklogPage() {
       {sprintAction.error && <div className="toast">{sprintAction.error.message}</div>}
       {createIn !== undefined && <CreateIssueModal projectId={projectId} sprintId={createIn} onClose={() => setCreateIn(undefined)} />}
       {openIssue !== null && board && (
-        <IssueDrawer issueId={openIssue} statuses={board.columns} onClose={() => setOpenIssue(null)} />
+        <IssueDrawer issueId={openIssue} statuses={board.columns} transitions={board.transitions} onClose={() => setOpenIssue(null)} />
       )}
     </div>
   );

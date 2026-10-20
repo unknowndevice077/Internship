@@ -4,14 +4,17 @@ import { fieldErrors } from "../api/client";
 import { useIssue, useMembers, useSprints, useUpdateIssue } from "../api/queries";
 import type { Issue, Status } from "../api/types";
 import { useCan } from "../auth/AuthContext";
+import { Attachments, CommentsAndHistory } from "./IssueActivity";
+import { allowedTargets } from "./kanban";
 
 interface Props {
   issueId: number;
   statuses: Status[];
+  transitions?: [number, number][];
   onClose(): void;
 }
 
-export default function IssueDrawer({ issueId, statuses, onClose }: Props) {
+export default function IssueDrawer({ issueId, statuses, transitions = [], onClose }: Props) {
   const { data: issue } = useIssue(issueId);
   const { data: members = [] } = useMembers();
   const { data: sprints = [] } = useSprints(issue?.project ?? 0);
@@ -39,6 +42,7 @@ export default function IssueDrawer({ issueId, statuses, onClose }: Props) {
   const save = (patch: Partial<Issue>) => update.mutate({ id: issue.id, ...patch });
   const errors = fieldErrors(update.error);
   const openSprints = sprints.filter((s) => s.state !== "closed");
+  const allowed = allowedTargets(transitions, issue.status);
 
   return (
     <Shell onClose={onClose}>
@@ -57,7 +61,7 @@ export default function IssueDrawer({ issueId, statuses, onClose }: Props) {
           Status
           <select value={issue.status} disabled={!canEdit} onChange={(e) => save({ status: Number(e.target.value) })}>
             {statuses.map((s) => (
-              <option key={s.id} value={s.id}>
+              <option key={s.id} value={s.id} disabled={!allowed(s.id)}>
                 {s.name}
               </option>
             ))}
@@ -141,6 +145,9 @@ export default function IssueDrawer({ issueId, statuses, onClose }: Props) {
           onBlur={() => draft.description !== undefined && save({ description: draft.description })}
         />
       </label>
+
+      <Attachments issueId={issue.id} />
+      <CommentsAndHistory issueId={issue.id} statuses={statuses} />
 
       <p className="muted small">
         Reported by {issue.reporter?.full_name || issue.reporter?.email || "unknown"} ·{" "}

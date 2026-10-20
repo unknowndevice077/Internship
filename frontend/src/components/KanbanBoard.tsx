@@ -19,17 +19,18 @@ import { api } from "../api/client";
 import { keys } from "../api/queries";
 import type { BoardColumn, BoardIssue } from "../api/types";
 import IssueCard, { IssueCardBody } from "./IssueCard";
-import { columnId, findColumn, moveCard, neighbours, toColumnMap, type ColumnMap } from "./kanban";
+import { allowedTargets, columnId, findColumn, moveCard, neighbours, toColumnMap, type ColumnMap } from "./kanban";
 
 interface Props {
   projectId: number;
   columns: BoardColumn[];
+  transitions: [number, number][];
   canEdit: boolean;
   onOpen(id: number): void;
   onMoveError(message: string): void;
 }
 
-export default function KanbanBoard({ projectId, columns, canEdit, onOpen, onMoveError }: Props) {
+export default function KanbanBoard({ projectId, columns, transitions, canEdit, onOpen, onMoveError }: Props) {
   const qc = useQueryClient();
   const [map, setMap] = useState<ColumnMap>(() => toColumnMap(columns));
   const [active, setActive] = useState<BoardIssue | null>(null);
@@ -68,6 +69,7 @@ export default function KanbanBoard({ projectId, columns, canEdit, onOpen, onMov
     const from = findColumn(map, active.id);
     const to = findColumn(map, over.id);
     if (from === undefined || to === undefined || from === to) return;
+    if (startColumn !== null && !allowedTargets(transitions, startColumn)(to)) return;
     const overIndex = map[to].findIndex((i) => i.id === over.id);
     setMap((m) => moveCard(m, Number(active.id), to, overIndex === -1 ? m[to].length : overIndex));
   }
@@ -112,7 +114,14 @@ export default function KanbanBoard({ projectId, columns, canEdit, onOpen, onMov
     >
       <div className="board">
         {columns.map((col) => (
-          <Column key={col.id} column={col} issues={map[col.id] ?? []} canEdit={canEdit} onOpen={onOpen} />
+          <Column
+            key={col.id}
+            column={col}
+            issues={map[col.id] ?? []}
+            canEdit={canEdit}
+            blocked={active !== null && startColumn !== null && !allowedTargets(transitions, startColumn)(col.id)}
+            onOpen={onOpen}
+          />
         ))}
       </div>
       <DragOverlay>{active && <div className="issue-card overlay"><IssueCardBody issue={active} /></div>}</DragOverlay>
@@ -120,10 +129,18 @@ export default function KanbanBoard({ projectId, columns, canEdit, onOpen, onMov
   );
 }
 
-function Column({ column, issues, canEdit, onOpen }: { column: BoardColumn; issues: BoardIssue[]; canEdit: boolean; onOpen(id: number): void }) {
-  const { setNodeRef, isOver } = useDroppable({ id: columnId(column.id) });
+interface ColumnProps {
+  column: BoardColumn;
+  issues: BoardIssue[];
+  canEdit: boolean;
+  blocked: boolean;
+  onOpen(id: number): void;
+}
+
+function Column({ column, issues, canEdit, blocked, onOpen }: ColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: columnId(column.id), disabled: blocked });
   return (
-    <section className={`column column-${column.category} ${isOver ? "over" : ""}`}>
+    <section className={`column column-${column.category} ${isOver ? "over" : ""} ${blocked ? "blocked" : ""}`}>
       <header className="column-header">
         <span>{column.name}</span>
         <span className="count">{issues.length}</span>

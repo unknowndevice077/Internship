@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import BacklogPage from "./pages/BacklogPage";
 import BoardPage from "./pages/BoardPage";
 import LoginPage from "./pages/LoginPage";
+import ProjectSettingsPage from "./pages/ProjectSettingsPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import RegisterPage from "./pages/RegisterPage";
 
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/" element={<ProjectsPage />} />
         <Route path="/projects/:projectId/board" element={<BoardPage />} />
         <Route path="/projects/:projectId/backlog" element={<BacklogPage />} />
+        <Route path="/projects/:projectId/settings" element={<ProjectSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

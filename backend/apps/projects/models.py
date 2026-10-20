@@ -73,6 +73,31 @@ class Status(TenantModel):
         return f"{self.project.key}: {self.name}"
 
 
+class Transition(TenantModel):
+    # A project with no transitions has an open workflow (any status -> any status).
+    # Once one is defined, only the listed moves are allowed.
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="transitions")
+    from_status = models.ForeignKey(Status, on_delete=models.CASCADE, related_name="outgoing")
+    to_status = models.ForeignKey(Status, on_delete=models.CASCADE, related_name="incoming")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["from_status", "to_status"], name="uniq_transition"),
+        ]
+
+    def __str__(self):
+        return f"{self.from_status.name} -> {self.to_status.name}"
+
+
+def transition_allowed(project, from_status_id, to_status_id):
+    if from_status_id == to_status_id:
+        return True
+    rules = Transition.objects.filter(project=project)
+    if not rules.exists():
+        return True
+    return rules.filter(from_status_id=from_status_id, to_status_id=to_status_id).exists()
+
+
 class Board(TenantModel):
     class Kind(models.TextChoices):
         KANBAN = "kanban", "Kanban"

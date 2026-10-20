@@ -87,6 +87,7 @@ export interface BoardColumn extends Status {
 export interface Board {
   project: Project;
   columns: BoardColumn[];
+  transitions: [number, number][];
 }
 
 export interface Sprint {
@@ -104,4 +105,43 @@ export interface Page<T> {
   next: string | null;
   previous: string | null;
   results: T[];
+}
+
+export interface Transition {
+  id: number;
+  project: number;
+  from_status: number;
+  to_status: number;
+}
+
+export interface Comment {
+  id: number;
+  issue: number;
+  author: UserBrief | null;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Attachment {
+  id: number;
+  issue: number;
+  name: string;
+  size: number;
+  content_type: string;
+  uploaded_by: UserBrief | null;
+  download_url: string;
+  created_at: string;
+}
+
+export interface AuditEntry {
+  id: number;
+  actor: UserBrief | null;
+  action: "created" | "updated" | "deleted" | "moved" | "commented" | "attached";
+  entity_type: string;
+  entity_id: number;
+  entity_label: string;
+  changes: Record<string, [unknown, unknown]>;
+  issue: number | null;
+  created_at: string;
 }

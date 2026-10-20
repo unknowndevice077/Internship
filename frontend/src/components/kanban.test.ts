@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { BoardIssue } from "../api/types";
-import { findColumn, moveCard, neighbours, type ColumnMap } from "./kanban";
+import { allowedTargets, findColumn, moveCard, neighbours, type ColumnMap } from "./kanban";
 
 const card = (id: number, status: number): BoardIssue => ({
   id,
@@ -45,5 +45,18 @@ describe("kanban helpers", () => {
     const next = moveCard(board(), 3, 1, 1);
     expect(neighbours(next, 3)).toEqual({ status: 1, before: 1, after: 2 });
     expect(neighbours(next, 1)).toEqual({ status: 1, before: null, after: 3 });
+  });
+});
+
+describe("allowedTargets", () => {
+  it("allows everything when the workflow is open", () => {
+    expect(allowedTargets([], 1)(3)).toBe(true);
+  });
+
+  it("only allows configured moves", () => {
+    const allowed = allowedTargets([[1, 2], [2, 3]], 1);
+    expect(allowed(2)).toBe(true);
+    expect(allowed(3)).toBe(false);
+    expect(allowed(1)).toBe(true);
   });
 });

@@ -2,6 +2,9 @@ from django.db import transaction
 from rest_framework import exceptions, generics, mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 
+from apps.activity import audit
+from apps.activity.models import AuditLog
+
 from .models import Membership, Role, Workspace
 from .permissions import WorkspaceRolePermission
 from .serializers import (
@@ -17,14 +20,31 @@ class TenantViewSet(viewsets.ModelViewSet):
     read_role = Role.VIEWER
     write_role = Role.MEMBER
     action_roles = {}
+    audited = True
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return self.queryset.none()
         return self.queryset.for_workspace(self.request.workspace)
 
-    def perform_create(self, serializer):
-        serializer.save(workspace=self.request.workspace)
+    def perform_create(self, serializer, **extra):
+        instance = serializer.save(workspace=self.request.workspace, **extra)
+        if self.audited:
+            audit.record(self.request.user, AuditLog.Action.CREATED, instance)
+        return instance
+
+    def perform_update(self, serializer):
+        before = audit.snapshot(serializer.instance)
+        instance = serializer.save()
+        changes = audit.diff(before, audit.snapshot(instance))
+        if self.audited and changes:
+            audit.record(self.request.user, AuditLog.Action.UPDATED, instance, changes)
+        return instance
+
+    def perform_destroy(self, instance):
+        if self.audited:
+            audit.record(self.request.user, AuditLog.Action.DELETED, instance)
+        instance.delete()
 
 
 class MyWorkspacesView(generics.ListCreateAPIView):
@@ -73,6 +93,10 @@ class MembershipViewSet(
     def get_serializer_class(self):
         return MemberInviteSerializer if self.action == "create" else MembershipSerializer
 
+    def perform_create(self, serializer):
+        membership = serializer.save()
+        audit.record(self.request.user, AuditLog.Action.CREATED, membership)
+
     def perform_update(self, serializer):
         new_role = serializer.validated_data.get("role", serializer.instance.role)
         target = serializer.instance
@@ -80,7 +104,10 @@ class MembershipViewSet(
             raise exceptions.PermissionDenied("Only owners can grant or change the owner role.")
         if target.role == Role.OWNER and new_role != Role.OWNER:
             self._ensure_another_owner(target)
+        before = target.role
         serializer.save()
+        if before != target.role:
+            audit.record(self.request.user, AuditLog.Action.UPDATED, target, {"role": [before, target.role]})
 
     @transaction.atomic
     def perform_destroy(self, instance):
@@ -88,6 +115,7 @@ class MembershipViewSet(
             if self.request.membership.role != Role.OWNER:
                 raise exceptions.PermissionDenied("Only owners can remove an owner.")
             self._ensure_another_owner(instance)
+        audit.record(self.request.user, AuditLog.Action.DELETED, instance)
         instance.delete()
 
     def _ensure_another_owner(self, membership):
