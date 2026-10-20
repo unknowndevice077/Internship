@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 
-import { api, fieldErrors } from "../api/client";
+import { api, ApiError, fieldErrors } from "../api/client";
 import { keys, useProjects } from "../api/queries";
 import type { Project } from "../api/types";
 import { useAuth, useCan } from "../auth/AuthContext";
@@ -94,7 +94,17 @@ function NewProjectForm({ onDone }: { onDone(): void }) {
         Description
         <input value={description} onChange={(e) => setDescription(e.target.value)} />
       </label>
-      {errors.detail && <p className="form-error">{errors.detail}</p>}
+      {errors.detail && (
+        <p className="form-error">
+          {errors.detail}
+          {create.error instanceof ApiError && create.error.isPlanLimit && (
+            <>
+              {" "}
+              <Link to="/billing">See plans</Link>
+            </>
+          )}
+        </p>
+      )}
       <div className="form-actions">
         <button type="button" className="btn" onClick={onDone}>
           Cancel

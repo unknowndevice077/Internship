@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import Layout from "./components/Layout";
 import BacklogPage from "./pages/BacklogPage";
+import BillingPage from "./pages/BillingPage";
 import BoardPage from "./pages/BoardPage";
 import LoginPage from "./pages/LoginPage";
 import ProjectSettingsPage from "./pages/ProjectSettingsPage";
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/projects/:projectId/settings" element={<ProjectSettingsPage />} />
         <Route path="/projects/:projectId/reports" element={<ReportsPage />} />
         <Route path="/settings" element={<WorkspaceSettingsPage />} />
+        <Route path="/billing" element={<BillingPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

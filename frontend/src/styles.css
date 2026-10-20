@@ -1104,3 +1104,68 @@ code {
 .bar-done {
   background: var(--primary);
 }
+
+.usage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.meter-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.meter-track {
+  height: 8px;
+  background: var(--sunken);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: var(--primary);
+}
+
+.meter-fill.full {
+  background: var(--danger);
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.plan-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow);
+}
+
+.plan-card.current {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.plan-card ul {
+  margin: 0;
+  padding-left: 18px;
+  flex: 1;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.price {
+  font-size: 28px;
+  font-weight: 700;
+}

@@ -3,6 +3,7 @@ from rest_framework import exceptions, mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
+from apps.billing import limits
 from apps.tenancy.models import Role
 from apps.tenancy.permissions import WorkspaceRolePermission
 from apps.tenancy.views import TenantViewSet
@@ -56,6 +57,7 @@ class AttachmentViewSet(OwnedByMixin, TenantViewSet):
     audited = False
 
     def perform_create(self, serializer):
+        limits.check(self.request.workspace, "storage_mb", adding=serializer.validated_data["file"].size / 1024 / 1024)
         attachment = serializer.save(workspace=self.request.workspace, uploaded_by=self.request.user)
         audit.record(self.request.user, AuditLog.Action.ATTACHED, attachment)
         return attachment

@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.billing import limits
 from apps.tenancy.models import Role
 from apps.tenancy.views import TenantViewSet
 
@@ -21,6 +22,7 @@ class WebhookEndpointViewSet(TenantViewSet):
     audited = False
 
     def create(self, request, *args, **kwargs):
+        limits.check_feature(request.workspace, "webhooks")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         endpoint = self.perform_create(serializer)

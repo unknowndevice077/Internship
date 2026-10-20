@@ -46,6 +46,10 @@ export class ApiError extends Error {
   constructor(public status: number, public data: unknown) {
     super(typeof data === "object" && data && "detail" in data ? String((data as { detail: unknown }).detail) : `HTTP ${status}`);
   }
+
+  get isPlanLimit() {
+    return this.status === 402;
+  }
 }
 
 type Options = {

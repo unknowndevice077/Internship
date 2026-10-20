@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "apps.webhooks",
     "apps.notifications",
     "apps.reports",
+    "apps.billing",
 ]
 
 MIDDLEWARE = [
@@ -147,6 +148,9 @@ CELERY_BEAT_SCHEDULE = {
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Sprintboard <no-reply@sprintboard.local>")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 WEBHOOK_TIMEOUT_SECONDS = 5
 WEBHOOK_ALLOW_PRIVATE_URLS = env_bool("WEBHOOK_ALLOW_PRIVATE_URLS", DEBUG)

@@ -71,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
+  const refreshMe = useCallback(() => queryClient.invalidateQueries({ queryKey: ["me"] }), [queryClient]);
+
   const logout = useCallback(() => {
     session.clear();
     session.setWorkspace(null);
@@ -88,9 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       switchWorkspace,
-      refreshMe: () => meQuery.refetch(),
+      refreshMe,
     }),
-    [me, hasToken, meQuery, workspace, login, register, logout, switchWorkspace],
+    [me, hasToken, meQuery.isLoading, workspace, login, register, logout, switchWorkspace, refreshMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

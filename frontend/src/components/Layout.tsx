@@ -36,6 +36,7 @@ export default function Layout() {
             Projects
           </NavLink>
           <NavLink to="/settings">Settings</NavLink>
+          {isAdmin && <NavLink to="/billing">Billing</NavLink>}
           {projects.map((p) => (
             <div key={p.id} className={`nav-project ${String(p.id) === projectId ? "open" : ""}`}>
               <span className="nav-project-name">

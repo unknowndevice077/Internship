@@ -16,7 +16,14 @@ HOOK_URL = "https://hooks.example.com/sprintboard"
 
 
 @pytest.fixture
-def endpoint(project):
+def pro(owner):
+    owner.workspace.plan = "pro"
+    owner.workspace.save()
+    return owner.workspace
+
+
+@pytest.fixture
+def endpoint(project, pro):
     return WebhookEndpoint.objects.create(workspace=project.workspace, url=HOOK_URL)
 
 
@@ -68,7 +75,7 @@ def test_endpoint_event_filter(api, owner, project, endpoint, commit):
 
 
 def test_webhooks_never_cross_tenants(api, owner, project, endpoint, commit):
-    other = IssueFactory()
+    other = IssueFactory(project__workspace__plan="pro")
     WebhookEndpoint.objects.create(workspace=other.workspace, url="https://other.example.com/hook")
     with responses.RequestsMock() as rsps:
         rsps.post(HOOK_URL, status=200)
@@ -77,13 +84,13 @@ def test_webhooks_never_cross_tenants(api, owner, project, endpoint, commit):
     assert WebhookDelivery.objects.filter(workspace=other.workspace).count() == 0
 
 
-def test_private_webhook_urls_rejected(api, owner, settings):
+def test_private_webhook_urls_rejected(api, owner, pro, settings):
     settings.WEBHOOK_ALLOW_PRIVATE_URLS = False
     res = api.as_member(owner).post("/api/webhooks/", {"url": "http://127.0.0.1:6379/"})
     assert res.status_code == 400
 
 
-def test_secret_shown_only_on_create(api, owner, settings):
+def test_secret_shown_only_on_create(api, owner, pro, settings):
     settings.WEBHOOK_ALLOW_PRIVATE_URLS = True
     api.as_member(owner)
     created = api.post("/api/webhooks/", {"url": HOOK_URL, "events": ["issue.created"]}).data
@@ -95,6 +102,12 @@ def test_secret_shown_only_on_create(api, owner, settings):
 def test_members_cannot_manage_webhooks(api, owner, member_of):
     api.as_member(member_of(owner.workspace, "member"))
     assert api.get("/api/webhooks/").status_code == 403
+
+
+def test_free_plan_cannot_add_webhooks(api, owner):
+    res = api.as_member(owner).post("/api/webhooks/", {"url": HOOK_URL})
+    assert res.status_code == 402
+    assert res.data["code"] == "plan_limit"
 
 
 def test_signature_helpers():

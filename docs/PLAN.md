@@ -19,7 +19,7 @@ Multi-tenant project management platform (FS-04). Due 20 Nov 2026.
 - [x] React Kanban board (dnd-kit), backlog, sprints
 - [x] Custom workflows, comments, attachments, audit log
 - [x] Webhooks, notifications, reports (Celery)
-- [ ] Stripe billing and plan limits
+- [x] Stripe billing and plan limits
 - [ ] Docker images, GitHub Actions CI/CD
 - [ ] Seed data (Faker), performance numbers
 - [ ] README, architecture diagram, API docs, demo, presentation

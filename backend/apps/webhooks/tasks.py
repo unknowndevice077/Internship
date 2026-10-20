@@ -5,6 +5,9 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
+from apps.billing.plans import plan_for
+from apps.tenancy.models import Workspace
+
 from .models import WebhookDelivery, WebhookEndpoint
 from .signing import UnsafeURL, check_url, encode, sign
 
@@ -13,6 +16,9 @@ MAX_ATTEMPTS = 5
 
 @shared_task
 def fan_out_event(workspace_id, event, payload):
+    # endpoints stop firing if the workspace drops back to a plan without webhooks
+    if not plan_for(Workspace.objects.get(pk=workspace_id)).webhooks:
+        return
     endpoints = WebhookEndpoint.objects.filter(workspace_id=workspace_id, is_active=True)
     for endpoint in endpoints:
         if endpoint.wants(event):

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 
-import { api, fieldErrors } from "../api/client";
+import { Link } from "react-router-dom";
+
+import { api, ApiError, fieldErrors } from "../api/client";
 import { keys, useMembers } from "../api/queries";
 import type { Role } from "../api/types";
 import { useAuth, useCan } from "../auth/AuthContext";
@@ -114,6 +116,11 @@ function Members() {
             Invite
           </button>
           {fieldErrors(invite.error).email && <span className="field-error">{fieldErrors(invite.error).email}</span>}
+          {invite.error instanceof ApiError && invite.error.isPlanLimit && (
+            <span className="field-error">
+              {invite.error.message} <Link to="/billing">See plans</Link>
+            </span>
+          )}
         </form>
       )}
     </section>
@@ -232,6 +239,11 @@ function Webhooks() {
         </div>
         <p className="muted small">Leave every box empty to receive all events.</p>
         {fieldErrors(create.error).url && <span className="field-error">{fieldErrors(create.error).url}</span>}
+        {create.error instanceof ApiError && create.error.isPlanLimit && (
+          <span className="field-error">
+            {create.error.message} <Link to="/billing">See plans</Link>
+          </span>
+        )}
         <button className="btn btn-primary" disabled={create.isPending}>
           Add endpoint
         </button>

@@ -94,6 +94,9 @@ class MembershipViewSet(
         return MemberInviteSerializer if self.action == "create" else MembershipSerializer
 
     def perform_create(self, serializer):
+        from apps.billing import limits
+
+        limits.check(self.request.workspace, "members")
         membership = serializer.save()
         audit.record(self.request.user, AuditLog.Action.CREATED, membership)
 

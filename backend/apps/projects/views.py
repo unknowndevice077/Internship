@@ -12,6 +12,7 @@ from apps.tenancy.views import TenantViewSet
 from . import ranking
 from apps.activity import audit
 from apps.activity.models import AuditLog
+from apps.billing import limits
 from apps.reports.models import Report
 from apps.reports.tasks import build_report
 
@@ -36,6 +37,10 @@ class ProjectViewSet(TenantViewSet):
 
     def get_queryset(self):
         return super().get_queryset().annotate(issue_count=Count("issues")).order_by("name")
+
+    def perform_create(self, serializer):
+        limits.check(self.request.workspace, "projects")
+        return super().perform_create(serializer)
 
     @action(detail=True, methods=["get"], url_path="board")
     def board(self, request, pk=None):
