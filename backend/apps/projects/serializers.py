@@ -98,9 +98,23 @@ class IssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
         fields = [
-            "id", "key", "project", "number", "title", "description", "type", "priority",
-            "status", "sprint", "assignee", "assignee_detail", "reporter", "story_points",
-            "rank", "created_at", "updated_at",
+            "id",
+            "key",
+            "project",
+            "number",
+            "title",
+            "description",
+            "type",
+            "priority",
+            "status",
+            "sprint",
+            "assignee",
+            "assignee_detail",
+            "reporter",
+            "story_points",
+            "rank",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = ["number", "rank", "created_at", "updated_at"]
 
@@ -114,7 +128,9 @@ class IssueSerializer(serializers.ModelSerializer):
             attrs["status"] = project.statuses.order_by("order").first()
         elif status is not None and status.project_id != project.id:
             raise serializers.ValidationError({"status": "Status belongs to another project."})
-        elif status is not None and self.instance and not transition_allowed(project, self.instance.status_id, status.id):
+        elif (
+            status is not None and self.instance and not transition_allowed(project, self.instance.status_id, status.id)
+        ):
             raise serializers.ValidationError(
                 {"status": f"The workflow doesn't allow moving from {self.instance.status.name} to {status.name}."}
             )

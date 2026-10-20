@@ -22,7 +22,9 @@ def test_open_workflow_allows_any_move(api, owner, project):
 def test_custom_workflow_blocks_disallowed_moves(api, owner, project):
     s = statuses(project)
     api.as_member(owner)
-    api.post("/api/transitions/", {"project": project.id, "from_status": s["To Do"].id, "to_status": s["In Progress"].id})
+    api.post(
+        "/api/transitions/", {"project": project.id, "from_status": s["To Do"].id, "to_status": s["In Progress"].id}
+    )
     issue = IssueFactory(project=project, status=s["To Do"])
 
     res = api.post(f"/api/issues/{issue.id}/move/", {"status": s["Done"].id})
@@ -41,16 +43,23 @@ def test_board_exposes_transitions(api, owner, project):
 
 def test_transition_statuses_must_belong_to_project(api, owner, project):
     other = IssueFactory().project
-    res = api.as_member(owner).post("/api/transitions/", {
-        "project": project.id, "from_status": project.statuses.first().id, "to_status": other.statuses.first().id,
-    })
+    res = api.as_member(owner).post(
+        "/api/transitions/",
+        {
+            "project": project.id,
+            "from_status": project.statuses.first().id,
+            "to_status": other.statuses.first().id,
+        },
+    )
     assert res.status_code == 400
 
 
 def test_members_cannot_edit_workflow(api, owner, project, member_of):
     s = statuses(project)
     api.as_member(member_of(owner.workspace, "member"))
-    res = api.post("/api/transitions/", {"project": project.id, "from_status": s["To Do"].id, "to_status": s["Done"].id})
+    res = api.post(
+        "/api/transitions/", {"project": project.id, "from_status": s["To Do"].id, "to_status": s["Done"].id}
+    )
     assert res.status_code == 403
 
 

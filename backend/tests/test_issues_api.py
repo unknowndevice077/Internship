@@ -7,7 +7,9 @@ pytestmark = pytest.mark.django_db
 
 
 def test_create_issue_defaults_to_first_status_and_sets_reporter(api, owner, project):
-    res = api.as_member(owner).post("/api/issues/", {"project": project.id, "title": "Login button broken", "type": "bug"})
+    res = api.as_member(owner).post(
+        "/api/issues/", {"project": project.id, "title": "Login button broken", "type": "bug"}
+    )
     assert res.status_code == 201, res.data
     assert res.data["key"] == "WEB-1"
     assert res.data["status"] == project.statuses.first().id
@@ -28,7 +30,9 @@ def test_move_issue_between_neighbours(api, owner, project):
     todo, doing = project.statuses.all()[:2]
     a, b = IssueFactory(project=project, status=doing), IssueFactory(project=project, status=doing)
     moving = IssueFactory(project=project, status=todo)
-    res = api.as_member(owner).post(f"/api/issues/{moving.id}/move/", {"status": doing.id, "before": a.id, "after": b.id})
+    res = api.as_member(owner).post(
+        f"/api/issues/{moving.id}/move/", {"status": doing.id, "before": a.id, "after": b.id}
+    )
     assert res.status_code == 200, res.data
     order = list(Issue.objects.filter(status=doing).values_list("id", flat=True))
     assert order == [a.id, moving.id, b.id]

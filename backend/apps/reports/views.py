@@ -56,4 +56,6 @@ class ReportViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Cre
         report = self.get_object()
         if report.state != Report.State.READY or not report.file:
             raise exceptions.NotFound("Report isn't ready yet.")
-        return FileResponse(report.file.open("rb"), as_attachment=True, filename=f"{report.kind}-report-{report.pk}.csv")
+        return FileResponse(
+            report.file.open("rb"), as_attachment=True, filename=f"{report.kind}-report-{report.pk}.csv"
+        )

@@ -27,14 +27,28 @@ def sprint_report(report):
             person["done"] += 1
             person["done_points"] += points
         by_type[issue.type] += 1
-        rows.append([issue.key, issue.title, issue.type, issue.status.name, "yes" if done else "no", points,
-                     issue.assignee.email if issue.assignee else ""])
+        rows.append(
+            [
+                issue.key,
+                issue.title,
+                issue.type,
+                issue.status.name,
+                "yes" if done else "no",
+                points,
+                issue.assignee.email if issue.assignee else "",
+            ]
+        )
 
     committed_points = sum(p["points"] for p in people.values())
     completed_points = sum(p["done_points"] for p in people.values())
     data = {
-        "sprint": {"id": sprint.id, "name": sprint.name, "goal": sprint.goal,
-                   "start_date": str(sprint.start_date or ""), "end_date": str(sprint.end_date or "")},
+        "sprint": {
+            "id": sprint.id,
+            "name": sprint.name,
+            "goal": sprint.goal,
+            "start_date": str(sprint.start_date or ""),
+            "end_date": str(sprint.end_date or ""),
+        },
         "committed_issues": len(rows),
         "completed_issues": sum(1 for r in rows if r[4] == "yes"),
         "committed_points": committed_points,
@@ -56,8 +70,9 @@ def weekly_report(report):
         created = issues.filter(created_at__gte=since).count()
         completed = issues.filter(status__category=Status.Category.DONE, updated_at__gte=since).count()
         open_count = issues.exclude(status__category=Status.Category.DONE).count()
-        projects.append({"key": project.key, "name": project.name, "created": created,
-                         "completed": completed, "open": open_count})
+        projects.append(
+            {"key": project.key, "name": project.name, "created": created, "completed": completed, "open": open_count}
+        )
         rows.append([project.key, project.name, created, completed, open_count])
     data = {"since": since.date().isoformat(), "until": timezone.now().date().isoformat(), "projects": projects}
     return data, to_csv(["Project", "Name", "Created", "Completed", "Open"], rows)

@@ -8,11 +8,7 @@ def resolve_membership(request):
     slug = request.headers.get("X-Workspace")
     if not slug:
         raise exceptions.ValidationError({"detail": "X-Workspace header is required."})
-    membership = (
-        Membership.objects.select_related("workspace")
-        .filter(user=request.user, workspace__slug=slug)
-        .first()
-    )
+    membership = Membership.objects.select_related("workspace").filter(user=request.user, workspace__slug=slug).first()
     # 404 instead of 403 so we don't reveal which workspace slugs exist
     if membership is None:
         raise exceptions.NotFound("Workspace not found.")

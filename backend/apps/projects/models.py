@@ -17,7 +17,9 @@ class Project(TenantModel):
     name = models.CharField(max_length=120)
     key = models.CharField(max_length=10, help_text="Issue key prefix, e.g. WEB")
     description = models.TextField(blank=True)
-    lead = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    lead = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     issue_counter = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -159,8 +161,12 @@ class Issue(TenantModel):
     priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)
     status = models.ForeignKey(Status, on_delete=models.PROTECT, related_name="issues")
     sprint = models.ForeignKey(Sprint, null=True, blank=True, on_delete=models.SET_NULL, related_name="issues")
-    assignee = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="assigned_issues")
-    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reported_issues")
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="assigned_issues"
+    )
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reported_issues"
+    )
     story_points = models.PositiveSmallIntegerField(null=True, blank=True)
     # ordering inside a column, moving a card sets it between its new neighbours
     rank = models.FloatField(default=0, db_index=True)

@@ -39,16 +39,18 @@ class BillingView(APIView):
     def get(self, request):
         workspace = request.workspace
         sub = Subscription.objects.filter(workspace=workspace).first()
-        return Response({
-            "plan": plan_for(workspace).as_dict(),
-            "status": sub.status if sub else "",
-            "current_period_end": sub.current_period_end if sub else None,
-            "cancel_at_period_end": sub.cancel_at_period_end if sub else False,
-            "has_customer": bool(sub and sub.stripe_customer_id),
-            "usage": usage(workspace),
-            "plans": [p.as_dict() for p in PLANS.values()],
-            "stripe_enabled": bool(settings.STRIPE_SECRET_KEY),
-        })
+        return Response(
+            {
+                "plan": plan_for(workspace).as_dict(),
+                "status": sub.status if sub else "",
+                "current_period_end": sub.current_period_end if sub else None,
+                "cancel_at_period_end": sub.cancel_at_period_end if sub else False,
+                "has_customer": bool(sub and sub.stripe_customer_id),
+                "usage": usage(workspace),
+                "plans": [p.as_dict() for p in PLANS.values()],
+                "stripe_enabled": bool(settings.STRIPE_SECRET_KEY),
+            }
+        )
 
 
 class CheckoutSerializer(serializers.Serializer):
@@ -64,7 +66,9 @@ class CheckoutView(APIView):
         body = CheckoutSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         if request.workspace.plan != "free":
-            raise exceptions.ValidationError({"detail": "You already have a subscription. Use Manage billing to change plans."})
+            raise exceptions.ValidationError(
+                {"detail": "You already have a subscription. Use Manage billing to change plans."}
+            )
         try:
             url = stripe_sync.create_checkout(request.workspace, request.user, body.validated_data["plan"])
         except (LookupError, stripe.StripeError) as exc:
@@ -121,7 +125,9 @@ class StripeWebhookView(APIView):
             self.payment_failed(obj)
 
     def payment_failed(self, invoice):
-        sub = Subscription.objects.filter(stripe_customer_id=invoice.get("customer")).select_related("workspace").first()
+        sub = (
+            Subscription.objects.filter(stripe_customer_id=invoice.get("customer")).select_related("workspace").first()
+        )
         if not sub:
             return
         owners = Membership.objects.filter(workspace=sub.workspace, role=Role.OWNER).select_related("user")

@@ -7,3 +7,7 @@ staticfiles/
 node_modules/
 dist/
 .pytest_cache/
+junit.xml
+coverage.xml
+.coverage
+.ruff_cache/

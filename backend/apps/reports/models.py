@@ -19,13 +19,19 @@ class Report(TenantModel):
         FAILED = "failed"
 
     kind = models.CharField(max_length=10, choices=Kind.choices)
-    project = models.ForeignKey("projects.Project", null=True, blank=True, on_delete=models.CASCADE, related_name="reports")
-    sprint = models.ForeignKey("projects.Sprint", null=True, blank=True, on_delete=models.CASCADE, related_name="reports")
+    project = models.ForeignKey(
+        "projects.Project", null=True, blank=True, on_delete=models.CASCADE, related_name="reports"
+    )
+    sprint = models.ForeignKey(
+        "projects.Sprint", null=True, blank=True, on_delete=models.CASCADE, related_name="reports"
+    )
     state = models.CharField(max_length=10, choices=State.choices, default=State.PENDING)
     data = models.JSONField(default=dict, blank=True)
     file = models.FileField(upload_to=report_path, blank=True)
     error = models.CharField(max_length=500, blank=True)
-    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(null=True, blank=True)
 

@@ -4,7 +4,6 @@ from rest_framework.exceptions import APIException
 
 from .plans import plan_for
 
-
 LABELS = {"projects": "projects", "members": "members", "storage_mb": "MB of storage"}
 
 
@@ -13,21 +12,26 @@ class PlanLimitReached(APIException):
     default_code = "plan_limit"
 
     def __init__(self, resource, limit, plan):
-        super().__init__({
-            "detail": f"Your {plan.name} plan allows {limit} {resource}. Upgrade to add more.",
-            "code": "plan_limit",
-            "resource": resource,
-            "limit": limit,
-        })
+        super().__init__(
+            {
+                "detail": f"Your {plan.name} plan allows {limit} {resource}. Upgrade to add more.",
+                "code": "plan_limit",
+                "resource": resource,
+                "limit": limit,
+            }
+        )
 
     @classmethod
     def feature(cls, feature, plan):
         exc = cls.__new__(cls)
-        APIException.__init__(exc, {
-            "detail": f"{feature.capitalize()} aren't included in the {plan.name} plan. Upgrade to use them.",
-            "code": "plan_limit",
-            "resource": feature,
-        })
+        APIException.__init__(
+            exc,
+            {
+                "detail": f"{feature.capitalize()} aren't included in the {plan.name} plan. Upgrade to use them.",
+                "code": "plan_limit",
+                "resource": feature,
+            },
+        )
         return exc
 
 

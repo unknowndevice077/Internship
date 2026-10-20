@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import stripe
 from django.conf import settings
@@ -23,7 +23,9 @@ def ensure_customer(workspace, email):
     sub = subscription_for(workspace)
     if not sub.stripe_customer_id:
         customer = stripe.Customer.create(
-            name=workspace.name, email=email, metadata={"workspace_id": workspace.id, "slug": workspace.slug},
+            name=workspace.name,
+            email=email,
+            metadata={"workspace_id": workspace.id, "slug": workspace.slug},
             **client_kwargs(),
         )
         sub.stripe_customer_id = customer.id
@@ -70,7 +72,7 @@ def _period_end(data):
     if ts is None:
         items = (data.get("items") or {}).get("data") or []
         ts = items[0].get("current_period_end") if items else None
-    return datetime.fromtimestamp(ts, tz=timezone.utc) if ts else None
+    return datetime.fromtimestamp(ts, tz=UTC) if ts else None
 
 
 def _plan_code(data):
@@ -92,8 +94,10 @@ def apply_subscription(data):
     """Mirror a Stripe subscription object onto our Subscription row and the workspace plan."""
     data = as_dict(data)
     sub = (
-        Subscription.objects.select_for_update().select_related("workspace")
-        .filter(stripe_customer_id=data["customer"]).first()
+        Subscription.objects.select_for_update()
+        .select_related("workspace")
+        .filter(stripe_customer_id=data["customer"])
+        .first()
     )
     if sub is None:
         workspace_id = (data.get("metadata") or {}).get("workspace_id")

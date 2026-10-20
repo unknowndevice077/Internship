@@ -38,9 +38,13 @@ def send_weekly_summaries():
         if build_report(report.id) != Report.State.READY:
             continue
         report.refresh_from_db()
-        lines = [f"{p['key']}: {p['created']} created, {p['completed']} completed, {p['open']} open"
-                 for p in report.data["projects"]]
-        admins = Membership.objects.filter(workspace=workspace, role__in=[Role.OWNER, Role.ADMIN]).select_related("user")
+        lines = [
+            f"{p['key']}: {p['created']} created, {p['completed']} completed, {p['open']} open"
+            for p in report.data["projects"]
+        ]
+        admins = Membership.objects.filter(workspace=workspace, role__in=[Role.OWNER, Role.ADMIN]).select_related(
+            "user"
+        )
         send_mail(
             subject=f"[{workspace.name}] Weekly summary",
             message="Last 7 days\n\n" + ("\n".join(lines) or "No projects yet."),

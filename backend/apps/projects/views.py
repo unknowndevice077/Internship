@@ -6,16 +6,15 @@ from rest_framework import exceptions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.tenancy.models import Role
-from apps.tenancy.views import TenantViewSet
-
-from . import ranking
 from apps.activity import audit
 from apps.activity.models import AuditLog
 from apps.billing import limits
 from apps.reports.models import Report
 from apps.reports.tasks import build_report
+from apps.tenancy.models import Role
+from apps.tenancy.views import TenantViewSet
 
+from . import ranking
 from .models import Board, Issue, Project, Sprint, Status, Transition, transition_allowed
 from .serializers import (
     BoardIssueSerializer,
@@ -46,9 +45,7 @@ class ProjectViewSet(TenantViewSet):
     def board(self, request, pk=None):
         project = self.get_object()
         issues = (
-            Issue.objects.for_workspace(request.workspace)
-            .filter(project=project)
-            .select_related("project", "assignee")
+            Issue.objects.for_workspace(request.workspace).filter(project=project).select_related("project", "assignee")
         )
         sprint = request.query_params.get("sprint")
         if sprint == "active":
@@ -60,16 +57,20 @@ class ProjectViewSet(TenantViewSet):
         for issue in issues:
             by_status.setdefault(issue.status_id, []).append(issue)
         columns = [
-            {**StatusSerializer(s, context={"request": request}).data,
-             "issues": BoardIssueSerializer(by_status.get(s.id, []), many=True).data}
+            {
+                **StatusSerializer(s, context={"request": request}).data,
+                "issues": BoardIssueSerializer(by_status.get(s.id, []), many=True).data,
+            }
             for s in project.statuses.all()
         ]
         transitions = list(project.transitions.values_list("from_status_id", "to_status_id"))
-        return Response({
-            "project": ProjectSerializer(project, context={"request": request}).data,
-            "columns": columns,
-            "transitions": transitions,
-        })
+        return Response(
+            {
+                "project": ProjectSerializer(project, context={"request": request}).data,
+                "columns": columns,
+                "transitions": transitions,
+            }
+        )
 
 
 class StatusViewSet(TenantViewSet):
@@ -137,8 +138,12 @@ class SprintViewSet(TenantViewSet):
 
         with transaction.atomic():
             report = Report.objects.create(
-                workspace=request.workspace, kind=Report.Kind.SPRINT, project=sprint.project, sprint=sprint,
-                requested_by=request.user, data={"issue_ids": list(sprint.issues.values_list("id", flat=True))},
+                workspace=request.workspace,
+                kind=Report.Kind.SPRINT,
+                project=sprint.project,
+                sprint=sprint,
+                requested_by=request.user,
+                data={"issue_ids": list(sprint.issues.values_list("id", flat=True))},
             )
             # unfinished work goes to the chosen sprint, or back to the backlog
             sprint.issues.exclude(status__category=Status.Category.DONE).update(sprint=move_to)

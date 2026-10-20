@@ -84,11 +84,7 @@ class MembershipViewSet(
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Membership.objects.none()
-        return (
-            Membership.objects.filter(workspace=self.request.workspace)
-            .select_related("user")
-            .order_by("joined_at")
-        )
+        return Membership.objects.filter(workspace=self.request.workspace).select_related("user").order_by("joined_at")
 
     def get_serializer_class(self):
         return MemberInviteSerializer if self.action == "create" else MembershipSerializer

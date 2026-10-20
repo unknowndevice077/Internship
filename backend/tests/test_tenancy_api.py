@@ -47,15 +47,18 @@ def test_cannot_assign_issue_to_non_member(api, owner, project):
     assert "assignee" in res.data
 
 
-@pytest.mark.parametrize("role,method,url,expected", [
-    ("viewer", "get", "/api/projects/", 200),
-    ("viewer", "post", "/api/issues/", 403),
-    ("member", "post", "/api/issues/", 201),
-    ("member", "post", "/api/projects/", 403),
-    ("admin", "post", "/api/projects/", 201),
-    ("member", "post", "/api/members/", 403),
-    ("admin", "post", "/api/members/", 201),
-])
+@pytest.mark.parametrize(
+    "role,method,url,expected",
+    [
+        ("viewer", "get", "/api/projects/", 200),
+        ("viewer", "post", "/api/issues/", 403),
+        ("member", "post", "/api/issues/", 201),
+        ("member", "post", "/api/projects/", 403),
+        ("admin", "post", "/api/projects/", 201),
+        ("member", "post", "/api/members/", 403),
+        ("admin", "post", "/api/members/", 201),
+    ],
+)
 def test_role_permissions(api, owner, project, member_of, role, method, url, expected):
     payloads = {
         "/api/issues/": {"project": project.id, "title": "Fix login"},

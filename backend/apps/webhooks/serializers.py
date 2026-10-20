@@ -39,6 +39,15 @@ class WebhookDeliverySerializer(serializers.ModelSerializer):
     class Meta:
         model = WebhookDelivery
         fields = [
-            "id", "event", "payload", "state", "attempts", "response_code", "response_body",
-            "last_error", "duration_ms", "created_at", "delivered_at",
+            "id",
+            "event",
+            "payload",
+            "state",
+            "attempts",
+            "response_code",
+            "response_body",
+            "last_error",
+            "duration_ms",
+            "created_at",
+            "delivered_at",
         ]

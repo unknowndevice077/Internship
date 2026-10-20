@@ -25,24 +25,33 @@ def signed_post(api, event):
     payload = json.dumps(event)
     ts = int(time.time())
     sig = hmac.new(WEBHOOK_SECRET.encode(), f"{ts}.{payload}".encode(), hashlib.sha256).hexdigest()
-    return api.post("/api/billing/webhook/", data=payload, content_type="application/json",
-                    HTTP_STRIPE_SIGNATURE=f"t={ts},v1={sig}")
+    return api.post(
+        "/api/billing/webhook/", data=payload, content_type="application/json", HTTP_STRIPE_SIGNATURE=f"t={ts},v1={sig}"
+    )
 
 
-def subscription_event(workspace, status="active", lookup_key="sprintboard_pro_monthly", kind="customer.subscription.updated", event_id="evt_1"):
+def subscription_event(
+    workspace,
+    status="active",
+    lookup_key="sprintboard_pro_monthly",
+    kind="customer.subscription.updated",
+    event_id="evt_1",
+):
     return {
         "id": event_id,
         "object": "event",
         "type": kind,
-        "data": {"object": {
-            "id": "sub_123",
-            "object": "subscription",
-            "customer": "cus_123",
-            "status": status,
-            "cancel_at_period_end": False,
-            "metadata": {"workspace_id": str(workspace.id)},
-            "items": {"data": [{"price": {"lookup_key": lookup_key}, "current_period_end": 1893456000}]},
-        }},
+        "data": {
+            "object": {
+                "id": "sub_123",
+                "object": "subscription",
+                "customer": "cus_123",
+                "status": status,
+                "cancel_at_period_end": False,
+                "metadata": {"workspace_id": str(workspace.id)},
+                "items": {"data": [{"price": {"lookup_key": lookup_key}, "current_period_end": 1893456000}]},
+            }
+        },
     }
 
 
@@ -78,7 +87,9 @@ def test_only_owner_can_start_checkout(api, owner, member_of):
 
 def test_checkout_creates_customer_and_session(api, owner, monkeypatch):
     calls = {}
-    monkeypatch.setattr(stripe.Customer, "create", lambda **kw: calls.setdefault("customer", kw) and SimpleNamespace(id="cus_new"))
+    monkeypatch.setattr(
+        stripe.Customer, "create", lambda **kw: calls.setdefault("customer", kw) and SimpleNamespace(id="cus_new")
+    )
     monkeypatch.setattr(stripe.Price, "list", lambda **kw: SimpleNamespace(data=[SimpleNamespace(id="price_pro")]))
 
     def fake_session(**kw):
@@ -97,7 +108,9 @@ def test_checkout_creates_customer_and_session(api, owner, monkeypatch):
 
 
 def test_webhook_rejects_bad_signature(api):
-    res = api.post("/api/billing/webhook/", data="{}", content_type="application/json", HTTP_STRIPE_SIGNATURE="t=1,v1=bad")
+    res = api.post(
+        "/api/billing/webhook/", data="{}", content_type="application/json", HTTP_STRIPE_SIGNATURE="t=1,v1=bad"
+    )
     assert res.status_code == 400
 
 
@@ -125,7 +138,12 @@ def test_webhook_events_are_processed_once(api, owner):
 
 def test_cancelled_subscription_downgrades_to_free(api, owner):
     signed_post(api, subscription_event(owner.workspace, event_id="evt_up"))
-    signed_post(api, subscription_event(owner.workspace, status="canceled", kind="customer.subscription.deleted", event_id="evt_down"))
+    signed_post(
+        api,
+        subscription_event(
+            owner.workspace, status="canceled", kind="customer.subscription.deleted", event_id="evt_down"
+        ),
+    )
     owner.workspace.refresh_from_db()
     assert owner.workspace.plan == "free"
 

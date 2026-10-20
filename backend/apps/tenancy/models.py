@@ -33,8 +33,8 @@ class Membership(models.Model):
             models.UniqueConstraint(fields=["user", "workspace"], name="uniq_membership"),
         ]
 
-    def has_role(self, minimum):
-        return ROLE_RANK[self.role] >= ROLE_RANK[minimum]
-
     def __str__(self):
         return f"{self.user} @ {self.workspace} ({self.role})"
+
+    def has_role(self, minimum):
+        return ROLE_RANK[self.role] >= ROLE_RANK[minimum]

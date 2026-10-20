@@ -10,11 +10,5 @@ celery>=5.4
 redis>=5.0
 stripe>=10.0
 requests>=2.32
+whitenoise>=6.7
 gunicorn>=23.0
-
-# dev / test
-pytest>=8.0
-pytest-django>=4.9
-factory-boy>=3.3
-Faker>=30.0
-responses>=0.25

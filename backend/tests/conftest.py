@@ -30,6 +30,7 @@ def project(owner):
 def member_of():
     def make(workspace, role="member"):
         return MembershipFactory(workspace=workspace, role=role)
+
     return make
 
 
@@ -40,3 +41,4 @@ def test_settings(settings, tmp_path):
     settings.CELERY_TASK_EAGER_PROPAGATES = True
     settings.MEDIA_ROOT = tmp_path
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

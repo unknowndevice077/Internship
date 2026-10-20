@@ -29,9 +29,11 @@ def notifications_for(entry):
 
     def add(user_ids, verb, text):
         for user in _members(entry.workspace, set(user_ids) - {getattr(actor, "id", None), None}):
-            out.append(Notification(
-                workspace=entry.workspace, recipient=user, actor=actor, verb=verb, issue=issue, text=text[:300]
-            ))
+            out.append(
+                Notification(
+                    workspace=entry.workspace, recipient=user, actor=actor, verb=verb, issue=issue, text=text[:300]
+                )
+            )
 
     label = f"{issue.key} {issue.title}"
     if entry.action == AuditLog.Action.CREATED and entry.entity_type == "issue" and issue.assignee_id:
@@ -43,13 +45,16 @@ def notifications_for(entry):
 
     elif entry.action == AuditLog.Action.MOVED:
         to = entry.changes.get("status", [None, "?"])[1]
-        add([issue.reporter_id, issue.assignee_id], Notification.Verb.STATUS_CHANGED, f"{who} moved {issue.key} to {to}")
+        add(
+            [issue.reporter_id, issue.assignee_id], Notification.Verb.STATUS_CHANGED, f"{who} moved {issue.key} to {to}"
+        )
 
     elif entry.action == AuditLog.Action.COMMENTED:
         comment = Comment.objects.filter(pk=entry.entity_id).first()
         mentioned = set(
-            _members(entry.workspace, User.objects.filter(email__in=mentioned_emails(comment.body if comment else "")))
-            .values_list("id", flat=True)
+            _members(
+                entry.workspace, User.objects.filter(email__in=mentioned_emails(comment.body if comment else ""))
+            ).values_list("id", flat=True)
         )
         add(mentioned, Notification.Verb.MENTIONED, f"{who} mentioned you on {label}")
         watchers = {issue.reporter_id, issue.assignee_id} - mentioned

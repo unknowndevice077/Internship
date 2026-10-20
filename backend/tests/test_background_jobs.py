@@ -121,11 +121,15 @@ def test_assignment_and_mentions_create_notifications(api, owner, project, membe
     qa = member_of(owner.workspace)
     api.as_member(owner)
     with commit():
-        issue_id = api.post("/api/issues/", {"project": project.id, "title": "Fix login", "assignee": dev.user.id}).data["id"]
+        issue_id = api.post(
+            "/api/issues/", {"project": project.id, "title": "Fix login", "assignee": dev.user.id}
+        ).data["id"]
     with commit():
         api.post("/api/comments/", {"issue": issue_id, "body": f"@{qa.user.email} can you verify?"})
 
-    assert Notification.objects.get(recipient=dev.user, verb="assigned").text.startswith(owner.user.full_name or owner.user.email)
+    assert Notification.objects.get(recipient=dev.user, verb="assigned").text.startswith(
+        owner.user.full_name or owner.user.email
+    )
     assert Notification.objects.filter(recipient=qa.user, verb="mentioned").count() == 1
     assert Notification.objects.filter(recipient=dev.user, verb="commented").count() == 1
     assert not Notification.objects.filter(recipient=owner.user).exists()

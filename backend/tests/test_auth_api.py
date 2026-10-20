@@ -7,9 +7,15 @@ pytestmark = pytest.mark.django_db
 
 
 def test_register_creates_user_workspace_and_owner_membership(api):
-    res = api.post("/api/auth/register/", {
-        "email": "Ana@Acme.io", "password": "s3cure-pass!", "full_name": "Ana", "workspace_name": "Acme Inc",
-    })
+    res = api.post(
+        "/api/auth/register/",
+        {
+            "email": "Ana@Acme.io",
+            "password": "s3cure-pass!",
+            "full_name": "Ana",
+            "workspace_name": "Acme Inc",
+        },
+    )
     assert res.status_code == 201, res.data
     assert res.data["access"] and res.data["refresh"]
     assert res.data["user"]["workspaces"] == [{"slug": "acme-inc", "name": "Acme Inc", "plan": "free", "role": "owner"}]

@@ -12,6 +12,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     full_name = factory.Faker("name")
+
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):
         obj.set_password(extracted or "pass12345!")
