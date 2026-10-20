@@ -131,6 +131,7 @@ class IssueViewSet(TenantViewSet):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filterset_class = IssueFilter
+    ordering_fields = ["rank", "number", "priority", "created_at", "updated_at"]
     action_roles = {"destroy": Role.ADMIN}
 
     def get_queryset(self):

@@ -1,0 +1,36 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+
+import { useAuth } from "./auth/AuthContext";
+import Layout from "./components/Layout";
+import BacklogPage from "./pages/BacklogPage";
+import BoardPage from "./pages/BoardPage";
+import LoginPage from "./pages/LoginPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import RegisterPage from "./pages/RegisterPage";
+
+export default function App() {
+  const { me, loading } = useAuth();
+
+  if (loading) return <div className="splash">Loading…</div>;
+
+  if (!me) {
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<ProjectsPage />} />
+        <Route path="/projects/:projectId/board" element={<BoardPage />} />
+        <Route path="/projects/:projectId/backlog" element={<BacklogPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  );
+}
