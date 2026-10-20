@@ -22,4 +22,4 @@ Multi-tenant project management platform (FS-04). Due 20 Nov 2026.
 - [x] Stripe billing and plan limits
 - [x] Docker images, GitHub Actions CI/CD
 - [x] Seed data (Faker), performance numbers
-- [ ] README, architecture diagram, API docs, demo, presentation
+- [x] README, architecture diagram, API docs, demo, presentation
