@@ -8,6 +8,8 @@ import LoginPage from "./pages/LoginPage";
 import ProjectSettingsPage from "./pages/ProjectSettingsPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import RegisterPage from "./pages/RegisterPage";
+import ReportsPage from "./pages/ReportsPage";
+import WorkspaceSettingsPage from "./pages/WorkspaceSettingsPage";
 
 export default function App() {
   const { me, loading } = useAuth();
@@ -31,6 +33,8 @@ export default function App() {
         <Route path="/projects/:projectId/board" element={<BoardPage />} />
         <Route path="/projects/:projectId/backlog" element={<BacklogPage />} />
         <Route path="/projects/:projectId/settings" element={<ProjectSettingsPage />} />
+        <Route path="/projects/:projectId/reports" element={<ReportsPage />} />
+        <Route path="/settings" element={<WorkspaceSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

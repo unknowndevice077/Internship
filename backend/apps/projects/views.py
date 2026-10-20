@@ -12,6 +12,8 @@ from apps.tenancy.views import TenantViewSet
 from . import ranking
 from apps.activity import audit
 from apps.activity.models import AuditLog
+from apps.reports.models import Report
+from apps.reports.tasks import build_report
 
 from .models import Board, Issue, Project, Sprint, Status, Transition, transition_allowed
 from .serializers import (
@@ -129,12 +131,17 @@ class SprintViewSet(TenantViewSet):
             raise exceptions.ValidationError({"move_to": "Pick an open sprint in the same project."})
 
         with transaction.atomic():
+            report = Report.objects.create(
+                workspace=request.workspace, kind=Report.Kind.SPRINT, project=sprint.project, sprint=sprint,
+                requested_by=request.user, data={"issue_ids": list(sprint.issues.values_list("id", flat=True))},
+            )
             # unfinished work goes to the chosen sprint, or back to the backlog
             sprint.issues.exclude(status__category=Status.Category.DONE).update(sprint=move_to)
             sprint.state = Sprint.State.CLOSED
             sprint.end_date = sprint.end_date or timezone.localdate()
             sprint.save()
             audit.record(request.user, AuditLog.Action.UPDATED, sprint, {"state": ["active", "closed"]})
+            transaction.on_commit(lambda: build_report.delay(report.id))
         return Response(self.get_serializer(sprint).data)
 
 

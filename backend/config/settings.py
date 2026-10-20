@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -30,6 +31,9 @@ INSTALLED_APPS = [
     "apps.tenancy",
     "apps.projects",
     "apps.activity",
+    "apps.webhooks",
+    "apps.notifications",
+    "apps.reports",
 ]
 
 MIDDLEWARE = [
@@ -130,3 +134,19 @@ SPECTACULAR_SETTINGS = {
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6380/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", False)
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_BEAT_SCHEDULE = {
+    "weekly-summaries": {
+        "task": "apps.reports.tasks.send_weekly_summaries",
+        "schedule": crontab(hour=8, minute=0, day_of_week="mon"),
+    },
+}
+
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Sprintboard <no-reply@sprintboard.local>")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
+WEBHOOK_TIMEOUT_SECONDS = 5
+WEBHOOK_ALLOW_PRIVATE_URLS = env_bool("WEBHOOK_ALLOW_PRIVATE_URLS", DEBUG)

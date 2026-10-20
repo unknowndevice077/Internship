@@ -2,6 +2,7 @@ import { NavLink, Outlet, useParams } from "react-router-dom";
 
 import { useProjects } from "../api/queries";
 import { useAuth, useCan } from "../auth/AuthContext";
+import NotificationBell from "./NotificationBell";
 
 export default function Layout() {
   const { me, workspace, switchWorkspace, logout } = useAuth();
@@ -12,7 +13,10 @@ export default function Layout() {
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand">Sprintboard</div>
+        <div className="sidebar-top">
+          <div className="brand">Sprintboard</div>
+          <NotificationBell />
+        </div>
 
         <select
           className="ws-switcher"
@@ -31,6 +35,7 @@ export default function Layout() {
           <NavLink to="/" end>
             Projects
           </NavLink>
+          <NavLink to="/settings">Settings</NavLink>
           {projects.map((p) => (
             <div key={p.id} className={`nav-project ${String(p.id) === projectId ? "open" : ""}`}>
               <span className="nav-project-name">
@@ -38,6 +43,7 @@ export default function Layout() {
               </span>
               <NavLink to={`/projects/${p.id}/board`}>Board</NavLink>
               <NavLink to={`/projects/${p.id}/backlog`}>Backlog</NavLink>
+              <NavLink to={`/projects/${p.id}/reports`}>Reports</NavLink>
               {isAdmin && <NavLink to={`/projects/${p.id}/settings`}>Workflow</NavLink>}
             </div>
           ))}

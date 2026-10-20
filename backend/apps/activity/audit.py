@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 
 from .models import AuditLog
 
@@ -32,8 +32,10 @@ def issue_of(instance):
 
 
 def record(user, action, instance, changes=None, workspace=None):
+    from .tasks import handle_audit_entry
+
     issue = issue_of(instance)
-    return AuditLog.objects.create(
+    entry = AuditLog.objects.create(
         workspace=workspace or instance.workspace,
         actor=user if user and user.is_authenticated else None,
         action=action,
@@ -43,3 +45,6 @@ def record(user, action, instance, changes=None, workspace=None):
         changes=changes or {},
         issue=issue if issue and issue.pk else None,
     )
+    # wait for the commit so the worker never sees rows that might still roll back
+    transaction.on_commit(lambda: handle_audit_entry.delay(entry.id))
+    return entry

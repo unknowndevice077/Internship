@@ -31,3 +31,12 @@ def member_of():
     def make(workspace, role="member"):
         return MembershipFactory(workspace=workspace, role=role)
     return make
+
+
+@pytest.fixture(autouse=True)
+def test_settings(settings, tmp_path):
+    # celery reads the CELERY_* django settings live, so this runs tasks inline
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+    settings.MEDIA_ROOT = tmp_path
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"

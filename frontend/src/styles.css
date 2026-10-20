@@ -869,3 +869,238 @@ label {
 .matrix input {
   width: auto;
 }
+
+.sidebar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bell {
+  position: relative;
+}
+
+.bell-button {
+  position: relative;
+  padding: 6px 8px;
+}
+
+.bell-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 5px;
+  line-height: 16px;
+}
+
+.bell-panel {
+  position: absolute;
+  left: 0;
+  top: 36px;
+  width: 340px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.15);
+  z-index: 30;
+}
+
+.bell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bell-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bell-panel li {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--sunken);
+  cursor: pointer;
+}
+
+.bell-panel li:hover {
+  background: var(--sunken);
+}
+
+.bell-panel li.unread {
+  border-left: 3px solid var(--primary);
+}
+
+.pad {
+  padding: 12px 14px;
+  margin: 0;
+}
+
+.notice {
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 12px 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.webhook {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+.webhook-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  flex-wrap: wrap;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.dot-on {
+  background: var(--success);
+}
+
+.badge-success {
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+}
+
+.badge-failed {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.badge-pending {
+  background: var(--sunken);
+  color: var(--muted);
+}
+
+.deliveries {
+  margin: 0;
+}
+
+.webhook-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  align-items: flex-start;
+}
+
+.event-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.checkbox input {
+  width: auto;
+}
+
+.report-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.report-header h2 {
+  margin: 0;
+}
+
+.report-header .btn {
+  margin-left: auto;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.stat {
+  background: var(--sunken);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 80px;
+  gap: 10px;
+  align-items: center;
+}
+
+.bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  position: relative;
+  height: 14px;
+}
+
+.bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+}
+
+.bar-total {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.bar-done {
+  background: var(--primary);
+}

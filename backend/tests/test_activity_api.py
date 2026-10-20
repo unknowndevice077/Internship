@@ -8,11 +8,6 @@ from tests.factories import IssueFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture(autouse=True)
-def media_root(settings, tmp_path):
-    settings.MEDIA_ROOT = tmp_path
-
-
 def statuses(project):
     return {s.name: s for s in project.statuses.all()}
 
