@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import exceptions, serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -32,10 +33,14 @@ def require_stripe():
         raise BillingUnavailable()
 
 
+URL_RESPONSE = inline_serializer("RedirectUrl", {"url": serializers.URLField()})
+
+
 class BillingView(APIView):
     permission_classes = [WorkspaceRolePermission]
     read_role = Role.ADMIN
 
+    @extend_schema(responses={200: OpenApiResponse(description="Plan, subscription status, usage and plans")})
     def get(self, request):
         workspace = request.workspace
         sub = Subscription.objects.filter(workspace=workspace).first()
@@ -61,6 +66,7 @@ class CheckoutView(APIView):
     permission_classes = [WorkspaceRolePermission]
     write_role = Role.OWNER
 
+    @extend_schema(request=CheckoutSerializer, responses={200: URL_RESPONSE})
     def post(self, request):
         require_stripe()
         body = CheckoutSerializer(data=request.data)
@@ -81,6 +87,7 @@ class PortalView(APIView):
     permission_classes = [WorkspaceRolePermission]
     write_role = Role.OWNER
 
+    @extend_schema(request=None, responses={200: URL_RESPONSE})
     def post(self, request):
         require_stripe()
         sub = Subscription.objects.filter(workspace=request.workspace).first()
@@ -97,6 +104,11 @@ class StripeWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=None,
+        responses={200: OpenApiResponse(description="Event processed")},
+        description="Stripe calls this. The Stripe-Signature header is verified with STRIPE_WEBHOOK_SECRET.",
+    )
     def post(self, request):
         try:
             event = stripe.Webhook.construct_event(

@@ -12,4 +12,4 @@ known-first-party = ["apps", "config", "tests"]
 
 [tool.coverage.run]
 source = ["apps", "config"]
-omit = ["*/migrations/*", "*/admin.py", "config/asgi.py", "config/wsgi.py"]
+omit = ["*/migrations/*", "*/admin.py", "config/asgi.py", "config/wsgi.py", "*/management/commands/stripe_setup.py"]

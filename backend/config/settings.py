@@ -8,6 +8,20 @@ from celery.schedules import crontab
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def load_env_file(path):
+    # minimal .env support for local dev; real environment variables always win
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
+
+
+load_env_file(BASE_DIR / ".env")
+
+
 def env_bool(name, default=False):
     return os.environ.get(name, str(default)).lower() in ("1", "true", "yes")
 

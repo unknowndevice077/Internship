@@ -111,11 +111,16 @@ export default function ProjectSettingsPage() {
                   </select>
                 </td>
                 <td className="actions">
-                  <button className="btn btn-ghost" disabled={i === 0} onClick={() => swap(i, -1)} aria-label="Move up">
-                    ↑
+                  <button className="btn btn-ghost icon-btn" disabled={i === 0} onClick={() => swap(i, -1)} aria-label="Move up">
+                    <Chevron up />
                   </button>
-                  <button className="btn btn-ghost" disabled={i === statuses.length - 1} onClick={() => swap(i, 1)} aria-label="Move down">
-                    ↓
+                  <button
+                    className="btn btn-ghost icon-btn"
+                    disabled={i === statuses.length - 1}
+                    onClick={() => swap(i, 1)}
+                    aria-label="Move down"
+                  >
+                    <Chevron />
                   </button>
                   <button className="btn btn-ghost btn-danger" onClick={() => deleteStatus.mutate(s.id)}>
                     Delete
@@ -205,5 +210,13 @@ function NewStatus({ projectId, nextOrder, onDone }: { projectId: number; nextOr
       </button>
       {create.error && <span className="field-error">{create.error.message}</span>}
     </form>
+  );
+}
+
+function Chevron({ up = false }: { up?: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <path d={up ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"} />
+    </svg>
   );
 }

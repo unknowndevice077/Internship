@@ -47,6 +47,34 @@ ISSUE_THINGS = [
 ]
 
 
+DESCRIPTIONS = [
+    "Steps to reproduce:\n1. Sign in as a member\n2. Open the page\n3. Refresh twice\n\n"
+    "Expected: the page loads.\nActual: a blank screen until the second refresh.",
+    "Customers on the Business plan asked for this in the last two support calls. Keep the existing behaviour "
+    "behind a flag until QA signs off.",
+    "Acceptance criteria:\n- Works on Chrome, Safari and Firefox\n- Covered by an API test\n- Docs updated",
+    "Spotted in the error tracker, about 40 events a day since the last release. Probably related to the "
+    "timezone change.",
+    "Follow-up from the sprint review. Design is in the shared Figma file, ask the design team for the latest frame.",
+    "Low priority, but it keeps coming up in onboarding sessions. Should be a small change.",
+]
+
+SPRINT_GOALS = ["Ship the new onboarding flow", "Stabilise billing and exports", "Performance and polish"]
+
+COMMENTS = [
+    "I can take this one after standup.",
+    "Reproduced locally, looks like a missing null check.",
+    "PR is up, could someone review?",
+    "Moved to next sprint, we ran out of time.",
+    "QA passed on staging.",
+    "Can we split this into two tickets? The API part is bigger than it looks.",
+    "Blocked until the billing changes are merged.",
+    "Pairing on this tomorrow morning.",
+    "Added screenshots to the attachments.",
+    "Customer confirmed the fix works for them.",
+]
+
+
 class Command(BaseCommand):
     help = "Fill the database with demo workspaces, users, sprints and issues."
 
@@ -101,7 +129,11 @@ class Command(BaseCommand):
 
         for project_name, key in projects:
             project = Project.objects.create(
-                workspace=workspace, name=project_name, key=key, lead=owner, description=self.fake.sentence(nb_words=10)
+                workspace=workspace,
+                name=project_name,
+                key=key,
+                lead=owner,
+                description=f"{project_name} roadmap and bugs",
             )
             self.seed_project(project, people, opts["issues"])
 
@@ -121,7 +153,7 @@ class Command(BaseCommand):
                     workspace=workspace,
                     project=project,
                     name=f"Sprint {n}",
-                    goal=self.fake.sentence(nb_words=6),
+                    goal=SPRINT_GOALS[n - 1],
                     state=Sprint.State.CLOSED if n < 3 else Sprint.State.ACTIVE,
                     start_date=start,
                     end_date=start + timedelta(days=13),
@@ -133,6 +165,8 @@ class Command(BaseCommand):
 
         issues = []
         rank_by_status = {s.id: 0.0 for s in statuses}
+        titles = [f"{verb} {thing}" for verb in ISSUE_VERBS for thing in ISSUE_THINGS]
+        random.shuffle(titles)
         for number in range(1, count + 1):
             bucket = random.random()
             if bucket < 0.35:
@@ -149,8 +183,8 @@ class Command(BaseCommand):
                     workspace=workspace,
                     project=project,
                     number=number,
-                    title=f"{random.choice(ISSUE_VERBS)} {random.choice(ISSUE_THINGS)}",
-                    description=self.fake.paragraph(nb_sentences=3),
+                    title=titles[(number - 1) % len(titles)],
+                    description=random.choice(DESCRIPTIONS),
                     type=random.choices(["task", "bug", "story", "epic"], weights=[50, 25, 20, 5])[0],
                     priority=random.choices(["lowest", "low", "medium", "high", "highest"], weights=[5, 20, 45, 22, 8])[
                         0
@@ -174,14 +208,7 @@ class Command(BaseCommand):
         for issue in random.sample(saved, k=min(len(saved), count // 3)):
             for _ in range(random.randint(1, 3)):
                 author = random.choice(people)
-                comments.append(
-                    Comment(
-                        workspace=workspace,
-                        issue=issue,
-                        author=author,
-                        body=self.fake.sentence(nb_words=random.randint(6, 18)),
-                    )
-                )
+                comments.append(Comment(workspace=workspace, issue=issue, author=author, body=random.choice(COMMENTS)))
             entries.append(
                 AuditLog(
                     workspace=workspace,
