@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import OuterRef, Subquery
 from rest_framework import exceptions, generics, mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -57,7 +58,12 @@ class MyWorkspacesView(generics.ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Workspace.objects.none()
-        return Workspace.objects.filter(memberships__user=self.request.user).order_by("name")
+        my_role = Membership.objects.filter(workspace=OuterRef("pk"), user=self.request.user).values("role")[:1]
+        return (
+            Workspace.objects.filter(memberships__user=self.request.user)
+            .annotate(my_role=Subquery(my_role))
+            .order_by("name")
+        )
 
 
 class CurrentWorkspaceView(generics.RetrieveUpdateAPIView):

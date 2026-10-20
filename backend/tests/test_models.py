@@ -1,6 +1,7 @@
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.db.models import RestrictedError
 
 from apps.projects.models import Issue, Project, Sprint
 from tests.factories import IssueFactory, ProjectFactory, WorkspaceFactory
@@ -64,3 +65,17 @@ def test_only_one_active_sprint_per_project():
     Sprint.objects.create(workspace=project.workspace, project=project, name="S1", state="active")
     with pytest.raises(IntegrityError):
         Sprint.objects.create(workspace=project.workspace, project=project, name="S2", state="active")
+
+
+def test_deleting_a_workspace_removes_all_its_data():
+    issue = IssueFactory()
+    other = IssueFactory()
+    issue.workspace.delete()
+    assert not Issue.objects.filter(pk=issue.pk).exists()
+    assert Issue.objects.filter(pk=other.pk).exists()
+
+
+def test_status_with_issues_cannot_be_deleted_directly():
+    issue = IssueFactory()
+    with pytest.raises(RestrictedError):
+        issue.status.delete()

@@ -159,7 +159,7 @@ class Issue(TenantModel):
     description = models.TextField(blank=True)
     type = models.CharField(max_length=10, choices=Type.choices, default=Type.TASK)
     priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT, related_name="issues")
+    status = models.ForeignKey(Status, on_delete=models.RESTRICT, related_name="issues")
     sprint = models.ForeignKey(Sprint, null=True, blank=True, on_delete=models.SET_NULL, related_name="issues")
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="assigned_issues"

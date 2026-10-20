@@ -32,6 +32,8 @@ class WorkspaceSerializer(serializers.ModelSerializer):
         read_only_fields = ["slug", "plan", "created_at"]
 
     def get_role(self, obj) -> str | None:
+        if hasattr(obj, "my_role"):
+            return obj.my_role
         user = self.context["request"].user
         membership = obj.memberships.filter(user=user).first()
         return membership.role if membership else None

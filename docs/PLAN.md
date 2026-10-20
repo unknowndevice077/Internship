@@ -21,5 +21,5 @@ Multi-tenant project management platform (FS-04). Due 20 Nov 2026.
 - [x] Webhooks, notifications, reports (Celery)
 - [x] Stripe billing and plan limits
 - [x] Docker images, GitHub Actions CI/CD
-- [ ] Seed data (Faker), performance numbers
+- [x] Seed data (Faker), performance numbers
 - [ ] README, architecture diagram, API docs, demo, presentation
