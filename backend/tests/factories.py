@@ -8,10 +8,15 @@ from apps.tenancy.models import Membership, Workspace
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
+        skip_postgeneration_save = True
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     full_name = factory.Faker("name")
-    password = factory.PostGenerationMethodCall("set_password", "pass12345!")
+    @factory.post_generation
+    def password(obj, create, extracted, **kwargs):
+        obj.set_password(extracted or "pass12345!")
+        if create:
+            obj.save(update_fields=["password"])
 
 
 class WorkspaceFactory(factory.django.DjangoModelFactory):

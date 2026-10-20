@@ -11,7 +11,7 @@ def env_bool(name, default=False):
     return os.environ.get(name, str(default)).lower() in ("1", "true", "yes")
 
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-change-me")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me-in-production")
 DEBUG = env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
@@ -117,6 +117,7 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Sprintboard API",
     "DESCRIPTION": "Multi-tenant project management. Send `X-Workspace: <slug>` on tenant endpoints.",
     "VERSION": "0.1.0",
+    "ENUM_NAME_OVERRIDES": {"RoleEnum": "apps.tenancy.models.Role"},
 }
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6380/0")

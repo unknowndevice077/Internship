@@ -15,7 +15,7 @@ Multi-tenant project management platform (FS-04). Due 20 Nov 2026.
 ## Milestones
 
 - [x] Models and tenant isolation
-- [ ] REST API, auth, role permissions, OpenAPI docs
+- [x] REST API, auth, role permissions, OpenAPI docs
 - [ ] React Kanban board (dnd-kit), backlog, sprints
 - [ ] Custom workflows, comments, attachments, audit log
 - [ ] Webhooks, notifications, reports (Celery)
