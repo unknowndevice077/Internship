@@ -24,6 +24,8 @@ services:
     build: ./server
     env_file: ./server/.env
     environment:
+      PORT: 4000
+      NODE_ENV: production
       MONGO_URI: mongodb://mongo:27017/vendora
       REDIS_URL: redis://redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200

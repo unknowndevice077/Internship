@@ -1,14 +1,18 @@
 import Redis from 'ioredis';
-import RedisMock from 'ioredis-mock';
+import { createRequire } from 'node:module';
 import config from '../config.js';
 
 let client;
 
 export function getRedis() {
   if (!client) {
-    client = config.redisUrl
-      ? new Redis(config.redisUrl, { maxRetriesPerRequest: 2 })
-      : new RedisMock();
+    if (config.redisUrl) {
+      client = new Redis(config.redisUrl, { maxRetriesPerRequest: 2 });
+    } else {
+      // dev/test only, ioredis-mock is a devDependency so production never loads it
+      const RedisMock = createRequire(import.meta.url)('ioredis-mock');
+      client = new RedisMock();
+    }
   }
   return client;
 }

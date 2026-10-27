@@ -119,3 +119,4 @@ docs/             architecture, API reference, test results
 - [Architecture and database schema](docs/ARCHITECTURE.md)
 - [API reference](docs/API.md)
 - [Test and performance results](docs/TEST_RESULTS.md)
+- [Handoff: status, env vars, what's left](docs/HANDOFF.md)
