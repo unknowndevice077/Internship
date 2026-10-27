@@ -47,7 +47,7 @@ class Project(TenantModel):
         Board.objects.create(workspace=self.workspace, project=self, name=f"{self.key} board")
 
     def next_issue_number(self):
-        # update with F() so two requests creating issues at once don't get the same number
+        # atomic increment, safe under concurrent creates
         Project.objects.filter(pk=self.pk).update(issue_counter=F("issue_counter") + 1)
         self.refresh_from_db(fields=["issue_counter"])
         return self.issue_counter
@@ -76,8 +76,7 @@ class Status(TenantModel):
 
 
 class Transition(TenantModel):
-    # A project with no transitions has an open workflow (any status -> any status).
-    # Once one is defined, only the listed moves are allowed.
+    # no transitions = open workflow, otherwise only listed moves are allowed
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="transitions")
     from_status = models.ForeignKey(Status, on_delete=models.CASCADE, related_name="outgoing")
     to_status = models.ForeignKey(Status, on_delete=models.CASCADE, related_name="incoming")
@@ -168,7 +167,7 @@ class Issue(TenantModel):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reported_issues"
     )
     story_points = models.PositiveSmallIntegerField(null=True, blank=True)
-    # ordering inside a column, moving a card sets it between its new neighbours
+    # position within the column
     rank = models.FloatField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -190,7 +189,7 @@ class Issue(TenantModel):
         return self.key
 
     def clean(self):
-        # make sure status/sprint/project all belong to the same tenant
+        # status, sprint and project must belong to the same tenant
         if self.project_id and self.workspace_id and self.project.workspace_id != self.workspace_id:
             raise ValidationError("Project belongs to another workspace")
         if self.status_id and self.status.project_id != self.project_id:

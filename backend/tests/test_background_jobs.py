@@ -29,7 +29,7 @@ def endpoint(project, pro):
 
 @pytest.fixture
 def commit(django_capture_on_commit_callbacks):
-    # run on_commit callbacks (and so the celery tasks) while the test transaction is still open
+    # executes on_commit callbacks inside the test transaction
     return lambda: django_capture_on_commit_callbacks(execute=True)
 
 

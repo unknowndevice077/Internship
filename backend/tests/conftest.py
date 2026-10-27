@@ -36,7 +36,7 @@ def member_of():
 
 @pytest.fixture(autouse=True)
 def test_settings(settings, tmp_path):
-    # celery reads the CELERY_* django settings live, so this runs tasks inline
+    # run celery tasks inline
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
     settings.MEDIA_ROOT = tmp_path

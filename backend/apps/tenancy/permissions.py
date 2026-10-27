@@ -9,7 +9,7 @@ def resolve_membership(request):
     if not slug:
         raise exceptions.ValidationError({"detail": "X-Workspace header is required."})
     membership = Membership.objects.select_related("workspace").filter(user=request.user, workspace__slug=slug).first()
-    # 404 instead of 403 so we don't reveal which workspace slugs exist
+    # 404 rather than 403 to avoid leaking which slugs exist
     if membership is None:
         raise exceptions.NotFound("Workspace not found.")
     return membership
@@ -26,7 +26,7 @@ def required_role(view, request):
 
 
 class WorkspaceRolePermission(BasePermission):
-    # sets request.workspace / request.membership for the rest of the request
+    # also sets request.workspace and request.membership
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False

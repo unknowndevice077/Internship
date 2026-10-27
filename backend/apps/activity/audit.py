@@ -45,6 +45,6 @@ def record(user, action, instance, changes=None, workspace=None):
         changes=changes or {},
         issue=issue if issue and issue.pk else None,
     )
-    # wait for the commit so the worker never sees rows that might still roll back
+    # only enqueue once the row is committed
     transaction.on_commit(lambda: handle_audit_entry.delay(entry.id))
     return entry

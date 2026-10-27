@@ -66,7 +66,7 @@ class AuditLog(TenantModel):
     entity_label = models.CharField(max_length=255, blank=True)
     # {"field": [old, new]} for updates
     changes = models.JSONField(default=dict, blank=True)
-    # lets the issue activity feed include comment/attachment entries
+    # set for comments/attachments too, so they show in the issue history
     issue = models.ForeignKey("projects.Issue", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 

@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def load_env_file(path):
-    # minimal .env support for local dev; real environment variables always win
+    # local .env support; real env vars take precedence
     if not path.exists():
         return
     for line in path.read_text().splitlines():
@@ -107,7 +107,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    # the manifest only exists after collectstatic, so dev keeps the plain storage
+    # manifest storage needs collectstatic, so only use it in production
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
         if DEBUG

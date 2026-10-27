@@ -10,8 +10,7 @@ class TenantManager(models.Manager.from_queryset(TenantQuerySet)):
     pass
 
 
-# Every tenant-owned table extends this. Always query through
-# .for_workspace() so data from other workspaces can't leak.
+# Base for tenant-owned models. Query through .for_workspace().
 class TenantModel(models.Model):
     workspace = models.ForeignKey("tenancy.Workspace", on_delete=models.CASCADE, related_name="+", db_index=True)
 

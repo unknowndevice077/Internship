@@ -25,7 +25,7 @@ class UnsafeURL(ValueError):
 
 
 def check_url(url):
-    """Refuse URLs that resolve to internal addresses so tenants can't use webhooks to probe our network."""
+    # SSRF guard: reject URLs that resolve to internal addresses
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
         raise UnsafeURL("Only http(s) URLs are allowed.")

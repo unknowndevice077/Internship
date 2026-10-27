@@ -61,9 +61,13 @@ class MembershipBriefSerializer(serializers.ModelSerializer):
 
 
 class MeSerializer(serializers.ModelSerializer):
-    workspaces = MembershipBriefSerializer(source="memberships", many=True, read_only=True)
+    workspaces = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ["id", "email", "full_name", "workspaces"]
         read_only_fields = ["email"]
+
+    def get_workspaces(self, obj) -> list[dict]:
+        memberships = obj.memberships.select_related("workspace").order_by("workspace__name")
+        return MembershipBriefSerializer(memberships, many=True).data

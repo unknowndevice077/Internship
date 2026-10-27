@@ -161,12 +161,3 @@ class IssueMoveSerializer(serializers.Serializer):
 
 class SprintCompleteSerializer(serializers.Serializer):
     move_to = WorkspaceRelatedField(queryset=Sprint.objects.all(), required=False, allow_null=True)
-
-
-class BoardIssueSerializer(serializers.ModelSerializer):
-    key = serializers.CharField(read_only=True)
-    assignee = MemberUserSerializer(read_only=True)
-
-    class Meta:
-        model = Issue
-        fields = ["id", "key", "title", "type", "priority", "status", "sprint", "assignee", "story_points", "rank"]

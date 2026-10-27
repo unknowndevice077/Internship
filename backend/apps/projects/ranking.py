@@ -14,7 +14,6 @@ def rebalance(project, status):
 
 
 def rank_between(before, after):
-    """Rank for a card dropped below `before` and above `after` (either can be None)."""
     if before and after:
         return (before.rank + after.rank) / 2
     if before:
@@ -26,13 +25,13 @@ def rank_between(before, after):
 
 @transaction.atomic
 def move_issue(issue, status, before=None, after=None):
-    # before/after are the neighbours in the target column after the drop
+    # before = card above the drop position, after = card below
     if before is None and after is None:
-        last = Issue.objects.filter(project=issue.project, status=status).exclude(pk=issue.pk).order_by("-rank").first()
-        before = last
+        column = Issue.objects.filter(project=issue.project, status=status).exclude(pk=issue.pk)
+        before = column.order_by("-rank").first()
 
     if before and after and after.rank - before.rank < MIN_GAP:
-        # floats ran out of room between these two, respace the column and reload the neighbours
+        # gap too small for another midpoint, respace the column
         rebalance(issue.project, status)
         before.refresh_from_db(fields=["rank"])
         after.refresh_from_db(fields=["rank"])

@@ -10,7 +10,7 @@ from apps.projects.models import Issue, Project, Status
 
 def sprint_report(report):
     sprint = report.sprint
-    # issue ids are captured when the sprint closes, before unfinished work leaves the sprint
+    # ids are captured at close time, before unfinished issues leave the sprint
     ids = report.data.get("issue_ids") or list(sprint.issues.values_list("id", flat=True))
     issues = Issue.objects.filter(pk__in=ids).select_related("status", "assignee")
 

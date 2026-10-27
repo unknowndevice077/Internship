@@ -197,10 +197,10 @@ class Command(BaseCommand):
                     rank=rank_by_status[status.id],
                 )
             )
-        # bulk_create skips Issue.save(), so numbers and the counter are set by hand
+        # bulk_create skips Issue.save(), so set numbers and the counter here
         Issue.objects.bulk_create(issues, batch_size=500)
         Project.objects.filter(pk=project.pk).update(issue_counter=count)
-        # spread creation dates over the last ~7 weeks so reports have something to show
+        # spread created_at over the last 50 days
         Issue.objects.filter(project=project).update(created_at=RawSQL("now() - random() * interval '50 days'", []))
 
         saved = list(Issue.objects.filter(project=project))

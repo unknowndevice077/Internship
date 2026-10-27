@@ -16,7 +16,7 @@ MAX_ATTEMPTS = 5
 
 @shared_task
 def fan_out_event(workspace_id, event, payload):
-    # endpoints stop firing if the workspace drops back to a plan without webhooks
+    # skip if the workspace was downgraded
     if not plan_for(Workspace.objects.get(pk=workspace_id)).webhooks:
         return
     endpoints = WebhookEndpoint.objects.filter(workspace_id=workspace_id, is_active=True)
@@ -39,7 +39,7 @@ def deliver_webhook(delivery_id):
 
     started = time.monotonic()
     try:
-        # re-check at send time too, DNS can change after the endpoint was saved
+        # re-check at send time, DNS may have changed
         check_url(endpoint.url)
         res = requests.post(
             endpoint.url,
@@ -75,5 +75,5 @@ def deliver_webhook(delivery_id):
     delivery.save()
 
     if not ok and delivery.attempts < MAX_ATTEMPTS:
-        # attempts are tracked on the row, so schedule the next one instead of celery's retry: 30s, 1m, 2m, 4m
+        # backoff: 30s, 1m, 2m, 4m
         deliver_webhook.apply_async((delivery.id,), countdown=30 * 2 ** (delivery.attempts - 1))

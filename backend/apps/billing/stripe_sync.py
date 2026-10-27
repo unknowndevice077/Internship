@@ -85,13 +85,12 @@ def _plan_code(data):
 
 
 def as_dict(obj):
-    # recent stripe-python versions return StripeObjects that aren't dict subclasses
+    # StripeObject is no longer a dict subclass
     return obj.to_dict() if hasattr(obj, "to_dict") else obj
 
 
 @transaction.atomic
 def apply_subscription(data):
-    """Mirror a Stripe subscription object onto our Subscription row and the workspace plan."""
     data = as_dict(data)
     sub = (
         Subscription.objects.select_for_update()

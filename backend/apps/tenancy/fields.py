@@ -8,7 +8,7 @@ def current_workspace(field):
 
 
 class WorkspaceRelatedField(serializers.PrimaryKeyRelatedField):
-    # only accepts ids from the current workspace, so you can't attach another tenant's objects
+    # restricts choices to the current workspace
     def get_queryset(self):
         return super().get_queryset().filter(workspace=current_workspace(self))
 

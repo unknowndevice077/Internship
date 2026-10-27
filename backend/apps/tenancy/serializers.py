@@ -76,7 +76,7 @@ class MemberInviteSerializer(serializers.Serializer):
         return value.lower()
 
     def create(self, validated_data):
-        # people without an account get a placeholder user; registering with the same email claims it
+        # placeholder user, claimed later by registering with this email
         user, created = User.objects.get_or_create(email=validated_data["email"])
         if created:
             user.set_unusable_password()

@@ -18,7 +18,6 @@ def _members(workspace, user_ids):
 
 
 def notifications_for(entry):
-    """Turn one audit entry into the notifications it should produce."""
     issue = Issue.objects.filter(pk=entry.issue_id).select_related("project").first() if entry.issue_id else None
     if issue is None:
         return []

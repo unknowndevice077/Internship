@@ -25,7 +25,7 @@ def grow(project, members, n):
         AuditLog.objects.create(workspace=ws, actor=user, action="created", entity_type="issue", entity_id=issue.id)
 
 
-# each endpoint should cost the same number of queries no matter how much data there is (no N+1)
+# query count must not grow with the data (N+1 guard)
 @pytest.mark.parametrize(
     "url",
     [

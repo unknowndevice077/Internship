@@ -67,7 +67,7 @@ class AttachmentViewSet(OwnedByMixin, TenantViewSet):
         audit.record(self.request.user, AuditLog.Action.DELETED, instance)
         instance.delete()
 
-    # files are served through the API (not /media) so the tenant check applies to downloads too
+    # served through the API rather than /media so tenant checks apply
     @action(detail=True, methods=["get"])
     def download(self, request, pk=None):
         attachment = self.get_object()
@@ -86,5 +86,5 @@ class AuditLogViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     @property
     def read_role(self):
-        # the full workspace log is for admins; anyone can read the history of a single issue
+        # full log is admin-only, a single issue's history is open to members
         return Role.VIEWER if self.request.query_params.get("issue") else Role.ADMIN

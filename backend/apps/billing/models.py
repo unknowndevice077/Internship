@@ -16,7 +16,7 @@ class Subscription(models.Model):
 
 
 class StripeEvent(models.Model):
-    # Stripe can send the same event more than once; we keep ids to process each one once
+    # Stripe retries deliveries, the unique id makes handling idempotent
     event_id = models.CharField(max_length=64, unique=True)
     type = models.CharField(max_length=80)
     received_at = models.DateTimeField(auto_now_add=True)

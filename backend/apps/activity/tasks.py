@@ -29,7 +29,7 @@ def webhook_payload(entry):
     return payload
 
 
-# runs after every audited change: one place that feeds notifications and webhooks
+# single entry point for notifications and webhooks
 @shared_task
 def handle_audit_entry(entry_id):
     entry = (

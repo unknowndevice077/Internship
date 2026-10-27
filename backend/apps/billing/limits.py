@@ -11,28 +11,11 @@ class PlanLimitReached(APIException):
     status_code = status.HTTP_402_PAYMENT_REQUIRED
     default_code = "plan_limit"
 
-    def __init__(self, resource, limit, plan):
-        super().__init__(
-            {
-                "detail": f"Your {plan.name} plan allows {limit} {resource}. Upgrade to add more.",
-                "code": "plan_limit",
-                "resource": resource,
-                "limit": limit,
-            }
-        )
-
-    @classmethod
-    def feature(cls, feature, plan):
-        exc = cls.__new__(cls)
-        APIException.__init__(
-            exc,
-            {
-                "detail": f"{feature.capitalize()} aren't included in the {plan.name} plan. Upgrade to use them.",
-                "code": "plan_limit",
-                "resource": feature,
-            },
-        )
-        return exc
+    def __init__(self, message, resource, limit=None):
+        detail = {"detail": message, "code": "plan_limit", "resource": resource}
+        if limit is not None:
+            detail["limit"] = limit
+        super().__init__(detail)
 
 
 def usage(workspace):
@@ -51,7 +34,9 @@ def usage(workspace):
 def check_feature(workspace, feature):
     plan = plan_for(workspace)
     if not getattr(plan, feature):
-        raise PlanLimitReached.feature(feature, plan)
+        raise PlanLimitReached(
+            f"{feature.capitalize()} aren't included in the {plan.name} plan. Upgrade to use them.", feature
+        )
 
 
 def check(workspace, resource, adding=1):
@@ -59,6 +44,6 @@ def check(workspace, resource, adding=1):
     limit = getattr(plan, f"max_{resource}")
     if limit is None:
         return
-    current = usage(workspace)[resource]
-    if current + adding > limit:
-        raise PlanLimitReached(LABELS[resource], limit, plan)
+    if usage(workspace)[resource] + adding > limit:
+        label = LABELS[resource]
+        raise PlanLimitReached(f"Your {plan.name} plan allows {limit} {label}. Upgrade to add more.", label, limit)

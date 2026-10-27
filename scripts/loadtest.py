@@ -1,7 +1,4 @@
-"""Small concurrent load test using only the standard library.
-
-    python scripts/loadtest.py --base http://localhost:8088 --users 20 --seconds 20
-"""
+# usage: python scripts/loadtest.py --base http://localhost:8088 --users 20 --seconds 20
 
 import argparse
 import json

@@ -83,7 +83,7 @@ class ProjectViewSet(TenantViewSet):
         elif sprint:
             issues = issues.filter(sprint_id=sprint)
 
-        # the board can hold hundreds of cards; building dicts from .values() is ~4x faster than the serializer
+        # .values() instead of a serializer, see docs/PERFORMANCE.md
         by_status = {}
         for row in issues.values(*BOARD_FIELDS):
             by_status.setdefault(row["status"], []).append(board_card(project, row))
