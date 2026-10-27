@@ -1,47 +1,45 @@
 # Sprintboard
 
-Multi-tenant project management app (Jira-style). Each company has its own workspace with projects, Kanban boards,
-sprints, custom workflows and subscription billing.
+A multi-tenant project tracker in the style of Jira. Each company gets its own workspace with projects, a Kanban
+board, sprints, custom workflows and a paid plan through Stripe.
 
-Nexvia Technologies full-stack internship project (FS-04), Oct-Nov 2026.
+Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 
 ![Board](docs/screenshots/03-board.png)
 
-## Features
+## What it does
 
-- Workspaces with owner, admin, member and viewer roles
+- Workspaces with owner, admin, member and viewer roles, invites and workspace switching
+- Kanban board with drag and drop, a backlog and sprint planning
+- Per-project workflows: your own statuses and which moves between them are allowed
+- Comments with @mentions, attachments, and a history of every field change
+- Webhooks signed with HMAC and retried with backoff, plus in-app and email notifications
+- Sprint reports with CSV export, and a weekly summary email
+- Free, Pro and Business plans billed through Stripe (test mode), with limits enforced by the API
 - Password reset and email verification
-- Kanban board with drag and drop, backlog and sprint planning
-- Custom workflows per project (statuses and allowed transitions)
-- Comments with @mentions, file attachments, audit log with field-level history
-- Outbound webhooks (HMAC-signed, retried with backoff), in-app and email notifications
-- Sprint reports with CSV export and a weekly summary email
-- Stripe Billing in test mode: Free, Pro and Business plans with enforced limits
 - OpenAPI docs at `/api/docs/`
 
-## Stack
+Django 5.2 + DRF, PostgreSQL 16, Celery and Redis on the backend; React 18 + TypeScript (Vite, TanStack Query,
+dnd-kit) on the frontend. Runs in Docker behind nginx and gunicorn, with CI/CD on GitHub Actions.
 
-- Backend: Django 5.2, Django REST Framework, SimpleJWT, PostgreSQL 16
-- Background jobs: Celery 5 with Redis 7, celery beat for scheduled tasks
-- Frontend: React 18, TypeScript, Vite, TanStack Query, dnd-kit
-- Billing: Stripe (test mode)
-- Infra: Docker, nginx, gunicorn, GitHub Actions
+## Quick start
 
-## Running with Docker
+The fastest way to try it is the full Docker stack:
 
 ```bash
 docker compose --profile full up --build
 docker compose exec backend python manage.py seed
 ```
 
-Open http://localhost:8088 and sign in as `owner@acme-corp.test` / `demo-pass-123`.
+Then open http://localhost:8088 and sign in as `owner@acme-corp.test` / `demo-pass-123`.
 
-`seed` creates three demo workspaces: Acme Corp (Business plan), Globex (Pro) and Initech (Free). All demo users
-share the same password.
+The seed creates three companies on different plans: Acme Corp (Business), Globex (Pro) and Initech (Free). Every
+demo user has the same password, so you can sign in as `owner@globex.test` or `owner@initech.test` to see how the
+plans differ.
 
 ## Local development
 
-Requirements: Python 3.11, Node 22 and Docker (for Postgres and Redis).
+You need Python 3.11, Node 22 and Docker (only for Postgres and Redis).
 
 ```bash
 docker compose up -d db redis
@@ -60,13 +58,16 @@ python manage.py seed
 python manage.py runserver
 ```
 
-Worker with the beat scheduler, in a second terminal:
+Keep `DJANGO_DEBUG=1` in your `.env`. Debug is off by default, and without it the app expects a real secret key and
+HTTPS.
+
+Celery worker and scheduler, in another terminal:
 
 ```bash
 celery -A config worker -B -l info
 ```
 
-On Windows `-B` isn't supported, so run them separately:
+`-B` doesn't work on Windows, so there you need two terminals:
 
 ```bash
 celery -A config worker -P solo -l info
@@ -81,81 +82,98 @@ npm ci
 npm run dev
 ```
 
-The app runs on http://localhost:5173. Vite proxies `/api` to Django on port 8000.
+The app is on http://localhost:5173 and Vite proxies `/api` to Django on port 8000. Emails (invites, password
+resets, verification links) are printed in the worker's terminal.
 
-## Stripe test mode
+## Stripe
 
-1. Put a test secret key in `backend/.env` (`STRIPE_SECRET_KEY=sk_test_...`).
-2. Create the products and prices: `python manage.py stripe_setup`
-3. Forward webhooks and copy the signing secret it prints into `STRIPE_WEBHOOK_SECRET`:
+Without a Stripe key the app still works: everyone is on the Free plan and the Billing page says upgrades are off.
+To try real checkout in test mode:
+
+1. Add your test key to `backend/.env`: `STRIPE_SECRET_KEY=sk_test_...`
+2. Create the products and prices with `python manage.py stripe_setup` (safe to re-run, refuses live keys).
+3. Forward webhooks and put the `whsec_...` it prints into `STRIPE_WEBHOOK_SECRET`:
    `stripe listen --forward-to localhost:8000/api/billing/webhook/`
-4. In the Stripe dashboard (test mode), save the customer portal settings once.
-5. Upgrade from the Billing page with card `4242 4242 4242 4242`.
+4. In the Stripe dashboard (test mode), open the customer portal settings and save them once.
+5. Restart Django and the worker, then upgrade from the Billing page with card `4242 4242 4242 4242`.
 
-Without a key the app runs on the Free plan and the Billing page shows that upgrades are disabled.
+The plan only changes when Stripe's webhook arrives, not on the redirect back. If an upgrade doesn't show up,
+check that `stripe listen` is still running.
 
 ## Tests
 
-| Suite | Command | Count |
-|---|---|---|
-| Backend unit and API tests | `cd backend && pytest --cov` | 96 tests, 92% coverage |
-| Frontend unit tests | `cd frontend && npm test` | 6 tests |
-| End-to-end (Playwright) | `cd frontend && npm run e2e` | 33 tests |
+```bash
+cd backend && pytest --cov      # 96 tests, 92% coverage
+cd frontend && npm test         # 6 unit tests
+cd frontend && npm run e2e      # 33 Playwright tests
+```
 
-The end-to-end suite starts its own API (port 8020) and Vite server (port 5191), seeds the database and drives the
-UI in Chromium: sign up and sign in, projects and plan limits, drag and drop, every field in the issue drawer,
-password reset, email verification, comments, attachments, workflows, sprints and reports, roles and workspace switching, webhooks, notifications and
-billing. Locally you can use an installed Chrome instead of downloading one:
+The Playwright suite starts its own API and Vite server (ports 8020 and 5191), reseeds the database and clicks
+through the real UI: signup, plan limits, drag and drop, the issue drawer, password reset, workflows, sprints,
+roles, webhooks and billing. To use your installed Chrome instead of downloading Chromium:
 
 ```bash
 PW_CHANNEL=chrome E2E_PYTHON=../backend/.venv/bin/python npm run e2e
 ```
 
-Lint and format checks: `ruff check . && ruff format --check .` (backend) and `npm run lint && npm run format:check`
-(frontend).
+On Windows, give `E2E_PYTHON` the full path to the venv's `python.exe`.
+
+Linting: `ruff check . && ruff format --check .` in `backend/`, `npm run lint && npm run format:check` in
+`frontend/`.
+
+Results and performance numbers are in [TEST_RESULTS.md](docs/TEST_RESULTS.md) and
+[PERFORMANCE.md](docs/PERFORMANCE.md).
 
 ## CI/CD
 
-`.github/workflows/ci.yml` runs on every push and pull request:
+Every push and pull request runs `.github/workflows/ci.yml`:
 
-1. backend: ruff, migrations check, pytest against Postgres and Redis service containers, coverage report
-2. frontend: ESLint, Prettier, TypeScript, unit tests, production build
-3. e2e: Playwright against a real API, database and Vite server
-4. security: `pip-audit` and `npm audit` for known vulnerabilities, `manage.py check --deploy` with production
-   settings
-5. images: builds the backend and web Docker images once everything above passes, and pushes them to GHCR on
-   `main` (`latest`) and `staging`
-6. deploy: pushes to `staging` deploy to the staging environment, pushes to `main` to production. Each GitHub
-   environment holds its own `RENDER_DEPLOY_HOOK_API`, `_WORKER` and `_WEB` secrets; without them the step is
-   skipped. Add required reviewers to the `production` environment to gate releases.
+- **backend**: ruff, migrations check, pytest against real Postgres and Redis containers
+- **frontend**: ESLint, Prettier, typecheck, unit tests, production build
+- **e2e**: the Playwright suite against a real API and database
+- **security**: `pip-audit`, `npm audit` and `manage.py check --deploy` with production settings
+- **images**: builds both Docker images once the above pass and pushes them to GHCR
+- **deploy**: `staging` branch deploys to staging, `main` to production, through the Render deploy hooks stored in
+  each GitHub environment. Skips if no hooks are set.
 
-Dependabot opens weekly PRs for pip and npm updates and monthly ones for Docker base images and actions.
+Dependabot opens update PRs for pip, npm, the Docker base images and the workflow actions.
 
-`render.yaml` defines the Render services (API, worker, static frontend, Postgres, Redis). The API and worker share
-one env var group so they sign tokens with the same secret key.
+## Deploying
 
-## Production settings
+`render.yaml` sets up the API, worker, static frontend, Postgres and Redis on Render. The API and worker read the
+same env var group, since both need the same secret key to sign and check reset and verification links.
 
-`DJANGO_DEBUG` is off unless set, and the app refuses to start without `DJANGO_SECRET_KEY` in that mode. With
-debug off it also turns on HTTPS redirects, secure cookies and HSTS (one year, `SECURE_HSTS_SECONDS`).
+With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and HSTS, and won't start without
+`DJANGO_SECRET_KEY`. Other settings you'll probably want:
 
-| Variable | Purpose |
-|---|---|
-| `AWS_STORAGE_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_REGION_NAME` | store attachments in S3. Set `AWS_S3_ENDPOINT_URL` too for Cloudflare R2 or MinIO. Without a bucket files go to local disk, which Render wipes on each deploy |
-| `SENTRY_DSN` | report errors from the API and the Celery worker to Sentry |
-| `THROTTLE_AUTH_RATE` | login, signup, password reset and verification requests per IP (default `10/min`) |
-| `THROTTLE_ANON_RATE`, `THROTTLE_USER_RATE` | other requests per IP / per user (defaults `60/min`, `600/min`) |
-| `NUM_PROXIES` | how many proxies sit in front of gunicorn, so throttling uses the real client IP (`1` behind nginx or Render) |
+- `AWS_STORAGE_BUCKET_NAME` and the usual `AWS_*` keys to keep attachments in S3 (`AWS_S3_ENDPOINT_URL` for
+  Cloudflare R2 or MinIO). Render's disk is wiped on every deploy, so this matters there.
+- `SENTRY_DSN` to send errors from the API and worker to Sentry
+- `NUM_PROXIES=1` behind nginx or Render, so rate limits see the real client IP
+- `THROTTLE_AUTH_RATE` / `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` to change the rate limits (default 10, 60
+  and 600 a minute)
 
-Throttle counters live in Redis so they hold across gunicorn workers. Database backups come from the host;
-Render's free Postgres has none, so use a paid instance (daily backups) for anything real.
+Render's free Postgres has no backups, so use a paid instance for anything you care about.
 
-## Project layout
+## How it's put together
+
+All tenants share one schema and every tenant table has a `workspace_id`. Requests pick a workspace with the
+`X-Workspace` header, and a base viewset scopes every query and related field to it. Non-members get a 404 rather
+than a 403, so you can't tell whether another company's data exists.
+
+Card order on the board is a float `rank`. Moving a card writes one row (the midpoint of its neighbours), and a
+column only gets renumbered when the gaps run out.
+
+Every change goes through the audit log. After the transaction commits, one Celery task turns each entry into
+notifications and webhook deliveries, so a request that rolls back never fires a webhook.
+
+More detail and diagrams in [ARCHITECTURE.md](docs/ARCHITECTURE.md). Endpoints are in [API.md](docs/API.md) and
+[openapi.yaml](docs/openapi.yaml).
 
 ```
 backend/
   apps/
-    accounts/       user model, registration, JWT
+    accounts/       users, JWT auth, password reset, email verification
     tenancy/        workspaces, memberships, roles, base tenant viewset
     projects/       projects, statuses, transitions, sprints, issues; seed and bench commands
     activity/       comments, attachments, audit log
@@ -175,9 +193,8 @@ docs/
 scripts/loadtest.py
 ```
 
-## Documentation
+## Known gaps
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [API guide](docs/API.md), [OpenAPI schema](docs/openapi.yaml)
-- [Test results](docs/TEST_RESULTS.md)
-- [Performance](docs/PERFORMANCE.md)
+- Billing is tested against mocked Stripe responses; it hasn't run against a deployed webhook endpoint yet.
+- Notifications poll every 30 seconds instead of using websockets.
+- No SSO and no per-workspace data export yet.
