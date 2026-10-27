@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// placed -> packed -> shipped -> delivered (cancelled allowed before shipping)
 export const ORDER_FLOW = ['placed', 'packed', 'shipped', 'delivered'];
 export const ORDER_STATUSES = ['pending_payment', ...ORDER_FLOW, 'cancelled'];
 

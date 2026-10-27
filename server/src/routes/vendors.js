@@ -22,7 +22,6 @@ const storeSchema = z.object({
   logoUrl: z.string().url().or(z.string().startsWith('/uploads/')).optional(),
 });
 
-// step 1 of onboarding: create the store profile
 router.post(
   '/onboard',
   requireAuth,
@@ -53,7 +52,6 @@ router.patch(
   }),
 );
 
-// step 2: connect a Stripe Express account for payouts
 router.post(
   '/me/payouts',
   requireAuth,
@@ -124,7 +122,6 @@ router.get(
   }),
 );
 
-// public storefront
 router.get(
   '/:slug',
   asyncHandler(async (req, res) => {

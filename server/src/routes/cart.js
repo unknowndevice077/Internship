@@ -25,7 +25,6 @@ async function checkStock(productId, quantity) {
   if (product.stock < quantity) throw new HttpError(400, `Only ${product.stock} left in stock`);
 }
 
-// adds to whatever is already in the cart
 router.post(
   '/items',
   asyncHandler(async (req, res) => {
@@ -38,7 +37,7 @@ router.post(
   }),
 );
 
-// sets an exact quantity (0 removes)
+// 0 removes
 router.put(
   '/items/:productId',
   asyncHandler(async (req, res) => {

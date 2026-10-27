@@ -43,7 +43,10 @@ export default function Shop() {
     <div className="shop">
       <aside className="filters card">
         <h3>Category</h3>
-        <button className={`facet ${!params.get('category') ? 'active' : ''}`} onClick={() => set('category', '')}>
+        <button
+          className={`facet ${!params.get('category') ? 'active' : ''}`}
+          onClick={() => set('category', '')}
+        >
           All
         </button>
         {data?.facets.categories.map((c) => (
@@ -70,8 +73,20 @@ export default function Shop() {
             setParams(next);
           }}
         >
-          <input name="minPrice" type="number" min="0" placeholder="Min" defaultValue={params.get('minPrice') || ''} />
-          <input name="maxPrice" type="number" min="0" placeholder="Max" defaultValue={params.get('maxPrice') || ''} />
+          <input
+            name="minPrice"
+            type="number"
+            min="0"
+            placeholder="Min"
+            defaultValue={params.get('minPrice') || ''}
+          />
+          <input
+            name="maxPrice"
+            type="number"
+            min="0"
+            placeholder="Max"
+            defaultValue={params.get('maxPrice') || ''}
+          />
           <button type="submit">Go</button>
         </form>
 
@@ -100,7 +115,11 @@ export default function Shop() {
         <div className="shop-head">
           <div>
             {params.get('q') ? <h2>Results for “{params.get('q')}”</h2> : <h2>All products</h2>}
-            {data && <span className="muted">{data.total} items</span>}
+            {data && (
+              <span className="muted">
+                {data.total} {data.total === 1 ? 'item' : 'items'}
+              </span>
+            )}
           </div>
           <select value={params.get('sort') || ''} onChange={(e) => set('sort', e.target.value)}>
             {SORTS.map(([v, label]) => (

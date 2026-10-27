@@ -73,7 +73,10 @@ export default function AdminVendors() {
                     </button>
                   )}
                   {v.status === 'approved' && (
-                    <button className="small-btn danger" onClick={() => update(v._id, { status: 'suspended' })}>
+                    <button
+                      className="small-btn danger"
+                      onClick={() => update(v._id, { status: 'suspended' })}
+                    >
                       Suspend
                     </button>
                   )}

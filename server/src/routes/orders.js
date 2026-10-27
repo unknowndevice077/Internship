@@ -13,7 +13,12 @@ const router = Router();
 router.use(requireAuth);
 
 const checkoutSchema = z.object({
-  couponCode: z.string().trim().max(40).optional().or(z.literal('').transform(() => undefined)),
+  couponCode: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
   shippingAddress: z.object({
     line1: z.string().min(1),
     city: z.string().min(1),
@@ -33,8 +38,7 @@ router.post(
   }),
 );
 
-// The client calls this after Stripe confirms the card (or straight away in mock mode).
-// The webhook does the same thing, whichever arrives first wins.
+// called after Stripe confirms the card, races the webhook (see completePayment)
 router.post(
   '/confirm/:paymentGroup',
   requireRole('customer'),
@@ -92,7 +96,9 @@ router.patch(
   '/:id/status',
   requireVendor(),
   asyncHandler(async (req, res) => {
-    const { status } = z.object({ status: z.enum(['packed', 'shipped', 'delivered', 'cancelled']) }).parse(req.body);
+    const { status } = z
+      .object({ status: z.enum(['packed', 'shipped', 'delivered', 'cancelled']) })
+      .parse(req.body);
     const order = await loadOrder(req);
     if (status === 'cancelled') {
       if (!['placed', 'packed'].includes(order.status)) {

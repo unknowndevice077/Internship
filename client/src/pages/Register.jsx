@@ -42,7 +42,13 @@ export default function Register() {
             ['vendor', 'I want to sell'],
           ].map(([value, label]) => (
             <label key={value} className={form.role === value ? 'active' : ''}>
-              <input type="radio" name="role" value={value} checked={form.role === value} onChange={set('role')} />
+              <input
+                type="radio"
+                name="role"
+                value={value}
+                checked={form.role === value}
+                onChange={set('role')}
+              />
               {label}
             </label>
           ))}

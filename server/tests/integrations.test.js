@@ -19,7 +19,11 @@ const stripe = vi.hoisted(() => ({
   refunds: { create: vi.fn(async () => ({ id: 're_test_1' })) },
   webhooks: { constructEvent: vi.fn((body) => JSON.parse(body.toString())) },
 }));
-vi.mock('stripe', () => ({ default: vi.fn(function Stripe() { return stripe; }) }));
+vi.mock('stripe', () => ({
+  default: vi.fn(function Stripe() {
+    return stripe;
+  }),
+}));
 
 // fake Elasticsearch client
 const es = vi.hoisted(() => ({
@@ -36,7 +40,11 @@ const es = vi.hoisted(() => ({
     },
   })),
 }));
-vi.mock('@elastic/elasticsearch', () => ({ Client: vi.fn(function Client() { return es; }) }));
+vi.mock('@elastic/elasticsearch', () => ({
+  Client: vi.fn(function Client() {
+    return es;
+  }),
+}));
 
 describe('with Stripe Connect enabled', () => {
   beforeAll(() => {
@@ -70,7 +78,10 @@ describe('with Stripe Connect enabled', () => {
       await api().post('/api/cart/items').set(auth(c.token)).send({ productId: p._id, quantity: 1 });
     }
 
-    const checkout = await api().post('/api/orders/checkout').set(auth(c.token)).send({ shippingAddress: address });
+    const checkout = await api()
+      .post('/api/orders/checkout')
+      .set(auth(c.token))
+      .send({ shippingAddress: address });
     expect(checkout.body.provider).toBe('stripe');
     expect(checkout.body.clientSecret).toBe('pi_test_1_secret');
     expect(stripe.paymentIntents.create).toHaveBeenCalledWith(
@@ -102,7 +113,10 @@ describe('with Stripe Connect enabled', () => {
     const p = await makeProduct(v.vendorId, { price: 20 });
     const c = await login('customer');
     await api().post('/api/cart/items').set(auth(c.token)).send({ productId: p._id, quantity: 1 });
-    const checkout = await api().post('/api/orders/checkout').set(auth(c.token)).send({ shippingAddress: address });
+    const checkout = await api()
+      .post('/api/orders/checkout')
+      .set(auth(c.token))
+      .send({ shippingAddress: address });
     await api().post(`/api/orders/confirm/${checkout.body.paymentGroup}`).set(auth(c.token));
 
     const id = checkout.body.orders[0]._id;
@@ -113,8 +127,14 @@ describe('with Stripe Connect enabled', () => {
   it('updates payout status from account.updated webhooks', async () => {
     const v = await approvedVendor();
     await Vendor.updateOne({ _id: v.vendorId }, { stripeAccountId: 'acct_hook', payoutsEnabled: false });
-    const event = { type: 'account.updated', data: { object: { id: 'acct_hook', charges_enabled: true, payouts_enabled: true } } };
-    await api().post('/api/webhooks/stripe').set('Content-Type', 'application/json').send(JSON.stringify(event));
+    const event = {
+      type: 'account.updated',
+      data: { object: { id: 'acct_hook', charges_enabled: true, payouts_enabled: true } },
+    };
+    await api()
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify(event));
     expect((await Vendor.findById(v.vendorId)).payoutsEnabled).toBe(true);
   });
 
@@ -143,7 +163,10 @@ describe('with Elasticsearch enabled', () => {
       .set(auth(v.token))
       .send({ title: 'Trail Shoe', category: 'shoes', price: 60, stock: 4 });
     expect(es.index).toHaveBeenCalledWith(
-      expect.objectContaining({ index: 'products', document: expect.objectContaining({ title: 'Trail Shoe', vendorName: 'Test Store' }) }),
+      expect.objectContaining({
+        index: 'products',
+        document: expect.objectContaining({ title: 'Trail Shoe', vendorName: 'Test Store' }),
+      }),
     );
   });
 
@@ -164,7 +187,10 @@ describe('with Elasticsearch enabled', () => {
     const v = await approvedVendor();
     await makeProduct(v.vendorId);
     const admin = await login('admin');
-    await api().patch(`/api/admin/vendors/${v.vendorId}`).set(auth(admin.token)).send({ status: 'suspended' });
+    await api()
+      .patch(`/api/admin/vendors/${v.vendorId}`)
+      .set(auth(admin.token))
+      .send({ status: 'suspended' });
     expect(es.delete).toHaveBeenCalled();
   });
 
@@ -173,7 +199,10 @@ describe('with Elasticsearch enabled', () => {
     const p = await makeProduct(v.vendorId, { stock: 5 });
     const c = await login('customer');
     await api().post('/api/cart/items').set(auth(c.token)).send({ productId: p._id, quantity: 2 });
-    const checkout = await api().post('/api/orders/checkout').set(auth(c.token)).send({ shippingAddress: address });
+    const checkout = await api()
+      .post('/api/orders/checkout')
+      .set(auth(c.token))
+      .send({ shippingAddress: address });
     es.index.mockClear();
     await api().post(`/api/orders/confirm/${checkout.body.paymentGroup}`).set(auth(c.token));
     expect(es.index).toHaveBeenCalledWith(

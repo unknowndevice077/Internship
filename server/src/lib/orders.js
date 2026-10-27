@@ -6,17 +6,20 @@ import config from '../config.js';
 import { HttpError } from '../middleware/error.js';
 import { clearCart, getCart } from './cart.js';
 import { applyCoupon } from './coupons.js';
-import { createPaymentIntent, getPaymentIntent, refundPayment, round2, transferToVendor } from './payments.js';
+import {
+  createPaymentIntent,
+  getPaymentIntent,
+  refundPayment,
+  round2,
+  transferToVendor,
+} from './payments.js';
 import { getRedis } from './redis.js';
 import { indexProduct } from './search.js';
 
 const orderNumber = () =>
   `VD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-/**
- * Turns the customer's cart into one pending order per vendor plus a single
- * payment intent for the whole amount.
- */
+// one pending order per vendor, one payment intent for the whole cart
 export async function checkout(user, { couponCode, shippingAddress }) {
   const cart = await getCart(user.id);
   if (!cart.items.length) throw new HttpError(400, 'Your cart is empty');
@@ -79,10 +82,7 @@ export async function checkout(user, { couponCode, shippingAddress }) {
   return { paymentGroup, amount, provider: intent.provider, clientSecret: intent.clientSecret, orders };
 }
 
-/**
- * Runs once the payment succeeds (webhook or confirm call). Safe to call twice:
- * only orders still in pending_payment are touched.
- */
+// webhook and confirm call both land here, only pending_payment orders get touched
 export async function completePayment(paymentGroup) {
   const pending = await Order.find({ paymentGroup, status: 'pending_payment' });
   if (!pending.length) return Order.find({ paymentGroup });
@@ -140,7 +140,9 @@ async function reserveStock(items) {
       { $inc: { stock: -item.quantity } },
     );
     if (!res.modifiedCount) {
-      await Promise.all(done.map((i) => Product.updateOne({ _id: i.product }, { $inc: { stock: i.quantity } })));
+      await Promise.all(
+        done.map((i) => Product.updateOne({ _id: i.product }, { $inc: { stock: i.quantity } })),
+      );
       return false;
     }
     done.push(item);
@@ -172,7 +174,6 @@ export async function cancelOrder(order, status = 'cancelled', { restock = true 
   return order;
 }
 
-// vendors move an order one step forward: placed -> packed -> shipped -> delivered
 export async function advanceOrder(order, next) {
   const from = ORDER_FLOW.indexOf(order.status);
   const to = ORDER_FLOW.indexOf(next);

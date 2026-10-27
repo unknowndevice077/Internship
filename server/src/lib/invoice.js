@@ -2,7 +2,6 @@ import PDFDocument from 'pdfkit';
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 
-// Streams a simple invoice PDF for one vendor order into `stream` (usually the response).
 export function writeInvoice(stream, { order, vendor, customer }) {
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   doc.pipe(stream);
@@ -36,7 +35,10 @@ export function writeInvoice(stream, { order, vendor, customer }) {
 
   let y = doc.y;
   row(y, ['Item', 'Qty', 'Price', 'Total'], true);
-  doc.moveTo(50, y + 15).lineTo(545, y + 15).stroke();
+  doc
+    .moveTo(50, y + 15)
+    .lineTo(545, y + 15)
+    .stroke();
   y += 25;
   for (const item of order.items) {
     row(y, [item.title, String(item.quantity), money(item.price), money(item.price * item.quantity)]);
@@ -47,7 +49,9 @@ export function writeInvoice(stream, { order, vendor, customer }) {
 
   const totals = [
     ['Subtotal', money(order.subtotal)],
-    ...(order.discount ? [[`Discount${order.couponCode ? ` (${order.couponCode})` : ''}`, `-${money(order.discount)}`]] : []),
+    ...(order.discount
+      ? [[`Discount${order.couponCode ? ` (${order.couponCode})` : ''}`, `-${money(order.discount)}`]]
+      : []),
     ['Total paid', money(order.total)],
   ];
   for (const [label, value] of totals) {
@@ -57,6 +61,8 @@ export function writeInvoice(stream, { order, vendor, customer }) {
   }
 
   doc.font('Helvetica').fontSize(8).fillColor('#666');
-  doc.text('Thanks for shopping on Vendora. Payments are processed in test mode.', 50, 760, { align: 'center' });
+  doc.text('Thanks for shopping on Vendora. Payments are processed in test mode.', 50, 760, {
+    align: 'center',
+  });
   doc.end();
 }

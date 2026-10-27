@@ -9,7 +9,9 @@ const env = { ...process.env, MONGO_URI: mongo.getUri('vendora') };
 const run = (args) =>
   new Promise((resolve, reject) => {
     const child = spawn(process.execPath, args, { env, stdio: 'inherit' });
-    child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`${args[0]} exited with ${code}`))));
+    child.on('exit', (code) =>
+      code === 0 ? resolve() : reject(new Error(`${args[0]} exited with ${code}`)),
+    );
   });
 
 await run(['scripts/seed.js']);

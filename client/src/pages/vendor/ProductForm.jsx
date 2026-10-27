@@ -3,7 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api, imageUrl } from '../../api/client';
 import { ErrorText } from '../../components/ui';
 
-const EMPTY = { title: '', description: '', category: '', brand: '', price: '', stock: '', tags: '', images: [] };
+const EMPTY = {
+  title: '',
+  description: '',
+  category: '',
+  brand: '',
+  price: '',
+  stock: '',
+  tags: '',
+  images: [],
+};
 
 export default function ProductForm() {
   const { id } = useParams();
@@ -70,12 +79,32 @@ export default function ProductForm() {
       <input placeholder="Title" value={form.title} onChange={set('title')} required />
       <textarea placeholder="Description" rows={5} value={form.description} onChange={set('description')} />
       <div className="two">
-        <input placeholder="Category (e.g. laptops)" value={form.category} onChange={set('category')} required />
+        <input
+          placeholder="Category (e.g. laptops)"
+          value={form.category}
+          onChange={set('category')}
+          required
+        />
         <input placeholder="Brand" value={form.brand} onChange={set('brand')} />
       </div>
       <div className="two">
-        <input type="number" step="0.01" min="0.5" placeholder="Price" value={form.price} onChange={set('price')} required />
-        <input type="number" min="0" placeholder="Stock" value={form.stock} onChange={set('stock')} required />
+        <input
+          type="number"
+          step="0.01"
+          min="0.5"
+          placeholder="Price"
+          value={form.price}
+          onChange={set('price')}
+          required
+        />
+        <input
+          type="number"
+          min="0"
+          placeholder="Stock"
+          value={form.stock}
+          onChange={set('stock')}
+          required
+        />
       </div>
       <input placeholder="Tags, comma separated" value={form.tags} onChange={set('tags')} />
 
@@ -84,7 +113,10 @@ export default function ProductForm() {
           {form.images.map((src) => (
             <div key={src} className="thumb-edit">
               <img src={imageUrl(src)} alt="" />
-              <button type="button" onClick={() => setForm({ ...form, images: form.images.filter((x) => x !== src) })}>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, images: form.images.filter((x) => x !== src) })}
+              >
                 ×
               </button>
             </div>

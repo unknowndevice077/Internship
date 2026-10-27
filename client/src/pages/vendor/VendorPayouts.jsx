@@ -32,8 +32,8 @@ export default function VendorPayouts() {
       <h1>Payouts</h1>
       <p className="muted">
         Customers pay Vendora, and your share (order total minus the{' '}
-        {vendor.commissionRate != null ? `${Math.round(vendor.commissionRate * 100)}%` : 'platform'} commission) is
-        transferred to your Stripe account when the payment clears.
+        {vendor.commissionRate != null ? `${Math.round(vendor.commissionRate * 100)}%` : 'platform'}{' '}
+        commission) is transferred to your Stripe account when the payment clears.
       </p>
       <div className="row">
         <span>Stripe account</span>

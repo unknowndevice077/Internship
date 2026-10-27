@@ -40,12 +40,16 @@ export default function Cart() {
               <div className="muted small">Sold by {item.vendorName}</div>
               {!item.available && <div className="error small">Not enough stock ({item.stock} left)</div>}
               <div className="cart-actions">
-                <select value={item.quantity} onChange={(e) => update(item.productId, Number(e.target.value))}>
-                  {Array.from({ length: Math.max(item.quantity, Math.min(10, item.stock)) }, (_, i) => i + 1).map(
-                    (n) => (
-                      <option key={n}>{n}</option>
-                    ),
-                  )}
+                <select
+                  value={item.quantity}
+                  onChange={(e) => update(item.productId, Number(e.target.value))}
+                >
+                  {Array.from(
+                    { length: Math.max(item.quantity, Math.min(10, item.stock)) },
+                    (_, i) => i + 1,
+                  ).map((n) => (
+                    <option key={n}>{n}</option>
+                  ))}
                 </select>
                 <button className="link" onClick={() => remove(item.productId)}>
                   Remove

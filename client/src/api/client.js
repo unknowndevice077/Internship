@@ -1,4 +1,4 @@
-// In production the API lives on its own domain (VITE_API_URL), in dev Vite proxies /api.
+// empty in dev, vite proxies /api
 export const API_URL = import.meta.env.VITE_API_URL || '';
 
 const TOKEN_KEY = 'vendora_token';

@@ -1,9 +1,7 @@
 import Stripe from 'stripe';
 import config from '../config.js';
 
-// Stripe Connect "separate charges and transfers": the customer pays the platform once,
-// then each vendor gets a transfer for their share minus commission.
-// With no STRIPE_SECRET_KEY we run a mock provider so the full flow still works locally.
+// Stripe Connect "separate charges and transfers". No STRIPE_SECRET_KEY = mock provider for local dev.
 
 let stripe;
 export function getStripe() {

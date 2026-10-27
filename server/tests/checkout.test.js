@@ -39,7 +39,10 @@ describe('cart', () => {
 
   it('refuses more than the stock', async () => {
     const { mug, customer } = await setup();
-    const res = await api().post('/api/cart/items').set(auth(customer.token)).send({ productId: mug._id, quantity: 3 });
+    const res = await api()
+      .post('/api/cart/items')
+      .set(auth(customer.token))
+      .send({ productId: mug._id, quantity: 3 });
     expect(res.status).toBe(400);
   });
 });
@@ -56,7 +59,9 @@ describe('checkout and split payments', () => {
     expect(res.body.amount).toBe(125);
     expect(res.body.orders).toHaveLength(2);
 
-    const confirm = await api().post(`/api/orders/confirm/${res.body.paymentGroup}`).set(auth(customer.token));
+    const confirm = await api()
+      .post(`/api/orders/confirm/${res.body.paymentGroup}`)
+      .set(auth(customer.token));
     const orders = confirm.body.orders;
     expect(orders.every((o) => o.status === 'placed')).toBe(true);
 
@@ -136,7 +141,10 @@ describe('order lifecycle', () => {
 
   it("doesn't let another vendor touch the order", async () => {
     const { b, orderId } = await placedOrder();
-    const res = await api().patch(`/api/orders/${orderId}/status`).set(auth(b.token)).send({ status: 'packed' });
+    const res = await api()
+      .patch(`/api/orders/${orderId}/status`)
+      .set(auth(b.token))
+      .send({ status: 'packed' });
     expect(res.status).toBe(404);
   });
 

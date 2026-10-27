@@ -93,8 +93,17 @@ export default function Checkout() {
               required
             />
             <div className="two">
-              <input placeholder="City" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} required />
-              <input placeholder="State / province" value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
+              <input
+                placeholder="City"
+                value={address.city}
+                onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                required
+              />
+              <input
+                placeholder="State / province"
+                value={address.state}
+                onChange={(e) => setAddress({ ...address, state: e.target.value })}
+              />
             </div>
             <div className="two">
               <input
@@ -103,7 +112,12 @@ export default function Checkout() {
                 onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
                 required
               />
-              <input placeholder="Country" value={address.country} onChange={(e) => setAddress({ ...address, country: e.target.value })} required />
+              <input
+                placeholder="Country"
+                value={address.country}
+                onChange={(e) => setAddress({ ...address, country: e.target.value })}
+                required
+              />
             </div>
           </form>
         ) : stripePromise && elementsOptions ? (

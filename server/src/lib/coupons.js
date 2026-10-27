@@ -2,10 +2,7 @@ import Coupon from '../models/Coupon.js';
 import { HttpError } from '../middleware/error.js';
 import { round2 } from './payments.js';
 
-/**
- * Works out how much a coupon takes off each vendor's part of the cart.
- * `groups` is a Map of vendorId -> subtotal. Returns { coupon, discounts: Map }.
- */
+// groups: Map of vendorId -> subtotal
 export async function applyCoupon(code, groups) {
   const discounts = new Map([...groups.keys()].map((id) => [id, 0]));
   if (!code) return { coupon: null, discounts };

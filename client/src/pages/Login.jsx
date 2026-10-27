@@ -38,7 +38,13 @@ export default function Login() {
     <div className="auth-box card">
       <h1>Sign in</h1>
       <form onSubmit={submit} className="stack">
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
         <input
           type="password"
           placeholder="Password"

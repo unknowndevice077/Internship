@@ -16,10 +16,30 @@ const PASSWORD = 'demo-pass-123';
 
 const STORES = [
   { storeName: 'Glow Beauty Co', categories: ['beauty', 'fragrances', 'skin-care'] },
-  { storeName: 'Urban Threads', categories: ['mens-shirts', 'mens-shoes', 'womens-dresses', 'womens-shoes', 'tops', 'womens-bags', 'sunglasses'] },
-  { storeName: 'Gadget Hub', categories: ['smartphones', 'laptops', 'tablets', 'mobile-accessories', 'mens-watches', 'womens-watches'] },
-  { storeName: 'Home & Pantry', categories: ['furniture', 'home-decoration', 'kitchen-accessories', 'groceries'] },
-  { storeName: 'Ride & Sport', categories: ['sports-accessories', 'motorcycle', 'vehicle', 'womens-jewellery'] },
+  {
+    storeName: 'Urban Threads',
+    categories: [
+      'mens-shirts',
+      'mens-shoes',
+      'womens-dresses',
+      'womens-shoes',
+      'tops',
+      'womens-bags',
+      'sunglasses',
+    ],
+  },
+  {
+    storeName: 'Gadget Hub',
+    categories: ['smartphones', 'laptops', 'tablets', 'mobile-accessories', 'mens-watches', 'womens-watches'],
+  },
+  {
+    storeName: 'Home & Pantry',
+    categories: ['furniture', 'home-decoration', 'kitchen-accessories', 'groceries'],
+  },
+  {
+    storeName: 'Ride & Sport',
+    categories: ['sports-accessories', 'motorcycle', 'vehicle', 'womens-jewellery'],
+  },
 ];
 
 async function fetchProducts() {
@@ -150,7 +170,15 @@ async function main() {
         orderNumber: `VD-SEED-${String(n).padStart(4, '0')}`,
         customer: pick(customers)._id,
         vendor: vendor._id,
-        items: [{ product: product._id, title: product.title, image: product.images[0], price: product.price, quantity: qty }],
+        items: [
+          {
+            product: product._id,
+            title: product.title,
+            image: product.images[0],
+            price: product.price,
+            quantity: qty,
+          },
+        ],
         subtotal: total,
         total,
         commissionRate: config.commissionRate,
@@ -159,7 +187,12 @@ async function main() {
         shippingAddress: customers[0].address,
         status,
         statusHistory: [{ status: 'placed', at }, ...(status !== 'placed' ? [{ status, at }] : [])],
-        payment: { provider: 'mock', intentId: `mock_pi_seed_${n}`, transferId: `mock_tr_seed_${n}`, paidAt: at },
+        payment: {
+          provider: 'mock',
+          intentId: `mock_pi_seed_${n}`,
+          transferId: `mock_tr_seed_${n}`,
+          paidAt: at,
+        },
         createdAt: at,
         updatedAt: at,
       });
@@ -171,15 +204,57 @@ async function main() {
     `Seeded ${products.length} products, ${vendors.length + 1} stores, ${n} orders` +
       (indexed ? `, indexed ${indexed} in Elasticsearch` : ''),
   );
-  console.log(`Logins (password "${PASSWORD}"): admin@vendora.test, vendor@vendora.test, customer@vendora.test`);
+  console.log(
+    `Logins (password "${PASSWORD}"): admin@vendora.test, vendor@vendora.test, customer@vendora.test`,
+  );
 }
 
 const OFFLINE_PRODUCTS = [
-  { title: 'Essence Mascara Lash Princess', category: 'beauty', brand: 'Essence', price: 9.99, stock: 40, thumbnail: 'https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp', description: 'Popular mascara known for volumizing and lengthening effects.' },
-  { title: 'iPhone 13 Pro', category: 'smartphones', brand: 'Apple', price: 1099.99, stock: 12, thumbnail: 'https://cdn.dummyjson.com/product-images/smartphones/iphone-13-pro/thumbnail.webp', description: 'Pro camera system and Super Retina XDR display with ProMotion.' },
-  { title: 'Wooden Bathroom Sink With Mirror', category: 'furniture', brand: 'Bath Trends', price: 799.99, stock: 7, thumbnail: 'https://cdn.dummyjson.com/product-images/furniture/wooden-bathroom-sink-with-mirror/thumbnail.webp', description: 'Wooden bathroom sink with an attached mirror.' },
-  { title: 'Men Check Shirt', category: 'mens-shirts', brand: 'Fashion Trends', price: 27.99, stock: 50, thumbnail: 'https://cdn.dummyjson.com/product-images/mens-shirts/men-check-shirt/thumbnail.webp', description: 'Classic check shirt for a casual look.' },
-  { title: 'Football', category: 'sports-accessories', price: 14.99, stock: 30, thumbnail: 'https://cdn.dummyjson.com/product-images/sports-accessories/football/thumbnail.webp', description: 'Standard size football for matches and practice.' },
+  {
+    title: 'Essence Mascara Lash Princess',
+    category: 'beauty',
+    brand: 'Essence',
+    price: 9.99,
+    stock: 40,
+    thumbnail: 'https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp',
+    description: 'Popular mascara known for volumizing and lengthening effects.',
+  },
+  {
+    title: 'iPhone 13 Pro',
+    category: 'smartphones',
+    brand: 'Apple',
+    price: 1099.99,
+    stock: 12,
+    thumbnail: 'https://cdn.dummyjson.com/product-images/smartphones/iphone-13-pro/thumbnail.webp',
+    description: 'Pro camera system and Super Retina XDR display with ProMotion.',
+  },
+  {
+    title: 'Wooden Bathroom Sink With Mirror',
+    category: 'furniture',
+    brand: 'Bath Trends',
+    price: 799.99,
+    stock: 7,
+    thumbnail:
+      'https://cdn.dummyjson.com/product-images/furniture/wooden-bathroom-sink-with-mirror/thumbnail.webp',
+    description: 'Wooden bathroom sink with an attached mirror.',
+  },
+  {
+    title: 'Men Check Shirt',
+    category: 'mens-shirts',
+    brand: 'Fashion Trends',
+    price: 27.99,
+    stock: 50,
+    thumbnail: 'https://cdn.dummyjson.com/product-images/mens-shirts/men-check-shirt/thumbnail.webp',
+    description: 'Classic check shirt for a casual look.',
+  },
+  {
+    title: 'Football',
+    category: 'sports-accessories',
+    price: 14.99,
+    stock: 30,
+    thumbnail: 'https://cdn.dummyjson.com/product-images/sports-accessories/football/thumbnail.webp',
+    description: 'Standard size football for matches and practice.',
+  },
 ];
 
 main()

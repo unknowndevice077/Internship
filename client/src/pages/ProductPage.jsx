@@ -54,12 +54,15 @@ export default function ProductPage() {
         <div>
           <h1>{p.title}</h1>
           <p className="muted">
-            {p.brand && <>by {p.brand} · </>}sold by <Link to={`/stores/${p.vendor.slug}`}>{p.vendor.storeName}</Link>
+            {p.brand && <>by {p.brand} · </>}sold by{' '}
+            <Link to={`/stores/${p.vendor.slug}`}>{p.vendor.storeName}</Link>
           </p>
           <Stars value={p.ratingAvg} count={p.ratingCount} />
           <div className="price big">{money(p.price)}</div>
           <p>{p.description}</p>
-          <p className={p.stock > 0 ? 'ok' : 'error'}>{p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}</p>
+          <p className={p.stock > 0 ? 'ok' : 'error'}>
+            {p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
+          </p>
 
           {(!user || user.role === 'customer') && p.stock > 0 && (
             <div className="buy-row">
@@ -84,7 +87,15 @@ export default function ProductPage() {
 
       <section className="reviews">
         <h2>Customer reviews</h2>
-        {user?.role === 'customer' && <ReviewForm productId={id} onSaved={() => { reviews.reload(); product.reload(); }} />}
+        {user?.role === 'customer' && (
+          <ReviewForm
+            productId={id}
+            onSaved={() => {
+              reviews.reload();
+              product.reload();
+            }}
+          />
+        )}
         {reviews.data?.length === 0 && <p className="muted">No reviews yet.</p>}
         {reviews.data?.map((r) => (
           <div key={r._id} className="review">
@@ -129,7 +140,12 @@ function ReviewForm({ productId, onSaved }) {
           ))}
         </select>
       </label>
-      <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="What did you think?" rows={3} />
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="What did you think?"
+        rows={3}
+      />
       <button type="submit">Post review</button>
       <ErrorText error={error} />
     </form>

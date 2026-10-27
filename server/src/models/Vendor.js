@@ -7,7 +7,6 @@ const vendorSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true },
     description: String,
     logoUrl: String,
-    // pending -> approved by an admin before products go live
     status: { type: String, enum: ['pending', 'approved', 'suspended'], default: 'pending' },
     // overrides the platform default when set
     commissionRate: { type: Number, min: 0, max: 1 },

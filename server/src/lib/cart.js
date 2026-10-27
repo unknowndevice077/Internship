@@ -1,7 +1,7 @@
 import Product from '../models/Product.js';
 import { getRedis } from './redis.js';
 
-// Carts live in Redis as a hash: field = productId, value = quantity.
+// cart:<userId> hash, productId -> quantity
 const key = (userId) => `cart:${userId}`;
 const CART_TTL = 60 * 60 * 24 * 30;
 
@@ -21,7 +21,7 @@ export async function clearCart(userId) {
   await getRedis().del(key(userId));
 }
 
-// Joins the cart with current product data. Prices always come from the DB, never the client.
+// prices always come from the db, never the client
 export async function getCart(userId) {
   const raw = await getRawCart(userId);
   if (!raw.length) return { items: [], subtotal: 0, count: 0 };

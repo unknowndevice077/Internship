@@ -27,7 +27,9 @@ export function CartProvider({ children }) {
   const remove = async (productId) => setCart(await api(`/cart/items/${productId}`, { method: 'DELETE' }));
 
   return (
-    <CartContext.Provider value={{ cart, reload, add, update, remove, isCustomer }}>{children}</CartContext.Provider>
+    <CartContext.Provider value={{ cart, reload, add, update, remove, isCustomer }}>
+      {children}
+    </CartContext.Provider>
   );
 }
 

@@ -14,10 +14,7 @@ function getS3() {
 const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 export const ALLOWED_TYPES = Object.keys(EXT);
 
-/**
- * Uploads an image buffer and returns its public URL.
- * Without S3_BUCKET set, files go to ./uploads so local dev works offline.
- */
+// no S3_BUCKET = save to ./uploads so local dev works offline
 export async function uploadImage(file, folder = 'products') {
   const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${EXT[file.mimetype]}`;
 

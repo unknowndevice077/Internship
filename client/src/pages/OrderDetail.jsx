@@ -10,7 +10,12 @@ const NEXT = { placed: 'packed', packed: 'shipped', shipped: 'delivered' };
 export default function OrderDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  const { data: order, error, loading, reload } = useFetch(() => api(`/orders/${id}`).then((d) => d.order), [id]);
+  const {
+    data: order,
+    error,
+    loading,
+    reload,
+  } = useFetch(() => api(`/orders/${id}`).then((d) => d.order), [id]);
   const [actionError, setActionError] = useState(null);
 
   if (loading) return <Spinner />;
@@ -73,8 +78,8 @@ export default function OrderDetail() {
           ))}
           {order.shippingAddress && (
             <p className="muted small">
-              Ship to: {order.shippingAddress.line1}, {order.shippingAddress.city} {order.shippingAddress.postalCode},{' '}
-              {order.shippingAddress.country}
+              Ship to: {order.shippingAddress.line1}, {order.shippingAddress.city}{' '}
+              {order.shippingAddress.postalCode}, {order.shippingAddress.country}
             </p>
           )}
         </section>
@@ -111,7 +116,10 @@ export default function OrderDetail() {
             <button onClick={() => run(() => openInvoice(order._id))}>Download invoice (PDF)</button>
           )}
           {user.role === 'customer' && order.status === 'placed' && (
-            <button className="danger" onClick={() => run(() => api(`/orders/${order._id}/cancel`, { method: 'POST' }))}>
+            <button
+              className="danger"
+              onClick={() => run(() => api(`/orders/${order._id}/cancel`, { method: 'POST' }))}
+            >
               Cancel order
             </button>
           )}

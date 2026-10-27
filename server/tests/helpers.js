@@ -15,7 +15,9 @@ export async function login(role = 'customer', extra = {}) {
   if (role === 'admin') {
     await User.create({ name: 'Admin', email, password: 'password123', role: 'admin' });
   } else {
-    await api().post('/api/auth/register').send({ name: `${role} ${counter}`, email, password: 'password123', role });
+    await api()
+      .post('/api/auth/register')
+      .send({ name: `${role} ${counter}`, email, password: 'password123', role });
   }
   const res = await api().post('/api/auth/login').send({ email, password: 'password123' });
   return { token: res.body.token, user: res.body.user, ...extra };
@@ -27,7 +29,10 @@ export const auth = (token) => ({ Authorization: `Bearer ${token}` });
 export async function approvedVendor(storeName = 'Test Store') {
   const v = await login('vendor');
   const res = await api().post('/api/vendors/onboard').set(auth(v.token)).send({ storeName });
-  await Vendor.updateOne({ _id: res.body.vendor._id }, { status: 'approved', stripeAccountId: 'mock_acct_x' });
+  await Vendor.updateOne(
+    { _id: res.body.vendor._id },
+    { status: 'approved', stripeAccountId: 'mock_acct_x' },
+  );
   return { ...v, vendorId: res.body.vendor._id };
 }
 

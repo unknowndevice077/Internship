@@ -2,10 +2,17 @@ import { useState } from 'react';
 import { api, money } from '../api/client';
 import { Empty, ErrorText, Spinner, useFetch } from '../components/ui';
 
-// shared by vendors (store coupons) and admins (platform coupons), the API scopes it
+// vendors and admins share this page, the API scopes the list
 export default function Coupons() {
   const { data, error, loading, reload } = useFetch(() => api('/coupons').then((d) => d.items));
-  const [form, setForm] = useState({ code: '', type: 'percent', value: '', minOrder: '', maxUses: '', expiresAt: '' });
+  const [form, setForm] = useState({
+    code: '',
+    type: 'percent',
+    value: '',
+    minOrder: '',
+    maxUses: '',
+    expiresAt: '',
+  });
   const [formError, setFormError] = useState(null);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
@@ -46,8 +53,22 @@ export default function Coupons() {
           <option value="percent">% off</option>
           <option value="fixed">$ off</option>
         </select>
-        <input type="number" placeholder="Value" min="0" step="0.01" value={form.value} onChange={set('value')} required />
-        <input type="number" placeholder="Min order" min="0" value={form.minOrder} onChange={set('minOrder')} />
+        <input
+          type="number"
+          placeholder="Value"
+          min="0"
+          step="0.01"
+          value={form.value}
+          onChange={set('value')}
+          required
+        />
+        <input
+          type="number"
+          placeholder="Min order"
+          min="0"
+          value={form.minOrder}
+          onChange={set('minOrder')}
+        />
         <input type="number" placeholder="Max uses" min="0" value={form.maxUses} onChange={set('maxUses')} />
         <input type="date" value={form.expiresAt} onChange={set('expiresAt')} title="Expires" />
         <button className="primary">Create</button>

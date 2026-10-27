@@ -30,7 +30,6 @@ export function Empty({ children }) {
   return <div className="empty">{children}</div>;
 }
 
-// redirects to login (or home) when the user doesn't have one of the given roles
 export function RequireRole({ roles, children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -40,7 +39,6 @@ export function RequireRole({ roles, children }) {
   return children;
 }
 
-// small data-loading hook used by most pages
 export function useFetch(loader, deps = []) {
   const [state, setState] = useState({ data: null, error: null, loading: true });
   const [tick, setTick] = useState(0);

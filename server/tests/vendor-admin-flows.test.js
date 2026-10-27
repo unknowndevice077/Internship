@@ -41,9 +41,30 @@ describe('vendor store', () => {
     const b = await approvedVendor('Store B');
     const c = await login('customer');
     await Order.create([
-      { paymentGroup: 'g1', orderNumber: 'O1', customer: c.user._id, vendor: a.vendorId, total: 1, status: 'placed' },
-      { paymentGroup: 'g2', orderNumber: 'O2', customer: c.user._id, vendor: b.vendorId, total: 1, status: 'placed' },
-      { paymentGroup: 'g3', orderNumber: 'O3', customer: c.user._id, vendor: a.vendorId, total: 1, status: 'pending_payment' },
+      {
+        paymentGroup: 'g1',
+        orderNumber: 'O1',
+        customer: c.user._id,
+        vendor: a.vendorId,
+        total: 1,
+        status: 'placed',
+      },
+      {
+        paymentGroup: 'g2',
+        orderNumber: 'O2',
+        customer: c.user._id,
+        vendor: b.vendorId,
+        total: 1,
+        status: 'placed',
+      },
+      {
+        paymentGroup: 'g3',
+        orderNumber: 'O3',
+        customer: c.user._id,
+        vendor: a.vendorId,
+        total: 1,
+        status: 'pending_payment',
+      },
     ]);
     const orders = await api().get('/api/orders').set(auth(a.token));
     expect(orders.body.items.map((o) => o.orderNumber)).toEqual(['O1']);
@@ -96,7 +117,9 @@ describe('admin management', () => {
     expect(users.body.items).toHaveLength(1);
 
     await api().patch(`/api/admin/users/${c.user._id}`).set(h).send({ isActive: false });
-    const blocked = await api().post('/api/auth/login').send({ email: c.user.email, password: 'password123' });
+    const blocked = await api()
+      .post('/api/auth/login')
+      .send({ email: c.user.email, password: 'password123' });
     expect(blocked.status).toBe(403);
 
     const self = await api().patch(`/api/admin/users/${admin.user._id}`).set(h).send({ isActive: false });

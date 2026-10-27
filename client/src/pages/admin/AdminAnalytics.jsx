@@ -53,7 +53,14 @@ export default function AdminAnalytics() {
             <YAxis fontSize={12} />
             <Tooltip formatter={(v) => money(v)} />
             <Line type="monotone" dataKey="gmv" name="Sales" stroke="#ea580c" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="commission" name="Commission" stroke="#2563eb" strokeWidth={2} dot={false} />
+            <Line
+              type="monotone"
+              dataKey="commission"
+              name="Commission"
+              stroke="#2563eb"
+              strokeWidth={2}
+              dot={false}
+            />
           </LineChart>
         </ResponsiveContainer>
       </section>

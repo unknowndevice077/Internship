@@ -24,7 +24,6 @@ export async function closeRedis() {
   }
 }
 
-// small read-through cache helper
 export async function cached(key, ttlSeconds, load) {
   const redis = getRedis();
   const hit = await redis.get(key);
