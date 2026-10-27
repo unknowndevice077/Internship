@@ -106,7 +106,9 @@ class Command(BaseCommand):
         )
 
     def user(self, email, full_name):
-        user, created = User.objects.get_or_create(email=email, defaults={"full_name": full_name})
+        user, created = User.objects.get_or_create(
+            email=email, defaults={"full_name": full_name, "email_verified_at": timezone.now()}
+        )
         if created:
             user.set_password(DEMO_PASSWORD)
             user.save(update_fields=["password"])

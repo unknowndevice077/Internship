@@ -1,4 +1,5 @@
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from tests.factories import MembershipFactory, ProjectFactory
@@ -42,3 +43,6 @@ def test_settings(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+    # throttle counters live in the cache, keep them per test
+    settings.CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    cache.clear()

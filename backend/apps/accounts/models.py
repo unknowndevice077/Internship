@@ -28,6 +28,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=150, blank=True)
+    email_verified_at = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -36,3 +37,7 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def email_verified(self):
+        return self.email_verified_at is not None

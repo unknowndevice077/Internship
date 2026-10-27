@@ -1,5 +1,26 @@
 # Render blueprint: New > Blueprint > pick this repo.
 # Fill in the env vars marked sync: false in the dashboard afterwards.
+envVarGroups:
+  # shared by the API and worker; both must sign and check the same tokens
+  - name: sprintboard-shared
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: SENTRY_DSN
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+
 services:
   - type: web
     name: sprintboard-api
@@ -17,10 +38,10 @@ services:
           type: keyvalue
           name: sprintboard-redis
           property: connectionString
-      - key: DJANGO_SECRET_KEY
-        generateValue: true
-      - key: DJANGO_DEBUG
-        value: "0"
+      - fromGroup: sprintboard-shared
+      # Render's router sits in front of gunicorn
+      - key: NUM_PROXIES
+        value: "1"
       - key: RUN_MIGRATIONS
         value: "1"
       - key: DJANGO_ALLOWED_HOSTS
@@ -53,10 +74,7 @@ services:
           type: keyvalue
           name: sprintboard-redis
           property: connectionString
-      - key: DJANGO_SECRET_KEY
-        generateValue: true
-      - key: DJANGO_DEBUG
-        value: "0"
+      - fromGroup: sprintboard-shared
       - key: FRONTEND_URL
         sync: false
       - key: STRIPE_SECRET_KEY

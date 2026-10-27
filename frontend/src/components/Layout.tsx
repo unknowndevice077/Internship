@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { NavLink, Outlet, useParams } from "react-router-dom";
+
+import { api } from "../api/client";
 
 import { useProjects } from "../api/queries";
 import { useAuth, useCan } from "../auth/useAuth";
@@ -64,8 +67,36 @@ export default function Layout() {
         </div>
       </aside>
       <main className="content">
+        {me && !me.email_verified && <VerifyBanner email={me.email} />}
         <Outlet />
       </main>
+    </div>
+  );
+}
+
+function VerifyBanner({ email }: { email: string }) {
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+
+  async function resend() {
+    setState("sending");
+    try {
+      await api("/auth/verify-email/resend/", { method: "POST" });
+      setState("sent");
+    } catch {
+      setState("failed");
+    }
+  }
+
+  return (
+    <div className="notice verify-banner" role="status">
+      <span>Confirm your email address. We sent a link to {email}.</span>
+      {state === "sent" ? (
+        <span className="muted">Sent, check your inbox.</span>
+      ) : (
+        <button className="btn btn-ghost" onClick={resend} disabled={state === "sending"}>
+          {state === "failed" ? "Try again" : "Resend email"}
+        </button>
+      )}
     </div>
   );
 }

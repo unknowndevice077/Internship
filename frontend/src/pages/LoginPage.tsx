@@ -18,7 +18,10 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err instanceof ApiError && err.status === 401 ? "Wrong email or password." : "Could not sign in.");
+      if (err instanceof ApiError && err.status === 401) setError("Wrong email or password.");
+      else if (err instanceof ApiError && err.status === 429)
+        setError("Too many attempts. Wait a minute and try again.");
+      else setError("Could not sign in.");
     } finally {
       setBusy(false);
     }
@@ -37,6 +40,9 @@ export default function LoginPage() {
           Password
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
+        <Link className="small" to="/forgot-password">
+          Forgot password?
+        </Link>
         {error && <p className="form-error">{error}</p>}
         <button className="btn btn-primary" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}

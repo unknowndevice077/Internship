@@ -1192,3 +1192,8 @@ code {
   font-size: 28px;
   font-weight: 700;
 }
+
+.verify-banner {
+  margin: 12px 28px 0;
+  justify-content: space-between;
+}

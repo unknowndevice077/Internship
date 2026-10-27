@@ -14,6 +14,7 @@ export interface WorkspaceBrief {
 }
 
 export interface Me extends UserBrief {
+  email_verified: boolean;
   workspaces: WorkspaceBrief[];
 }
 

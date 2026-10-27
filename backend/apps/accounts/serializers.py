@@ -1,11 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.tenancy.models import Membership
 from apps.tenancy.serializers import create_workspace
+
+from . import tokens
 
 User = get_user_model()
 
@@ -50,6 +53,31 @@ class RegisterSerializer(serializers.Serializer):
         return user
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        user = tokens.user_from_reset(attrs["uid"], attrs["token"])
+        if user is None:
+            raise serializers.ValidationError({"token": "This reset link is invalid or has expired."})
+        try:
+            validate_password(attrs["password"], user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({"password": list(e.messages)}) from e
+        attrs["user"] = user
+        return attrs
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+
 class MembershipBriefSerializer(serializers.ModelSerializer):
     slug = serializers.CharField(source="workspace.slug")
     name = serializers.CharField(source="workspace.name")
@@ -61,11 +89,12 @@ class MembershipBriefSerializer(serializers.ModelSerializer):
 
 
 class MeSerializer(serializers.ModelSerializer):
+    email_verified = serializers.BooleanField(read_only=True)
     workspaces = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "workspaces"]
+        fields = ["id", "email", "full_name", "email_verified", "workspaces"]
         read_only_fields = ["email"]
 
     def get_workspaces(self, obj) -> list[dict]:

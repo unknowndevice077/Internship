@@ -27,7 +27,8 @@ def env_bool(name, default=False):
 
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me-in-production")
-DEBUG = env_bool("DJANGO_DEBUG", True)
+# off unless asked for, so a missing env var never ships debug pages
+DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 INSTALLED_APPS = [
@@ -105,8 +106,21 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# attachments go to S3 (or R2/MinIO) when a bucket is configured; hosts like Render
+# have an ephemeral disk
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
+AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL") or None
+AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME") or None
+AWS_DEFAULT_ACL = None
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_AUTH = True
+
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage"
+        if AWS_STORAGE_BUCKET_NAME
+        else "django.core.files.storage.FileSystemStorage"
+    },
     # manifest storage needs collectstatic, so only use it in production
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -129,7 +143,11 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", True)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", str(60 * 60 * 24 * 365)))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
+    SECURE_REFERRER_POLICY = "same-origin"
+    # subdomain HSTS and preloading only make sense on a domain we own (not *.onrender.com)
+    SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
     SECURE_CONTENT_TYPE_NOSNIFF = True
     if SECRET_KEY.startswith("dev-only"):
         raise RuntimeError("Set DJANGO_SECRET_KEY in production.")
@@ -161,6 +179,18 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 50,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("THROTTLE_ANON_RATE", "60/min"),
+        "user": os.environ.get("THROTTLE_USER_RATE", "600/min"),
+        # login, signup and password reset
+        "auth": os.environ.get("THROTTLE_AUTH_RATE", "10/min"),
+    },
+    # proxies in front of gunicorn (nginx, Render's router), so throttling sees the client IP
+    "NUM_PROXIES": int(os.environ["NUM_PROXIES"]) if os.environ.get("NUM_PROXIES") else None,
 }
 
 SIMPLE_JWT = {
@@ -176,6 +206,14 @@ SPECTACULAR_SETTINGS = {
 }
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6380/0")
+# shared cache so throttle counters hold across gunicorn workers
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "KEY_PREFIX": "sb",
+    }
+}
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", False)
@@ -191,9 +229,22 @@ CELERY_BEAT_SCHEDULE = {
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Sprintboard <no-reply@sprintboard.local>")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2
+EMAIL_VERIFY_MAX_AGE = 60 * 60 * 24 * 3
 
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 WEBHOOK_TIMEOUT_SECONDS = 5
 WEBHOOK_ALLOW_PRIVATE_URLS = env_bool("WEBHOOK_ALLOW_PRIVATE_URLS", DEBUG)
+
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+if SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")),
+        send_default_pii=False,
+    )

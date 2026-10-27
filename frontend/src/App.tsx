@@ -5,11 +5,14 @@ import Layout from "./components/Layout";
 import BacklogPage from "./pages/BacklogPage";
 import BillingPage from "./pages/BillingPage";
 import BoardPage from "./pages/BoardPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
 import ProjectSettingsPage from "./pages/ProjectSettingsPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import RegisterPage from "./pages/RegisterPage";
 import ReportsPage from "./pages/ReportsPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 import WorkspaceSettingsPage from "./pages/WorkspaceSettingsPage";
 
 export default function App() {
@@ -22,6 +25,9 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -29,6 +35,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route element={<Layout />}>
         <Route path="/" element={<ProjectsPage />} />
         <Route path="/projects/:projectId/board" element={<BoardPage />} />
