@@ -198,8 +198,7 @@ jobs:
     needs: images
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    # staging branch -> staging, main -> production. Each GitHub environment holds its
-    # own RENDER_DEPLOY_HOOK_* secrets; add required reviewers on production to gate it.
+    # staging branch -> staging, main -> production; hooks are per-environment secrets
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:
       - name: Trigger deploy

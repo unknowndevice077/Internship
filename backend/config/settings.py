@@ -27,7 +27,7 @@ def env_bool(name, default=False):
 
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me-in-production")
-# off unless asked for, so a missing env var never ships debug pages
+# default off so a missing env var can't turn on debug in prod
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
@@ -106,8 +106,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-# attachments go to S3 (or R2/MinIO) when a bucket is configured; hosts like Render
-# have an ephemeral disk
+# S3/R2 when a bucket is set; Render wipes the local disk on deploy
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
 AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL") or None
 AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME") or None
@@ -189,7 +188,7 @@ REST_FRAMEWORK = {
         # login, signup and password reset
         "auth": os.environ.get("THROTTLE_AUTH_RATE", "10/min"),
     },
-    # proxies in front of gunicorn (nginx, Render's router), so throttling sees the client IP
+    # so throttling sees the real client IP behind nginx/Render
     "NUM_PROXIES": int(os.environ["NUM_PROXIES"]) if os.environ.get("NUM_PROXIES") else None,
 }
 
