@@ -1,5 +1,6 @@
-// Seeds demo data. Products and reviews come from DummyJSON (https://dummyjson.com).
-// Usage: npm run seed            (wipes the database first)
+// Seeds demo data (wipes the database first). Products and reviews are a snapshot of
+// DummyJSON (https://dummyjson.com) in data/products.json. `npm run seed -- --fresh` pulls them live.
+import fs from 'node:fs/promises';
 import mongoose from 'mongoose';
 import config from '../src/config.js';
 import User from '../src/models/User.js';
@@ -42,16 +43,17 @@ const STORES = [
   },
 ];
 
-async function fetchProducts() {
-  try {
-    const res = await fetch('https://dummyjson.com/products?limit=0');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data.products;
-  } catch (err) {
-    console.warn(`Could not reach DummyJSON (${err.message}), using a small offline set`);
-    return OFFLINE_PRODUCTS;
+async function loadProducts() {
+  if (process.argv.includes('--fresh')) {
+    try {
+      const res = await fetch('https://dummyjson.com/products?limit=0');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()).products;
+    } catch (err) {
+      console.warn(`Could not reach DummyJSON (${err.message}), using the saved snapshot`);
+    }
   }
+  return JSON.parse(await fs.readFile(new URL('./data/products.json', import.meta.url), 'utf8'));
 }
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -106,7 +108,7 @@ async function main() {
   });
   await Vendor.create({ owner: pendingOwner._id, storeName: 'Fresh Finds', slug: 'fresh-finds' });
 
-  const raw = await fetchProducts();
+  const raw = await loadProducts();
   const vendorFor = (category) => {
     const idx = STORES.findIndex((s) => s.categories.includes(category));
     return vendors[idx === -1 ? 0 : idx];
@@ -208,54 +210,6 @@ async function main() {
     `Logins (password "${PASSWORD}"): admin@vendora.test, vendor@vendora.test, customer@vendora.test`,
   );
 }
-
-const OFFLINE_PRODUCTS = [
-  {
-    title: 'Essence Mascara Lash Princess',
-    category: 'beauty',
-    brand: 'Essence',
-    price: 9.99,
-    stock: 40,
-    thumbnail: 'https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp',
-    description: 'Popular mascara known for volumizing and lengthening effects.',
-  },
-  {
-    title: 'iPhone 13 Pro',
-    category: 'smartphones',
-    brand: 'Apple',
-    price: 1099.99,
-    stock: 12,
-    thumbnail: 'https://cdn.dummyjson.com/product-images/smartphones/iphone-13-pro/thumbnail.webp',
-    description: 'Pro camera system and Super Retina XDR display with ProMotion.',
-  },
-  {
-    title: 'Wooden Bathroom Sink With Mirror',
-    category: 'furniture',
-    brand: 'Bath Trends',
-    price: 799.99,
-    stock: 7,
-    thumbnail:
-      'https://cdn.dummyjson.com/product-images/furniture/wooden-bathroom-sink-with-mirror/thumbnail.webp',
-    description: 'Wooden bathroom sink with an attached mirror.',
-  },
-  {
-    title: 'Men Check Shirt',
-    category: 'mens-shirts',
-    brand: 'Fashion Trends',
-    price: 27.99,
-    stock: 50,
-    thumbnail: 'https://cdn.dummyjson.com/product-images/mens-shirts/men-check-shirt/thumbnail.webp',
-    description: 'Classic check shirt for a casual look.',
-  },
-  {
-    title: 'Football',
-    category: 'sports-accessories',
-    price: 14.99,
-    stock: 30,
-    thumbnail: 'https://cdn.dummyjson.com/product-images/sports-accessories/football/thumbnail.webp',
-    description: 'Standard size football for matches and practice.',
-  },
-];
 
 main()
   .catch((err) => {
