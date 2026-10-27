@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { api, downloadFile } from "../api/client";
 import { useBoard, useSprints } from "../api/queries";
 import type { Page } from "../api/types";
-import { useCan } from "../auth/AuthContext";
+import { useCan } from "../auth/useAuth";
 
 interface SprintData {
   sprint: { name: string; start_date: string; end_date: string; goal: string };
@@ -38,7 +38,6 @@ export default function ReportsPage() {
   const { data: reports } = useQuery({
     queryKey: ["reports", projectId],
     queryFn: () => api<Page<Report>>(`/reports/?project=${projectId}&kind=sprint&limit=20`),
-    // keep polling while the worker is still building one
     refetchInterval: (q) => (q.state.data?.results.some((r) => r.state === "pending") ? 2000 : false),
   });
   const generate = useMutation({
@@ -65,14 +64,20 @@ export default function ReportsPage() {
                 </option>
               ))}
             </select>
-            <button className="btn btn-primary" disabled={!sprintId || generate.isPending} onClick={() => generate.mutate()}>
+            <button
+              className="btn btn-primary"
+              disabled={!sprintId || generate.isPending}
+              onClick={() => generate.mutate()}
+            >
               Generate
             </button>
           </div>
         )}
       </header>
 
-      {!reports?.results.length && <div className="empty">Reports are created automatically when a sprint is completed.</div>}
+      {!reports?.results.length && (
+        <div className="empty">Reports are created automatically when a sprint is completed.</div>
+      )}
 
       {reports?.results.map((r) => (
         <section key={r.id} className="card settings-section">
@@ -80,7 +85,10 @@ export default function ReportsPage() {
             <h2>{sprintName(r.sprint)}</h2>
             <span className="muted small">{new Date(r.created_at).toLocaleString()}</span>
             {r.state === "ready" && (
-              <button className="btn btn-ghost small" onClick={() => downloadFile(`/api/reports/${r.id}/download/`, `sprint-report-${r.id}.csv`)}>
+              <button
+                className="btn btn-ghost small"
+                onClick={() => downloadFile(`/api/reports/${r.id}/download/`, `sprint-report-${r.id}.csv`)}
+              >
                 Download CSV
               </button>
             )}

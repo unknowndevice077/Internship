@@ -3,7 +3,7 @@ import { useRef, useState, type FormEvent } from "react";
 
 import { api, downloadFile, fieldErrors } from "../api/client";
 import type { Attachment, AuditEntry, Comment, Page, Status } from "../api/types";
-import { useAuth, useCan } from "../auth/AuthContext";
+import { useAuth, useCan } from "../auth/useAuth";
 
 const who = (u: { full_name: string; email: string } | null) => (u ? u.full_name || u.email : "Someone");
 
@@ -30,7 +30,10 @@ export function Attachments({ issueId }: { issueId: number }) {
   const isAdmin = useCan("admin");
   const input = useRef<HTMLInputElement>(null);
   const key = ["attachments", issueId];
-  const { data: files = [] } = useQuery({ queryKey: key, queryFn: () => api<Attachment[]>(`/attachments/?issue=${issueId}`) });
+  const { data: files = [] } = useQuery({
+    queryKey: key,
+    queryFn: () => api<Attachment[]>(`/attachments/?issue=${issueId}`),
+  });
 
   const upload = useMutation({
     mutationFn: (file: File) => {
@@ -119,7 +122,10 @@ function Comments({ issueId }: { issueId: number }) {
   const isAdmin = useCan("admin");
   const [body, setBody] = useState("");
   const key = ["comments", issueId];
-  const { data: comments = [] } = useQuery({ queryKey: key, queryFn: () => api<Comment[]>(`/comments/?issue=${issueId}`) });
+  const { data: comments = [] } = useQuery({
+    queryKey: key,
+    queryFn: () => api<Comment[]>(`/comments/?issue=${issueId}`),
+  });
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: key });
@@ -196,7 +202,9 @@ function describe(entry: AuditEntry, statusName: (v: unknown) => string) {
     case "updated": {
       const parts = Object.entries(entry.changes).map(([field, [from, to]]) => {
         const fmt = field === "status" ? statusName : (v: unknown) => (v === null || v === "" ? "none" : String(v));
-        return field === "description" ? "updated the description" : `changed ${field.replace("_", " ")} from ${fmt(from)} to ${fmt(to)}`;
+        return field === "description"
+          ? "updated the description"
+          : `changed ${field.replace("_", " ")} from ${fmt(from)} to ${fmt(to)}`;
       });
       return parts.join(", ");
     }

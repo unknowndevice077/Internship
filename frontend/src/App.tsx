@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import { useAuth } from "./auth/AuthContext";
+import { useAuth } from "./auth/useAuth";
 import Layout from "./components/Layout";
 import BacklogPage from "./pages/BacklogPage";
 import BillingPage from "./pages/BillingPage";

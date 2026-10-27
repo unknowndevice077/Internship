@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useParams } from "react-router-dom";
 
 import { useProjects } from "../api/queries";
-import { useAuth, useCan } from "../auth/AuthContext";
+import { useAuth, useCan } from "../auth/useAuth";
 import NotificationBell from "./NotificationBell";
 
 export default function Layout() {

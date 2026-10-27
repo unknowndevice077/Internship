@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useBoard } from "../api/queries";
 import type { Status, StatusCategory, Transition } from "../api/types";
-import { useCan } from "../auth/AuthContext";
+import { useCan } from "../auth/useAuth";
 
 const CATEGORIES: { value: StatusCategory; label: string }[] = [
   { value: "todo", label: "To do" },
@@ -30,14 +30,17 @@ export default function ProjectSettingsPage() {
 
   const refresh = () => {
     setError("");
-    qc.invalidateQueries({ queryKey: ["statuses", projectId] });
-    qc.invalidateQueries({ queryKey: ["transitions", projectId] });
-    qc.invalidateQueries({ queryKey: ["board", projectId] });
+    return Promise.all([
+      qc.invalidateQueries({ queryKey: ["statuses", projectId] }),
+      qc.invalidateQueries({ queryKey: ["transitions", projectId] }),
+      qc.invalidateQueries({ queryKey: ["board", projectId] }),
+    ]);
   };
   const onError = (err: Error) => setError(err instanceof ApiError ? err.message : "Something went wrong.");
 
   const saveStatus = useMutation({
-    mutationFn: ({ id, ...patch }: Partial<Status> & { id: number }) => api(`/statuses/${id}/`, { method: "PATCH", body: patch }),
+    mutationFn: ({ id, ...patch }: Partial<Status> & { id: number }) =>
+      api(`/statuses/${id}/`, { method: "PATCH", body: patch }),
     onSuccess: refresh,
     onError,
   });
@@ -46,16 +49,23 @@ export default function ProjectSettingsPage() {
     onSuccess: refresh,
     onError,
   });
+  type Toggle = { from: number; to: number; existing?: Transition };
+  // the clicked cell's new value, shown until the refetch confirms it
+  const [pendingCell, setPendingCell] = useState<{ from: number; to: number; checked: boolean } | null>(null);
   const toggle = useMutation({
-    mutationFn: ({ from, to }: { from: number; to: number }) => {
-      const existing = transitions.find((t) => t.from_status === from && t.to_status === to);
-      return existing
+    mutationFn: ({ from, to, existing }: Toggle) =>
+      existing
         ? api(`/transitions/${existing.id}/`, { method: "DELETE" })
-        : api("/transitions/", { method: "POST", body: { project: projectId, from_status: from, to_status: to } });
-    },
-    onSuccess: refresh,
+        : api("/transitions/", { method: "POST", body: { project: projectId, from_status: from, to_status: to } }),
+    onSettled: () => refresh().finally(() => setPendingCell(null)),
     onError,
   });
+
+  function toggleCell(from: number, to: number) {
+    const existing = transitions.find((t) => t.from_status === from && t.to_status === to);
+    setPendingCell({ from, to, checked: !existing });
+    toggle.mutate({ from, to, existing });
+  }
 
   function swap(index: number, dir: -1 | 1) {
     const a = statuses[index];
@@ -69,7 +79,10 @@ export default function ProjectSettingsPage() {
 
   if (!isAdmin) return <div className="page">Only workspace admins can change the workflow.</div>;
 
-  const has = (from: number, to: number) => transitions.some((t) => t.from_status === from && t.to_status === to);
+  const has = (from: number, to: number) =>
+    pendingCell?.from === from && pendingCell.to === to
+      ? pendingCell.checked
+      : transitions.some((t) => t.from_status === from && t.to_status === to);
 
   return (
     <div className="page">
@@ -102,7 +115,10 @@ export default function ProjectSettingsPage() {
                   />
                 </td>
                 <td>
-                  <select value={s.category} onChange={(e) => saveStatus.mutate({ id: s.id, category: e.target.value as StatusCategory })}>
+                  <select
+                    value={s.category}
+                    onChange={(e) => saveStatus.mutate({ id: s.id, category: e.target.value as StatusCategory })}
+                  >
                     {CATEGORIES.map((c) => (
                       <option key={c.value} value={c.value}>
                         {c.label}
@@ -111,7 +127,12 @@ export default function ProjectSettingsPage() {
                   </select>
                 </td>
                 <td className="actions">
-                  <button className="btn btn-ghost icon-btn" disabled={i === 0} onClick={() => swap(i, -1)} aria-label="Move up">
+                  <button
+                    className="btn btn-ghost icon-btn"
+                    disabled={i === 0}
+                    onClick={() => swap(i, -1)}
+                    aria-label="Move up"
+                  >
                     <Chevron up />
                   </button>
                   <button
@@ -162,8 +183,8 @@ export default function ProjectSettingsPage() {
                         <input
                           type="checkbox"
                           checked={has(from.id, to.id)}
-                          disabled={toggle.isPending}
-                          onChange={() => toggle.mutate({ from: from.id, to: to.id })}
+                          disabled={pendingCell !== null}
+                          onChange={() => toggleCell(from.id, to.id)}
                           aria-label={`${from.name} to ${to.name}`}
                         />
                       )}
@@ -183,7 +204,8 @@ function NewStatus({ projectId, nextOrder, onDone }: { projectId: number; nextOr
   const [name, setName] = useState("");
   const [category, setCategory] = useState<StatusCategory>("in_progress");
   const create = useMutation({
-    mutationFn: () => api("/statuses/", { method: "POST", body: { project: projectId, name, category, order: nextOrder } }),
+    mutationFn: () =>
+      api("/statuses/", { method: "POST", body: { project: projectId, name, category, order: nextOrder } }),
     onSuccess: () => {
       setName("");
       onDone();

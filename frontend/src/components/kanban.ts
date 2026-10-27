@@ -1,4 +1,11 @@
-import type { BoardColumn, BoardIssue } from "../api/types";
+import type { BoardColumn, BoardIssue, IssueType } from "../api/types";
+
+export const TYPE_ICON: Record<IssueType, string> = {
+  task: "✓",
+  bug: "●",
+  story: "■",
+  epic: "⚡",
+};
 
 export type ColumnMap = Record<number, BoardIssue[]>;
 
@@ -25,7 +32,7 @@ export function moveCard(map: ColumnMap, issueId: number, toColumn: number, toIn
   return next;
 }
 
-// what the API's move endpoint expects: the card right above (before) and right below (after)
+// neighbours for POST /issues/{id}/move/
 export function neighbours(map: ColumnMap, issueId: number) {
   const column = findColumn(map, issueId);
   if (column === undefined) return null;
@@ -38,7 +45,7 @@ export function neighbours(map: ColumnMap, issueId: number) {
   };
 }
 
-// open workflow when no transitions are configured
+// no transitions = open workflow
 export function allowedTargets(transitions: [number, number][], from: number) {
   if (transitions.length === 0) return () => true;
   const targets = new Set(transitions.filter(([f]) => f === from).map(([, t]) => t));

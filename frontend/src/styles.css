@@ -12,7 +12,12 @@
   --warning: #d97706;
   --radius: 8px;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
-  font-family: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    Inter,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 14px;
   color: var(--text);
   background: var(--bg);

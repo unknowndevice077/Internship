@@ -2,13 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import type { BoardIssue } from "../api/types";
-
-export const TYPE_ICON: Record<BoardIssue["type"], string> = {
-  task: "✓",
-  bug: "●",
-  story: "■",
-  epic: "⚡",
-};
+import { TYPE_ICON } from "./kanban";
 
 export function IssueCardBody({ issue }: { issue: BoardIssue }) {
   return (
@@ -31,8 +25,19 @@ export function IssueCardBody({ issue }: { issue: BoardIssue }) {
   );
 }
 
-export default function IssueCard({ issue, onOpen, disabled }: { issue: BoardIssue; onOpen(id: number): void; disabled?: boolean }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: issue.id, disabled });
+export default function IssueCard({
+  issue,
+  onOpen,
+  disabled,
+}: {
+  issue: BoardIssue;
+  onOpen(id: number): void;
+  disabled?: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: issue.id,
+    disabled,
+  });
 
   return (
     <div
@@ -41,6 +46,8 @@ export default function IssueCard({ issue, onOpen, disabled }: { issue: BoardIss
       style={{ transform: CSS.Transform.toString(transform), transition }}
       onClick={() => onOpen(issue.id)}
       {...attributes}
+      // dragging can be off for viewers, but the card still opens the issue
+      aria-disabled={false}
       {...listeners}
     >
       <IssueCardBody issue={issue} />

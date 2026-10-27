@@ -5,10 +5,10 @@ import { useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useBoard, useInvalidateProjectData, useIssues, useSprints, useUpdateIssue } from "../api/queries";
 import type { Issue, Sprint } from "../api/types";
-import { useCan } from "../auth/AuthContext";
+import { useCan } from "../auth/useAuth";
 import CreateIssueModal from "../components/CreateIssueModal";
-import { TYPE_ICON } from "../components/IssueCard";
 import IssueDrawer from "../components/IssueDrawer";
+import { TYPE_ICON } from "../components/kanban";
 
 export default function BacklogPage() {
   const projectId = Number(useParams().projectId);
@@ -26,7 +26,9 @@ export default function BacklogPage() {
     onSuccess: invalidate,
   });
 
-  const open = sprints.filter((s) => s.state !== "closed").sort((a, b) => (a.state === "active" ? -1 : b.state === "active" ? 1 : a.id - b.id));
+  const open = sprints
+    .filter((s) => s.state !== "closed")
+    .sort((a, b) => (a.state === "active" ? -1 : b.state === "active" ? 1 : a.id - b.id));
   const statusName = Object.fromEntries((board?.columns ?? []).map((c) => [c.id, c.name]));
   const doneIds = new Set((board?.columns ?? []).filter((c) => c.category === "done").map((c) => c.id));
   const hasActive = sprints.some((s) => s.state === "active");
@@ -69,9 +71,16 @@ export default function BacklogPage() {
       />
 
       {sprintAction.error && <div className="toast">{sprintAction.error.message}</div>}
-      {createIn !== undefined && <CreateIssueModal projectId={projectId} sprintId={createIn} onClose={() => setCreateIn(undefined)} />}
+      {createIn !== undefined && (
+        <CreateIssueModal projectId={projectId} sprintId={createIn} onClose={() => setCreateIn(undefined)} />
+      )}
       {openIssue !== null && board && (
-        <IssueDrawer issueId={openIssue} statuses={board.columns} transitions={board.transitions} onClose={() => setOpenIssue(null)} />
+        <IssueDrawer
+          issueId={openIssue}
+          statuses={board.columns}
+          transitions={board.transitions}
+          onClose={() => setOpenIssue(null)}
+        />
       )}
     </div>
   );
@@ -91,7 +100,19 @@ interface SectionProps {
   onAction?(action: "start" | "complete"): void;
 }
 
-function SprintSection({ sprint, title, issues, statusName, doneIds, canEdit, canStart, sprints, onOpen, onCreate, onAction }: SectionProps) {
+function SprintSection({
+  sprint,
+  title,
+  issues,
+  statusName,
+  doneIds,
+  canEdit,
+  canStart,
+  sprints,
+  onOpen,
+  onCreate,
+  onAction,
+}: SectionProps) {
   const update = useUpdateIssue();
   const points = issues.reduce((sum, i) => sum + (i.story_points ?? 0), 0);
   const done = issues.filter((i) => doneIds.has(i.status)).length;
@@ -108,8 +129,10 @@ function SprintSection({ sprint, title, issues, statusName, doneIds, canEdit, ca
           </span>
           {sprint?.goal && <div className="muted small">{sprint.goal}</div>}
         </div>
-        {canEdit && sprint && onAction && (
-          sprint.state === "active" ? (
+        {canEdit &&
+          sprint &&
+          onAction &&
+          (sprint.state === "active" ? (
             <button className="btn" onClick={() => onAction("complete")}>
               Complete sprint
             </button>
@@ -117,8 +140,7 @@ function SprintSection({ sprint, title, issues, statusName, doneIds, canEdit, ca
             <button className="btn" disabled={!canStart || issues.length === 0} onClick={() => onAction("start")}>
               Start sprint
             </button>
-          )
-        )}
+          ))}
       </header>
       <ul className="issue-list">
         {issues.map((issue) => (
@@ -132,7 +154,9 @@ function SprintSection({ sprint, title, issues, statusName, doneIds, canEdit, ca
                 className="sprint-picker"
                 value={issue.sprint ?? ""}
                 onClick={(e) => e.stopPropagation()}
-                onChange={(e) => update.mutate({ id: issue.id, sprint: e.target.value ? Number(e.target.value) : null })}
+                onChange={(e) =>
+                  update.mutate({ id: issue.id, sprint: e.target.value ? Number(e.target.value) : null })
+                }
               >
                 <option value="">Backlog</option>
                 {sprints.map((s) => (

@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { api, ApiError, fieldErrors } from "../api/client";
 import { keys, useProjects } from "../api/queries";
 import type { Project } from "../api/types";
-import { useAuth, useCan } from "../auth/AuthContext";
+import { useAuth, useCan } from "../auth/useAuth";
 
 export default function ProjectsPage() {
   const { workspace } = useAuth();
@@ -79,7 +79,13 @@ function NewProjectForm({ onDone }: { onDone(): void }) {
           value={name}
           onChange={(e) => {
             setName(e.target.value);
-            if (!key) setKey(e.target.value.replace(/[^a-z]/gi, "").slice(0, 4).toUpperCase());
+            if (!key)
+              setKey(
+                e.target.value
+                  .replace(/[^a-z]/gi, "")
+                  .slice(0, 4)
+                  .toUpperCase(),
+              );
           }}
           required
           autoFocus

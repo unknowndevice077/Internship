@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client";
-import { useAuth, useCan } from "../auth/AuthContext";
+import { useAuth, useCan } from "../auth/useAuth";
 
 interface Plan {
   code: string;
@@ -37,13 +37,12 @@ export default function BillingPage() {
     queryKey: ["billing"],
     queryFn: () => api<Billing>("/billing/"),
     enabled: isAdmin,
-    // right after Checkout the webhook may land a second later, so poll briefly
+    // the Stripe webhook can land a moment after the redirect
     refetchInterval: (q) => (checkout === "success" && q.state.data?.plan.code === "free" ? 2000 : false),
   });
 
   const upgraded = checkout === "success" && data !== undefined && data.plan.code !== "free";
   useEffect(() => {
-    // the plan shown in the sidebar comes from /auth/me, refresh it once the upgrade lands
     if (upgraded) void refreshMe();
   }, [upgraded, refreshMe]);
 
@@ -79,7 +78,9 @@ export default function BillingPage() {
       )}
       {checkout === "cancelled" && <div className="notice">Checkout cancelled. You haven't been charged.</div>}
       {!data.stripe_enabled && (
-        <div className="notice">Stripe isn't configured on this server, so upgrades are disabled. See the README for setup.</div>
+        <div className="notice">
+          Stripe isn't configured on this server, so upgrades are disabled. See the README for setup.
+        </div>
       )}
       {error && <p className="form-error">{error}</p>}
 
@@ -139,7 +140,17 @@ export default function BillingPage() {
   );
 }
 
-function Meter({ label, used, limit, unit = "" }: { label: string; used: number; limit: number | null; unit?: string }) {
+function Meter({
+  label,
+  used,
+  limit,
+  unit = "",
+}: {
+  label: string;
+  used: number;
+  limit: number | null;
+  unit?: string;
+}) {
   const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
   return (
     <div className="meter">

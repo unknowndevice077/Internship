@@ -1,21 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 import { api, session } from "../api/client";
-import type { Me, WorkspaceBrief } from "../api/types";
-
-interface AuthState {
-  me: Me | undefined;
-  loading: boolean;
-  workspace: WorkspaceBrief | undefined;
-  login(email: string, password: string): Promise<void>;
-  register(data: { email: string; password: string; full_name?: string; workspace_name?: string }): Promise<void>;
-  logout(): void;
-  switchWorkspace(slug: string): void;
-  refreshMe(): Promise<unknown>;
-}
-
-const AuthContext = createContext<AuthState | null>(null);
+import type { Me } from "../api/types";
+import { AuthContext, type AuthState } from "./context";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -37,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (next: string) => {
       session.setWorkspace(next);
       setSlug(next);
-      // everything except "me" is tenant data, so drop it when switching
+      // drop cached tenant data
       queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
     },
     [queryClient],
@@ -96,17 +84,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-  return ctx;
-}
-
-const RANK = { viewer: 0, member: 1, admin: 2, owner: 3 } as const;
-
-export function useCan(minimum: keyof typeof RANK) {
-  const { workspace } = useAuth();
-  return workspace ? RANK[workspace.role] >= RANK[minimum] : false;
 }

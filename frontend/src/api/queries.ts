@@ -34,7 +34,10 @@ export function useIssue(id: number | null) {
 
 export function useIssues(params: Record<string, string>) {
   const qs = new URLSearchParams({ limit: "500", ...params }).toString();
-  return useQuery({ queryKey: keys.issues(qs), queryFn: () => api<Page<Issue>>(`/issues/?${qs}`).then((p) => p.results) });
+  return useQuery({
+    queryKey: keys.issues(qs),
+    queryFn: () => api<Page<Issue>>(`/issues/?${qs}`).then((p) => p.results),
+  });
 }
 
 export function useSprints(projectId: number) {
@@ -57,6 +60,7 @@ export function useInvalidateProjectData() {
       qc.invalidateQueries({ queryKey: ["issues"] }),
       qc.invalidateQueries({ queryKey: ["issue"] }),
       qc.invalidateQueries({ queryKey: ["sprints"] }),
+      qc.invalidateQueries({ queryKey: ["history"] }),
       qc.invalidateQueries({ queryKey: keys.projects }),
     ]);
 }

@@ -54,7 +54,13 @@ describe("allowedTargets", () => {
   });
 
   it("only allows configured moves", () => {
-    const allowed = allowedTargets([[1, 2], [2, 3]], 1);
+    const allowed = allowedTargets(
+      [
+        [1, 2],
+        [2, 3],
+      ],
+      1,
+    );
     expect(allowed(2)).toBe(true);
     expect(allowed(3)).toBe(false);
     expect(allowed(1)).toBe(true);

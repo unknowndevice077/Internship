@@ -15,7 +15,7 @@ function write(key: string, value: string | null) {
     if (value === null) localStorage.removeItem(key);
     else localStorage.setItem(key, value);
   } catch {
-    // storage can be blocked (private mode); the session just won't survive a reload
+    // storage may be blocked in private mode
   }
 }
 
@@ -43,8 +43,15 @@ export const session = {
 };
 
 export class ApiError extends Error {
-  constructor(public status: number, public data: unknown) {
-    super(typeof data === "object" && data && "detail" in data ? String((data as { detail: unknown }).detail) : `HTTP ${status}`);
+  constructor(
+    public status: number,
+    public data: unknown,
+  ) {
+    super(
+      typeof data === "object" && data && "detail" in data
+        ? String((data as { detail: unknown }).detail)
+        : `HTTP ${status}`,
+    );
   }
 
   get isPlanLimit() {
@@ -63,7 +70,7 @@ let refreshing: Promise<boolean> | null = null;
 async function refreshAccess(): Promise<boolean> {
   const refresh = session.refresh;
   if (!refresh) return false;
-  // several requests can 401 at once; share one refresh call between them
+  // share one in-flight refresh between concurrent 401s
   refreshing ??= fetch("/api/auth/token/refresh/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -81,7 +88,11 @@ async function refreshAccess(): Promise<boolean> {
   return refreshing;
 }
 
-export async function api<T = unknown>(path: string, { method = "GET", body, auth = true }: Options = {}, retry = true): Promise<T> {
+export async function api<T = unknown>(
+  path: string,
+  { method = "GET", body, auth = true }: Options = {},
+  retry = true,
+): Promise<T> {
   const headers: Record<string, string> = {};
   const isForm = body instanceof FormData;
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
@@ -107,12 +118,15 @@ export async function api<T = unknown>(path: string, { method = "GET", body, aut
 export function fieldErrors(error: unknown): Record<string, string> {
   if (!(error instanceof ApiError) || typeof error.data !== "object" || !error.data) return {};
   return Object.fromEntries(
-    Object.entries(error.data as Record<string, unknown>).map(([k, v]) => [k, Array.isArray(v) ? v.join(" ") : String(v)]),
+    Object.entries(error.data as Record<string, unknown>).map(([k, v]) => [
+      k,
+      Array.isArray(v) ? v.join(" ") : String(v),
+    ]),
   );
 }
 
 export async function downloadFile(path: string, filename: string) {
-  // attachments need the auth + workspace headers, so a plain <a href> won't work
+  // needs auth headers, so a plain link won't work
   const doFetch = () =>
     fetch(path, {
       headers: {

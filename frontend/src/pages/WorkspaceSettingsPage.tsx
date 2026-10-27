@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { api, ApiError, fieldErrors } from "../api/client";
 import { keys, useMembers } from "../api/queries";
 import type { Role } from "../api/types";
-import { useAuth, useCan } from "../auth/AuthContext";
+import { useAuth, useCan } from "../auth/useAuth";
 
 export default function WorkspaceSettingsPage() {
   const { workspace } = useAuth();
@@ -45,7 +45,8 @@ function Members() {
     },
   });
   const update = useMutation({
-    mutationFn: ({ id, role }: { id: number; role: Role }) => api(`/members/${id}/`, { method: "PATCH", body: { role } }),
+    mutationFn: ({ id, role }: { id: number; role: Role }) =>
+      api(`/members/${id}/`, { method: "PATCH", body: { role } }),
     onSuccess: refresh,
     onError: (e: Error) => setError(e.message),
   });
@@ -106,7 +107,13 @@ function Members() {
       </table>
       {isAdmin && (
         <form className="inline-form compact" onSubmit={submit}>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="teammate@company.com" required />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="teammate@company.com"
+            required
+          />
           <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
             <option value="admin">Admin</option>
             <option value="member">Member</option>
@@ -151,7 +158,10 @@ interface Delivery {
 function Webhooks() {
   const qc = useQueryClient();
   const { data: hooks = [] } = useQuery({ queryKey: ["webhooks"], queryFn: () => api<Webhook[]>("/webhooks/") });
-  const { data: events = [] } = useQuery({ queryKey: ["webhook-events"], queryFn: () => api<string[]>("/webhooks/events/") });
+  const { data: events = [] } = useQuery({
+    queryKey: ["webhook-events"],
+    queryFn: () => api<string[]>("/webhooks/events/"),
+  });
   const [url, setUrl] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
   const [newSecret, setNewSecret] = useState("");
@@ -171,7 +181,10 @@ function Webhooks() {
     mutationFn: (h: Webhook) => api(`/webhooks/${h.id}/`, { method: "PATCH", body: { is_active: !h.is_active } }),
     onSuccess: refresh,
   });
-  const remove = useMutation({ mutationFn: (id: number) => api(`/webhooks/${id}/`, { method: "DELETE" }), onSuccess: refresh });
+  const remove = useMutation({
+    mutationFn: (id: number) => api(`/webhooks/${id}/`, { method: "DELETE" }),
+    onSuccess: refresh,
+  });
   const ping = useMutation({
     mutationFn: (id: number) => api(`/webhooks/${id}/ping/`, { method: "POST" }),
     onSuccess: (_, id) => setTimeout(() => qc.invalidateQueries({ queryKey: ["deliveries", id] }), 1500),
@@ -186,8 +199,9 @@ function Webhooks() {
     <section className="card settings-section">
       <h2>Webhooks</h2>
       <p className="muted small">
-        We POST a JSON payload for each event, signed with <code>X-Sprintboard-Signature: sha256=HMAC(secret, body)</code>. Failed
-        deliveries are retried up to 5 times with backoff.
+        We POST a JSON payload for each event, signed with{" "}
+        <code>X-Sprintboard-Signature: sha256=HMAC(secret, body)</code>. Failed deliveries are retried up to 5 times
+        with backoff.
       </p>
 
       {newSecret && (
@@ -224,7 +238,13 @@ function Webhooks() {
       ))}
 
       <form className="webhook-form" onSubmit={submit}>
-        <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/hooks/sprintboard" required />
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://example.com/hooks/sprintboard"
+          required
+        />
         <div className="event-picker">
           {events.map((ev) => (
             <label key={ev} className="checkbox">
@@ -275,7 +295,9 @@ function Deliveries({ hookId }: { hookId: number }) {
             </td>
             <td>{d.event}</td>
             <td className="muted small">{d.response_code ?? d.last_error ?? "–"}</td>
-            <td className="muted small">{d.attempts} attempt{d.attempts === 1 ? "" : "s"}</td>
+            <td className="muted small">
+              {d.attempts} attempt{d.attempts === 1 ? "" : "s"}
+            </td>
             <td className="muted small">{d.duration_ms != null ? `${d.duration_ms} ms` : ""}</td>
             <td className="muted small">{new Date(d.created_at).toLocaleString()}</td>
             <td className="actions">

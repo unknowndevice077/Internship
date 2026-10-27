@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { useBoard } from "../api/queries";
-import { useCan } from "../auth/AuthContext";
+import { useCan } from "../auth/useAuth";
 import CreateIssueModal from "../components/CreateIssueModal";
 import IssueDrawer from "../components/IssueDrawer";
 import KanbanBoard from "../components/KanbanBoard";
@@ -47,7 +47,12 @@ export default function BoardPage() {
       {toast && <div className="toast">{toast}</div>}
       {creating && <CreateIssueModal projectId={projectId} onClose={() => setCreating(false)} />}
       {openIssue !== null && (
-        <IssueDrawer issueId={openIssue} statuses={board.columns} transitions={board.transitions} onClose={() => setOpenIssue(null)} />
+        <IssueDrawer
+          issueId={openIssue}
+          statuses={board.columns}
+          transitions={board.transitions}
+          onClose={() => setOpenIssue(null)}
+        />
       )}
     </div>
   );

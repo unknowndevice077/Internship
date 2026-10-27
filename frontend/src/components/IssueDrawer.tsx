@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { fieldErrors } from "../api/client";
 import { useIssue, useMembers, useSprints, useUpdateIssue } from "../api/queries";
 import type { Issue, Status } from "../api/types";
-import { useCan } from "../auth/AuthContext";
+import { useCan } from "../auth/useAuth";
 import { Attachments, CommentsAndHistory } from "./IssueActivity";
 import { allowedTargets } from "./kanban";
 
@@ -84,7 +84,11 @@ export default function IssueDrawer({ issueId, statuses, transitions = [], onClo
         </label>
         <label>
           Type
-          <select value={issue.type} disabled={!canEdit} onChange={(e) => save({ type: e.target.value as Issue["type"] })}>
+          <select
+            value={issue.type}
+            disabled={!canEdit}
+            onChange={(e) => save({ type: e.target.value as Issue["type"] })}
+          >
             {["task", "bug", "story", "epic"].map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -128,7 +132,9 @@ export default function IssueDrawer({ issueId, statuses, transitions = [], onClo
             min={0}
             value={value("story_points") ?? ""}
             disabled={!canEdit}
-            onChange={(e) => setDraft({ ...draft, story_points: e.target.value === "" ? null : Number(e.target.value) })}
+            onChange={(e) =>
+              setDraft({ ...draft, story_points: e.target.value === "" ? null : Number(e.target.value) })
+            }
             onBlur={() => "story_points" in draft && save({ story_points: draft.story_points })}
           />
         </label>

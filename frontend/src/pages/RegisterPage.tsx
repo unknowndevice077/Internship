@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { fieldErrors } from "../api/client";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -47,7 +47,11 @@ export default function RegisterPage() {
         </label>
         <label>
           Company / workspace name
-          <input value={form.workspace_name} onChange={set("workspace_name")} placeholder="Leave empty if you were invited" />
+          <input
+            value={form.workspace_name}
+            onChange={set("workspace_name")}
+            placeholder="Leave empty if you were invited"
+          />
           {errors.workspace_name && <span className="field-error">{errors.workspace_name}</span>}
         </label>
         <button className="btn btn-primary" disabled={busy}>

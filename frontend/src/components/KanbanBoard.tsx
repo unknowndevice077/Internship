@@ -41,7 +41,7 @@ export default function KanbanBoard({ projectId, columns, transitions, canEdit, 
   }, [columns, active]);
 
   const sensors = useSensors(
-    // small distance so a plain click still opens the issue
+    // keep plain clicks working
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
@@ -60,10 +60,10 @@ export default function KanbanBoard({ projectId, columns, transitions, canEdit, 
     const id = Number(active.id);
     const col = findColumn(map, id);
     setStartColumn(col ?? null);
-    setActive(col !== undefined ? map[col].find((i) => i.id === id) ?? null : null);
+    setActive(col !== undefined ? (map[col].find((i) => i.id === id) ?? null) : null);
   }
 
-  // crossing into another column: move the card there right away so the list makes room for it
+  // move across columns while dragging so the target list makes room
   function handleDragOver({ active, over }: DragOverEvent) {
     if (!over) return;
     const from = findColumn(map, active.id);
@@ -83,6 +83,11 @@ export default function KanbanBoard({ projectId, columns, transitions, canEdit, 
     }
     const col = findColumn(map, id)!;
     const overCol = findColumn(map, over.id);
+    // dropped on a column the workflow doesn't allow: put the card back
+    if (overCol === undefined || (startColumn !== null && !allowedTargets(transitions, startColumn)(overCol))) {
+      setMap(toColumnMap(columns));
+      return;
+    }
     let next = map;
     if (overCol === col && over.id !== active.id) {
       const overIndex = map[col].findIndex((i) => i.id === over.id);
@@ -124,7 +129,13 @@ export default function KanbanBoard({ projectId, columns, transitions, canEdit, 
           />
         ))}
       </div>
-      <DragOverlay>{active && <div className="issue-card overlay"><IssueCardBody issue={active} /></div>}</DragOverlay>
+      <DragOverlay>
+        {active && (
+          <div className="issue-card overlay">
+            <IssueCardBody issue={active} />
+          </div>
+        )}
+      </DragOverlay>
     </DndContext>
   );
 }
@@ -138,9 +149,12 @@ interface ColumnProps {
 }
 
 function Column({ column, issues, canEdit, blocked, onOpen }: ColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: columnId(column.id), disabled: blocked });
+  // blocked columns stay droppable so a drop there is detected and rejected
+  const { setNodeRef, isOver } = useDroppable({ id: columnId(column.id) });
   return (
-    <section className={`column column-${column.category} ${isOver ? "over" : ""} ${blocked ? "blocked" : ""}`}>
+    <section
+      className={`column column-${column.category} ${isOver && !blocked ? "over" : ""} ${blocked ? "blocked" : ""}`}
+    >
       <header className="column-header">
         <span>{column.name}</span>
         <span className="count">{issues.length}</span>

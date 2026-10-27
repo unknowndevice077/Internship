@@ -73,7 +73,11 @@ export default function CreateIssueModal({ projectId, sprintId = null, onClose }
         </div>
         <label>
           Description
-          <textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <textarea
+            rows={4}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
         </label>
         {errors.detail && <p className="form-error">{errors.detail}</p>}
         <div className="form-actions">
