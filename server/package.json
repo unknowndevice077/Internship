@@ -8,13 +8,14 @@
     "seed": "node scripts/seed.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "dev:memory": "node scripts/dev-memory.js"
+    "dev:memory": "node scripts/dev-memory.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
-  "license": "ISC",
-  "description": "",
+  "description": "Vendora marketplace API",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1157.0",
-    "@aws-sdk/s3-request-presigner": "^3.1157.0",
     "@elastic/elasticsearch": "^8.19.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -32,10 +33,15 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@vitest/coverage-v8": "^5.0.5",
     "autocannon": "^8.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
     "ioredis-mock": "^8.13.1",
     "mongodb-memory-server": "^11.3.0",
+    "prettier": "^3.9.10",
     "supertest": "^7.3.1",
     "vitest": "^5.0.5"
   },
