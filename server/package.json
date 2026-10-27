@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "seed": "node scripts/seed.js",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "dev:memory": "node scripts/dev-memory.js"
   },
   "license": "ISC",
   "description": "",
@@ -31,6 +32,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.5",
+    "autocannon": "^8.0.0",
     "ioredis-mock": "^8.13.1",
     "mongodb-memory-server": "^11.3.0",
     "supertest": "^7.3.1",
