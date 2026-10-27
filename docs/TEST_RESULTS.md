@@ -1,6 +1,6 @@
 # Test results
 
-Run on 21 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
+Last run 27 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
 
 ## Backend: 89 passed, 92% coverage
 
@@ -45,7 +45,7 @@ Lint: `ruff check` and `ruff format --check` pass. `makemigrations --check` repo
 
 ```
 $ npm test
- ✓ src/components/kanban.test.ts (6 tests)
+ PASS src/components/kanban.test.ts (6 tests)
  Test Files  1 passed (1)
       Tests  6 passed (6)
 ```
@@ -54,20 +54,23 @@ Covers finding a card's column, moving across columns and into an empty column, 
 API, and the workflow rule check used to block columns. `npm run typecheck` (strict TypeScript) and
 `npm run build` both pass. The production bundle is 308 kB (97 kB gzipped).
 
-## Manual end-to-end checks
+## End-to-end: 30 passed (Playwright, Chromium)
 
-Done in the browser against the dev stack with a real Celery worker:
+`npm run e2e` starts the API and Vite, migrates and seeds the database, then drives the real UI. The suite passed
+three full runs in a row (90/90) before being added to CI.
 
-- drag a card to another column and reorder within a column, then reload to confirm both are saved
-- with a custom workflow, dragging from To Do greys out the disallowed columns, and the API rejects a forced PATCH
-- comment, upload an attachment and see both in the issue history
-- a second user assigns an issue and @mentions the owner, and the bell shows 2 unread
-- a webhook to a local receiver gets `issue.created`, `comment.commented` and `ping` with valid signatures
-- complete a sprint, and the worker builds the report (21 points committed, 1 done, 4.8%)
-- the 4th project on the Free plan is refused with an upgrade link
+| Spec | Tests | Flows covered |
+|---|---:|---|
+| `auth.spec.ts` | 5 | register, duplicate email, weak password, missing workspace name, wrong password, sign out, session after reload, page links |
+| `board.spec.ts` | 6 | create project, key validation, auto key, Free plan project limit and billing link, default columns, issue keys, create/cancel modal, drag between and within columns with reload, every drawer field, close by Escape/backdrop/button, history |
+| `activity.spec.ts` | 3 | add/delete comments, history entries, upload/download/remove attachment, size limit |
+| `workflow.spec.ts` | 3 | add/rename/recategorise/reorder/delete statuses, delete blocked while issues exist, transition rules on drag and in the status picker |
+| `sprints.spec.ts` | 3 | new sprint, plan issues, start, one active sprint rule, complete, unfinished work back to backlog, report numbers, CSV download, on-demand report, create issue inside a sprint |
+| `members.spec.ts` | 5 | invite, claim invited account, viewer read-only UI, promote and remove, admin limits on owner role, workspace switching and isolation, member limit, duplicate invite |
+| `integrations.spec.ts` | 5 | webhooks need a paid plan, add/ping/deliver/disable/delete endpoint, HMAC signature check, event filter, bell notifications for assignment and mention, mark read, billing page states |
 
-Full Docker stack (`docker compose --profile full up`): health check green, register, create a project and an issue
-through nginx, and the worker processes the jobs.
+Also checked by hand: the full Docker stack (`docker compose --profile full up`) with health check, register, create
+project and issue through nginx, and jobs processed by the containerised worker.
 
 ## Bugs found by testing
 
@@ -79,8 +82,14 @@ through nginx, and the worker processes the jobs.
 | Webhook retries raised `Retry` in eager mode | retry test | attempts tracked on the row, next attempt scheduled with `apply_async` |
 | Stripe SDK objects are no longer dicts (`.get` fails) | billing webhook tests | normalise with `to_dict()` |
 | A sprint request with `project=0` fired before the issue had loaded | browser network log | query only enabled once the id is known |
+| Issue history showed stale entries after editing in the drawer | e2e `board.spec.ts` | history query invalidated on issue updates |
+| Viewers' cards were announced as disabled (`aria-disabled`) although clicking opens the issue | e2e `members.spec.ts` | `aria-disabled={false}` on the card |
+| Dropping a card on a column the workflow blocks moved it into a column passed on the way | e2e `workflow.spec.ts` | blocked columns stay droppable and the drop is rejected |
+| Workflow checkboxes flickered back before the request finished and could send the wrong request | e2e `workflow.spec.ts` (flaky run) | action decided at click time, local pending state until refetch |
+| Workspace switcher order depended on join order | e2e `members.spec.ts` | workspaces sorted by name |
 
 ## CI
 
-`.github/workflows/ci.yml` runs the same backend tests against Postgres and Redis service containers, plus lint, the
-migrations check, the frontend checks and the Docker image builds. It runs on the first push to GitHub.
+`.github/workflows/ci.yml` runs all three suites on every push and pull request: backend (ruff, migrations check,
+pytest on Postgres and Redis), frontend (ESLint, Prettier, TypeScript, unit tests, build) and e2e (Playwright), then
+builds the Docker images. Each job was replayed locally from a clean install before pushing.

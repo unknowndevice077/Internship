@@ -157,14 +157,14 @@ checked in the API and return `402` with `code: plan_limit`.
 ## Roles
 
 | Action | viewer | member | admin | owner |
-|---|:-:|:-:|:-:|:-:|
-| Read projects, issues, boards | ✓ | ✓ | ✓ | ✓ |
-| Create/edit issues, comment, upload | | ✓ | ✓ | ✓ |
-| Delete issues | | | ✓ | ✓ |
-| Projects, statuses, workflows | | | ✓ | ✓ |
-| Invite members, change roles | | | ✓ | ✓ |
-| Webhooks, workspace audit log | | | ✓ | ✓ |
-| Grant or remove owner, billing changes | | | | ✓ |
+|---|---|---|---|---|
+| Read projects, issues, boards | yes | yes | yes | yes |
+| Create/edit issues, comment, upload | | yes | yes | yes |
+| Delete issues | | | yes | yes |
+| Projects, statuses, workflows | | | yes | yes |
+| Invite members, change roles | | | yes | yes |
+| Webhooks, workspace audit log | | | yes | yes |
+| Grant or remove owner, billing changes | | | | yes |
 
 ## Deployment
 

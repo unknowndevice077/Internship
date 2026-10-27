@@ -1,135 +1,151 @@
 # Sprintboard
 
-Multi-tenant project management platform, similar to Jira. Each company gets its own workspace with projects,
-Kanban boards, sprints, custom workflows and Stripe billing.
+Multi-tenant project management app (Jira-style). Each company has its own workspace with projects, Kanban boards,
+sprints, custom workflows and subscription billing.
 
-Built for the Nexvia Technologies full-stack internship (FS-04), Oct–Nov 2026.
+Nexvia Technologies full-stack internship project (FS-04), Oct-Nov 2026.
 
 ![Board](docs/screenshots/03-board.png)
 
 ## Features
 
-- **Workspaces (tenants)**: shared schema with a `workspace_id` on every tenant table, resolved per request from the
-  `X-Workspace` header and checked against the caller's membership
-- **Roles**: owner, admin, member, viewer per workspace, enforced per endpoint and action
-- **Kanban board**: drag-and-drop between columns and within a column (dnd-kit), float ranks so a move is one update
-- **Backlog and sprints**: plan, start, complete; unfinished work moves to the backlog or the next sprint
-- **Custom workflows**: per-project statuses and allowed transitions, enforced by the API and shown on the board
-- **Comments, @mentions, attachments**: attachments are downloaded through the API, so tenant checks apply
-- **Audit log**: field-level diffs for every change, issue history tab, admin-only workspace log
-- **Background jobs (Celery + Redis)**: HMAC-signed outbound webhooks with retries, in-app and email notifications,
-  sprint reports with CSV export, weekly summary emails (celery beat)
-- **Stripe Billing (test mode)**: Free / Pro / Business plans, Checkout, customer portal, signed webhooks, plan limits
-- **Ops**: Docker images, docker compose stack, GitHub Actions CI/CD, health check, OpenAPI docs
+- Workspaces with owner, admin, member and viewer roles
+- Kanban board with drag and drop, backlog and sprint planning
+- Custom workflows per project (statuses and allowed transitions)
+- Comments with @mentions, file attachments, audit log with field-level history
+- Outbound webhooks (HMAC-signed, retried with backoff), in-app and email notifications
+- Sprint reports with CSV export and a weekly summary email
+- Stripe Billing in test mode: Free, Pro and Business plans with enforced limits
+- OpenAPI docs at `/api/docs/`
 
 ## Stack
 
-| Layer | Tech |
-|---|---|
-| API | Django 5.2, Django REST Framework, SimpleJWT, drf-spectacular |
-| Database | PostgreSQL 16 |
-| Jobs | Celery 5, Redis 7, celery beat |
-| Billing | Stripe Billing (test mode) |
-| Frontend | React 18, TypeScript, Vite, TanStack Query, dnd-kit |
-| Infra | Docker, nginx, gunicorn, GitHub Actions, Render blueprint |
+- Backend: Django 5.2, Django REST Framework, SimpleJWT, PostgreSQL 16
+- Background jobs: Celery 5 with Redis 7, celery beat for scheduled tasks
+- Frontend: React 18, TypeScript, Vite, TanStack Query, dnd-kit
+- Billing: Stripe (test mode)
+- Infra: Docker, nginx, gunicorn, GitHub Actions
 
-## Quick start (Docker)
+## Running with Docker
 
 ```bash
 docker compose --profile full up --build
 docker compose exec backend python manage.py seed
 ```
 
-Open http://localhost:8088 and sign in with `owner@acme-corp.test` / `demo-pass-123`.
+Open http://localhost:8088 and sign in as `owner@acme-corp.test` / `demo-pass-123`.
 
-The seed creates three workspaces on different plans (Acme Corp: Business, Globex: Pro, Initech: Free).
-Every demo user has the same password.
+`seed` creates three demo workspaces: Acme Corp (Business plan), Globex (Pro) and Initech (Free). All demo users
+share the same password.
 
 ## Local development
 
-Requirements: Python 3.11, Node 22, Docker (for Postgres and Redis).
+Requirements: Python 3.11, Node 22 and Docker (for Postgres and Redis).
 
 ```bash
 docker compose up -d db redis
+```
 
+Backend:
+
+```bash
 cd backend
 python -m venv .venv
-.venv/Scripts/activate        # macOS/Linux: source .venv/bin/activate
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
+cp .env.example .env
 python manage.py migrate
 python manage.py seed
 python manage.py runserver
+```
 
-# second terminal
-celery -A config worker -l info          # on Windows add: -P solo
+Worker, in a second terminal (add `-P solo` on Windows):
 
-# third terminal
+```bash
+celery -A config worker -B -l info
+```
+
+Frontend:
+
+```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-The app runs at http://localhost:5173 (Vite proxies `/api` to Django on port 8000).
-API docs: http://localhost:8000/api/docs/
+The app runs on http://localhost:5173. Vite proxies `/api` to Django on port 8000.
 
-Copy `backend/.env.example` for the available settings. Defaults work for local development.
+## Stripe test mode
 
-## Stripe (test mode)
+1. Put a test secret key in `backend/.env` (`STRIPE_SECRET_KEY=sk_test_...`).
+2. Create the products and prices: `python manage.py stripe_setup`
+3. Forward webhooks and copy the signing secret it prints into `STRIPE_WEBHOOK_SECRET`:
+   `stripe listen --forward-to localhost:8000/api/billing/webhook/`
+4. In the Stripe dashboard (test mode), save the customer portal settings once.
+5. Upgrade from the Billing page with card `4242 4242 4242 4242`.
 
-1. Create a Stripe account and stay in **test mode**.
-2. Set `STRIPE_SECRET_KEY=sk_test_...` and run `python manage.py stripe_setup` to create the Pro and Business prices.
-3. Forward webhooks with the Stripe CLI and set the secret it prints:
-   ```bash
-   stripe listen --forward-to localhost:8000/api/billing/webhook/
-   ```
-   `STRIPE_WEBHOOK_SECRET=whsec_...`
-4. Upgrade from the Billing page with card `4242 4242 4242 4242`, any future date and any CVC.
-
-Without Stripe keys the app still works on the Free plan, and the Billing page says billing is disabled.
+Without a key the app runs on the Free plan and the Billing page shows that upgrades are disabled.
 
 ## Tests
 
+| Suite | Command | Count |
+|---|---|---|
+| Backend unit and API tests | `cd backend && pytest --cov` | 89 tests, 92% coverage |
+| Frontend unit tests | `cd frontend && npm test` | 6 tests |
+| End-to-end (Playwright) | `cd frontend && npm run e2e` | 30 tests |
+
+The end-to-end suite starts its own API (port 8020) and Vite server (port 5191), seeds the database and drives the
+UI in Chromium: sign up and sign in, projects and plan limits, drag and drop, every field in the issue drawer,
+comments, attachments, workflows, sprints and reports, roles and workspace switching, webhooks, notifications and
+billing. Locally you can use an installed Chrome instead of downloading one:
+
 ```bash
-cd backend && pytest --cov        # 89 tests, ~92% coverage
-cd frontend && npm test           # drag-and-drop ordering and workflow rules
+PW_CHANNEL=chrome E2E_PYTHON=../backend/.venv/bin/python npm run e2e
 ```
 
-CI runs ruff, a migrations check, the backend tests against real Postgres and Redis, the frontend typecheck, tests
-and build, then builds both Docker images. See [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) and
-[docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+Lint and format checks: `ruff check . && ruff format --check .` (backend) and `npm run lint && npm run format:check`
+(frontend).
+
+## CI/CD
+
+`.github/workflows/ci.yml` runs on every push and pull request:
+
+1. backend: ruff, migrations check, pytest against Postgres and Redis service containers, coverage report
+2. frontend: ESLint, Prettier, TypeScript, unit tests, production build
+3. e2e: Playwright against a real API, database and Vite server
+4. images: builds the backend and web Docker images, and pushes them to GHCR on `main`
+5. deploy: on `main`, calls the Render deploy hooks when the `RENDER_DEPLOY_HOOK_*` secrets are set
+
+`render.yaml` defines the Render services (API, worker, static frontend, Postgres, Redis).
 
 ## Project layout
 
 ```
 backend/
   apps/
-    accounts/       email-based user, register, JWT
+    accounts/       user model, registration, JWT
     tenancy/        workspaces, memberships, roles, base tenant viewset
-    projects/       projects, statuses, transitions, boards, sprints, issues, seed/bench commands
+    projects/       projects, statuses, transitions, sprints, issues; seed and bench commands
     activity/       comments, attachments, audit log
-    notifications/  in-app + email notifications
-    webhooks/       outbound webhooks, signing, delivery tasks
+    notifications/  in-app and email notifications
+    webhooks/       endpoints, signing, delivery tasks
     reports/        sprint and weekly reports
-    billing/        plans, limits, Stripe checkout/portal/webhooks
-  config/           settings, urls, celery, health check
+    billing/        plans, limits, Stripe checkout, portal and webhooks
+  config/           settings, URLs, Celery app, health check
   tests/
 frontend/
-  src/api           fetch client with token refresh, React Query hooks
-  src/components    Kanban board, issue drawer, notification bell
-  src/pages
-docs/               architecture, API, test results, performance, presentation
+  src/api/          fetch client with token refresh, query hooks
+  src/auth/         session context and role helpers
+  src/components/   board, issue drawer, notification bell
+  src/pages/
+  e2e/              Playwright tests
+docs/
+scripts/loadtest.py
 ```
 
-## Docs
+## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
-- [API guide](docs/API.md) and [OpenAPI schema](docs/openapi.yaml)
+- [API guide](docs/API.md), [OpenAPI schema](docs/openapi.yaml)
 - [Test results](docs/TEST_RESULTS.md)
 - [Performance](docs/PERFORMANCE.md)
-- [Presentation outline](docs/PRESENTATION.md)
-
-## Deployment
-
-`render.yaml` describes the API, worker, static frontend, Postgres and Redis on Render.
-On every push to `main`, GitHub Actions builds the images (pushed to GHCR) and calls the Render deploy hooks if the
-`RENDER_DEPLOY_HOOK_*` secrets are set.
