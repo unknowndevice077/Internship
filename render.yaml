@@ -1,0 +1,34 @@
+# Render blueprint for the API. The front end deploys separately on Vercel (see client/vercel.json).
+services:
+  - type: web
+    name: vendora-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: ELASTICSEARCH_URL
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: AWS_REGION
+        value: ap-south-1
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
