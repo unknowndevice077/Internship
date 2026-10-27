@@ -144,7 +144,7 @@ Dependabot opens update PRs for pip, npm, the Docker base images and the workflo
 same env var group, since both need the same secret key to sign and check reset and verification links.
 
 With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and HSTS, and won't start without
-`DJANGO_SECRET_KEY`. Other settings you'll probably want:
+`DJANGO_SECRET_KEY`. Optional production settings:
 
 - `AWS_STORAGE_BUCKET_NAME` and the usual `AWS_*` keys to keep attachments in S3 (`AWS_S3_ENDPOINT_URL` for
   Cloudflare R2 or MinIO). Render's disk is wiped on every deploy, so this matters there.
@@ -152,9 +152,6 @@ With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and H
 - `NUM_PROXIES=1` behind nginx or Render, so rate limits see the real client IP
 - `THROTTLE_AUTH_RATE` / `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` to change the rate limits (default 10, 60
   and 600 a minute)
-
-Render's free Postgres has no backups, so use a paid instance for anything you care about.
-
 ## How it's put together
 
 All tenants share one schema and every tenant table has a `workspace_id`. Requests pick a workspace with the
@@ -192,9 +189,3 @@ frontend/
 docs/
 scripts/loadtest.py
 ```
-
-## Known gaps
-
-- Billing is tested against mocked Stripe responses; it hasn't run against a deployed webhook endpoint yet.
-- Notifications poll every 30 seconds instead of using websockets.
-- No SSO and no per-workspace data export yet.
