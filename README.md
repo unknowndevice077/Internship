@@ -59,10 +59,17 @@ python manage.py seed
 python manage.py runserver
 ```
 
-Worker, in a second terminal (add `-P solo` on Windows):
+Worker with the beat scheduler, in a second terminal:
 
 ```bash
 celery -A config worker -B -l info
+```
+
+On Windows `-B` isn't supported, so run them separately:
+
+```bash
+celery -A config worker -P solo -l info
+celery -A config beat -l info
 ```
 
 Frontend:
