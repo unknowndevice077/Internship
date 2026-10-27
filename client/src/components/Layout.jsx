@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { api, imageUrl, money } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -8,10 +9,34 @@ export default function Layout() {
   const { cart } = useCart();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+
+  // wait for a pause in typing before asking the API
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      api(`/products/suggest?q=${encodeURIComponent(term)}`)
+        .then((res) => setSuggestions(res.items))
+        .catch(() => setSuggestions([]));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [q]);
 
   const onSearch = (e) => {
     e.preventDefault();
+    setOpen(false);
     navigate(q.trim() ? `/?q=${encodeURIComponent(q.trim())}` : '/');
+  };
+
+  const pick = (id) => {
+    setOpen(false);
+    setQ('');
+    navigate(`/products/${id}`);
   };
 
   return (
@@ -22,8 +47,32 @@ export default function Layout() {
             vendora
           </Link>
           <form className="search" onSubmit={onSearch}>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products, brands…" />
+            <input
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setTimeout(() => setOpen(false), 150)}
+              onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+              placeholder="Search products, brands…"
+              aria-label="Search"
+            />
             <button type="submit">Search</button>
+            {open && suggestions.length > 0 && (
+              <ul className="suggestions" role="listbox">
+                {suggestions.map((item) => (
+                  <li key={item._id}>
+                    <button type="button" onMouseDown={() => pick(item._id)}>
+                      {item.image && <img src={imageUrl(item.image)} alt="" />}
+                      <span className="suggestion-title">{item.title}</span>
+                      <span className="muted small">{money(item.price)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </form>
           <nav className="nav">
             {user?.role === 'vendor' && <NavLink to="/vendor">Seller hub</NavLink>}

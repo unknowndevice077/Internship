@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
-import { Empty, ErrorText, Spinner, Stars, useFetch } from '../components/ui';
+import { Empty, ErrorText, Stars, useFetch } from '../components/ui';
 
 const SORTS = [
   ['', 'Best match'],
@@ -13,7 +13,10 @@ const SORTS = [
 export function ProductCard({ p }) {
   return (
     <Link to={`/products/${p._id}`} className="card product-card">
-      <div className="thumb">{p.image && <img src={imageUrl(p.image)} alt={p.title} loading="lazy" />}</div>
+      <div className="thumb">
+        {p.image && <img src={imageUrl(p.image)} alt={p.title} loading="lazy" />}
+        {p.stock === 0 && <span className="sold-out">Sold out</span>}
+      </div>
       <div className="product-card-body">
         <div className="product-title">{p.title}</div>
         <Stars value={p.ratingAvg} count={p.ratingCount} />
@@ -21,6 +24,22 @@ export function ProductCard({ p }) {
         <div className="muted small">{p.vendorName}</div>
       </div>
     </Link>
+  );
+}
+
+function SkeletonGrid() {
+  return (
+    <div className="grid" aria-label="Loading">
+      {Array.from({ length: 8 }, (_, i) => (
+        <div key={i} className="card skeleton">
+          <div className="thumb" />
+          <div className="product-card-body">
+            <div className="skeleton-line" />
+            <div className="skeleton-line short" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -132,7 +151,7 @@ export default function Shop() {
 
         <ErrorText error={error} />
         {loading && !data ? (
-          <Spinner />
+          <SkeletonGrid />
         ) : data?.items.length ? (
           <div className="grid">
             {data.items.map((p) => (
@@ -140,7 +159,14 @@ export default function Shop() {
             ))}
           </div>
         ) : (
-          <Empty>No products match those filters.</Empty>
+          <Empty>
+            No products match those filters.{' '}
+            {query && (
+              <button className="link" onClick={() => setParams({})}>
+                Clear filters
+              </button>
+            )}
+          </Empty>
         )}
 
         {pages > 1 && (

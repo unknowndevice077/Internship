@@ -202,6 +202,41 @@ button:disabled {
 .search {
   flex: 1;
   display: flex;
+  position: relative;
+}
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 15%);
+}
+.search .suggestions button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 6px;
+  text-align: left;
+  background: #fff;
+  color: var(--ink);
+}
+.search .suggestions button:hover {
+  background: var(--bg);
+}
+.suggestions img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+.suggestion-title {
+  flex: 1;
 }
 .search input {
   flex: 1;
@@ -297,7 +332,8 @@ button:disabled {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1rem;
 }
-.product-card {
+.product-card,
+.skeleton {
   padding: 0;
   overflow: hidden;
   display: flex;
@@ -727,6 +763,36 @@ button:disabled {
 }
 .actions {
   white-space: nowrap;
+}
+
+.sold-out {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.75rem;
+}
+.skeleton .thumb,
+.skeleton-line {
+  background: linear-gradient(90deg, #f0efee 25%, #e7e5e4 50%, #f0efee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+.skeleton-line {
+  height: 0.8rem;
+  border-radius: 4px;
+  margin: 0.25rem 0;
+}
+.skeleton-line.short {
+  width: 40%;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .spinner {

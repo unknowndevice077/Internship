@@ -1,127 +1,129 @@
 # Vendora
 
-A multi-vendor marketplace in the style of Amazon. Many vendors sell, customers buy from several stores in one checkout, and the platform splits each payment between the vendors and keeps a commission.
+A multi-vendor marketplace I built for my Nexvia internship (project FS-01). Think a small Amazon: lots of sellers each run their own store, a customer can fill one cart from several of them and pay once, and the platform splits that payment so every seller gets their share minus a commission.
 
-**Stack:** React (Vite) · Node.js/Express · MongoDB · Elasticsearch · Redis · Stripe Connect (test mode) · AWS S3
+The hardest part was the money side. One checkout has to become one order per seller, coupons have to be split fairly between them, and payment confirmation has to be safe to run twice (Stripe's webhook and the browser can both confirm the same payment). Most of my time went into getting that right and testing it.
 
-## Features
+**Built with:** React (Vite), Node.js + Express, MongoDB, Elasticsearch, Redis, Stripe Connect (test mode), AWS S3
 
-| Area | What it does |
-| --- | --- |
-| Roles | `customer`, `vendor`, `admin`, with JWT auth and role checks on every route. Sessions live in Redis, so logging out revokes the token right away |
-| Vendor onboarding | Vendors create a store, an admin approves it, then the vendor connects a Stripe Express account to get paid |
-| Products | Full CRUD, up to 6 images per product uploaded to S3 (or `./uploads` locally), soft delete |
-| Search | Elasticsearch full-text search with fuzzy matching, filters (category, brand, price, rating, stock), sorting and facet counts. Falls back to MongoDB text search when no ES is configured |
-| Cart | Stored in Redis hashes with a 30-day TTL. Prices are always read from the database |
-| Checkout | One payment covers the whole cart, split into one order per vendor |
-| Order lifecycle | `placed → packed → shipped → delivered`. Customers can cancel before packing, vendors before shipping, and cancelling refunds and restocks |
-| Split payments | Stripe Connect "separate charges and transfers". Each vendor gets a transfer for their order total minus commission (10% default, can be set per vendor) |
-| Reviews | One per customer per product, "verified purchase" badge once the order is delivered, keeps the product rating up to date |
-| Coupons | Percent or fixed, minimum order, usage limit, expiry. Platform-wide (admin) or for one store (vendor) |
-| Invoices | PDF invoice per order, generated on request with PDFKit |
-| Admin analytics | GMV, commission, payouts, AOV, daily sales chart, top vendors and products, orders by status |
+## What it does
 
-## Running it locally
+**Customers** can search with typo tolerance and live suggestions, filter by category, price, rating and stock, add items from different stores to one cart, apply coupons, check out, follow each order's status, download a PDF invoice, cancel before it ships, and leave reviews (marked "verified purchase" once the order is delivered).
 
-You need Node 20+ and either Docker or nothing else at all (see the in-memory option).
+**Vendors** sign up, open a store, and wait for an admin to approve it. After that they connect a Stripe Express account for payouts, list products with up to 6 images, run their own coupons, and move orders through `placed → packed → shipped → delivered`. Each order shows exactly what they'll be paid.
 
-### Option A: with Docker (full stack: Mongo, Redis, Elasticsearch)
+**Admins** approve or suspend stores, set commission per store (10% by default), manage users and platform coupons, and get an analytics page with GMV, commission, average order value, daily sales and top sellers.
+
+Some details under the hood:
+
+- Logins use JWTs, but every token is tied to a session in Redis, so logging out (or an admin disabling someone) kills it immediately instead of waiting for it to expire.
+- The cart lives in Redis. Prices are always re-read from the database, so a stale cart can't check out at an old price.
+- Product pages are cached in Redis for 5 minutes and cleared on edit.
+- Search runs on Elasticsearch when it's available and falls back to MongoDB text search when it isn't, so the app still works without it.
+- Payments use Stripe's "separate charges and transfers": the customer is charged once, then each vendor gets a transfer for their order. Without a Stripe key there's a mock provider, so the whole flow works offline.
+
+## Running it
+
+You need Node 20+. Docker is optional.
+
+**Quickest (no Docker):**
+
+```bash
+cd server
+npm install
+npm run dev:memory
+```
+
+That starts an in-memory MongoDB, seeds it with demo data and runs the API on port 4000. Redis gets swapped for an in-memory mock and search uses MongoDB. Then in another terminal:
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Open http://localhost:5173.
+
+**Full stack with Docker** (real Mongo, Redis and Elasticsearch):
 
 ```bash
 docker compose up -d mongo redis elasticsearch
-
 cd server
 cp .env.example .env
 npm install
-npm run seed       # demo data from DummyJSON, also builds the search index
-npm run dev        # API on http://localhost:4000
-
-cd ../client
-cp .env.example .env.local
-npm install
-npm run dev        # web on http://localhost:5173
+npm run seed
+npm run dev
 ```
 
-### Option B: no Docker
+Then start the client the same way (`cp .env.example .env.local` first). `docker compose --profile full up --build` runs everything in containers instead (web on :8090, API on :4000).
 
-```bash
-cd server && npm install && npm run dev:memory
-```
+The seed loads 194 products from a saved [DummyJSON](https://dummyjson.com) snapshot, spread across 5 stores, plus about 70 past orders so the charts aren't empty. `npm run seed -- --fresh` pulls the products live instead.
 
-This starts a throwaway in-memory MongoDB, seeds it and runs the API. With `REDIS_URL` and `ELASTICSEARCH_URL` left empty, Redis is replaced by an in-memory mock and search uses MongoDB. Then start the client as above.
+### Demo logins
 
-### Demo accounts
+Password for all of them: `demo-pass-123`. The login page also has quick-login buttons.
 
-All passwords are `demo-pass-123`. The login page also has one-click buttons for these.
+- Customer: `customer@vendora.test`
+- Vendor (Glow Beauty Co): `vendor@vendora.test`
+- Admin: `admin@vendora.test`
 
-| Role | Email |
-| --- | --- |
-| Customer | customer@vendora.test |
-| Vendor (Glow Beauty Co) | vendor@vendora.test |
-| Admin | admin@vendora.test |
+Coupons to try: `WELCOME10` (10% off over $20), `FLAT5` ($5 off over $30), `GLOW15` (15% off, Glow Beauty Co only).
 
-Coupons from the seed: `WELCOME10` (10% off over $20), `FLAT5` ($5 off over $30), `GLOW15` (15% off Glow Beauty Co only).
+### Using real Stripe test mode
 
-### Turning on real Stripe test mode
+1. Put your `sk_test_...` key in `server/.env` as `STRIPE_SECRET_KEY`, and the `pk_test_...` key in `client/.env.local` as `VITE_STRIPE_PUBLISHABLE_KEY`.
+2. Run `stripe listen --forward-to localhost:4000/api/webhooks/stripe` and copy the `whsec_...` it prints into `STRIPE_WEBHOOK_SECRET`.
+3. Log in as a vendor, go to **Payouts** and finish Stripe's onboarding.
+4. Pay with `4242 4242 4242 4242`, any future date, any CVC.
 
-Without a Stripe key the API uses a mock payment provider, so the full flow works offline. To use Stripe Connect:
+### Using S3 for images
 
-1. Put your `sk_test_...` key in `server/.env` as `STRIPE_SECRET_KEY` and the `pk_test_...` key in `client/.env.local` as `VITE_STRIPE_PUBLISHABLE_KEY`.
-2. Forward webhooks: `stripe listen --forward-to localhost:4000/api/webhooks/stripe`, and copy the `whsec_...` it prints into `STRIPE_WEBHOOK_SECRET`.
-3. Log in as a vendor, open **Payouts** and finish Stripe's Express onboarding.
-4. Pay with card `4242 4242 4242 4242`, any future date and any CVC.
-
-### S3 uploads
-
-Set `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. The bucket needs public read on the `vendors/` prefix (or put CloudFront in front of it and set `S3_PUBLIC_URL`).
+Set `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. The bucket needs public read on `vendors/` (or put CloudFront in front and set `S3_PUBLIC_URL`). Without these, uploads go to `server/uploads/`.
 
 ## Tests
 
 ```bash
 cd server
-npm test               # 46 API tests against an in-memory MongoDB
+npm test              # API tests on an in-memory MongoDB
 npm run test:coverage
-npm run lint && npm run format:check
 
 cd ../client
-npm run test:e2e       # 20 Playwright browser tests, starts its own API and web server
-npm run lint && npm run format:check
+npm run test:e2e      # Playwright, starts its own API and web server
 ```
 
-The end-to-end tests use your installed Google Chrome (`channel: 'chrome'`), so there's no browser download. Stripe and Elasticsearch are mocked at the SDK level in `server/tests/integrations.test.js`, so the real code paths for both are covered without network access. Results are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
+The API tests cover auth, products, search, checkout and commission math, coupons, the order lifecycle, reviews and admin. Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exact calls the API makes to them. The Playwright tests click through the app in Chrome, including one long test that walks a new seller from sign-up to their first delivered order and payout.
 
-## Deployment
+Both suites, plus lint and format checks, run on every push in GitHub Actions. The end-to-end tests caught a handful of real bugs along the way. Those, and the performance numbers, are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
+
+## Deploying
 
 The front end and back end deploy separately:
 
-- **API:** Render, using [render.yaml](render.yaml). It needs MongoDB Atlas, a Redis instance (Upstash or Render Redis), Elastic Cloud (or Bonsai) and an S3 bucket.
-- **Web:** Vercel with `client/` as the root directory. Set `VITE_API_URL` to the API url. [client/vercel.json](client/vercel.json) handles the SPA routes.
-- After deploying, add `https://<api>/api/webhooks/stripe` as a webhook endpoint in the Stripe dashboard for `payment_intent.succeeded` and `account.updated`.
+- **API → Render** using [render.yaml](render.yaml). It needs MongoDB Atlas, a Redis instance (Upstash works), Elastic Cloud or Bonsai (optional) and an S3 bucket.
+- **Web → Vercel** with `client/` as the root directory and `VITE_API_URL` set to the API's URL. [client/vercel.json](client/vercel.json) handles client-side routes.
+- In the Stripe dashboard, add `https://<your-api>/api/webhooks/stripe` as a webhook for `payment_intent.succeeded` and `account.updated`.
 
-`docker compose --profile full up --build` runs the whole thing in containers (web on :8090, API on :4000).
-
-## Project layout
+## Where things are
 
 ```
-server/
-  src/
-    models/       Mongoose schemas
-    routes/       Express routers, one per resource
-    lib/          search, payments, cart, orders, coupons, storage, invoice
-    middleware/   auth (JWT + Redis session) and error handling
-  scripts/        seed and in-memory dev runner
-  tests/
-client/
-  src/
-    pages/        storefront, checkout, vendor hub, admin
-    context/      auth and cart state
-    api/          fetch wrapper
-docs/             architecture, API reference, test results
+server/src/
+  models/       Mongoose schemas
+  routes/       one router per resource
+  lib/          orders, payments, search, cart, coupons, storage, invoices
+  middleware/   auth and error handling
+server/scripts/ seed and the in-memory dev runner
+client/src/
+  pages/        storefront, checkout, vendor hub, admin
+  context/      auth and cart state
+client/e2e/     Playwright tests
+docs/           architecture, API reference, test results, handoff notes
 ```
 
-## Docs
+More detail: [architecture and schema](docs/ARCHITECTURE.md) · [API reference](docs/API.md) · [test results](docs/TEST_RESULTS.md) · [handoff notes](docs/HANDOFF.md)
 
-- [Architecture and database schema](docs/ARCHITECTURE.md)
-- [API reference](docs/API.md)
-- [Test and performance results](docs/TEST_RESULTS.md)
-- [Handoff: status, env vars, what's left](docs/HANDOFF.md)
+## What I'd add next
+
+- A retry queue for Stripe transfers that fail (right now they're just logged)
+- Warning customers before checkout when something sells out, instead of cancelling that part of the order afterwards
+- Order emails
+- Partial refunds, so a vendor can refund one item instead of the whole order

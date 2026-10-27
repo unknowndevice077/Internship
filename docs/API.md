@@ -31,6 +31,7 @@ Roles: **C** customer, **V** vendor, **A** admin, **any** any logged-in user, **
 | --- | --- | --- | --- |
 | GET | `/products` | public | search, see query params below |
 | GET | `/products/mine` | V | own products, including hidden ones |
+| GET | `/products/suggest?q=` | public | up to 6 title matches for the search box, needs 2+ characters |
 | GET | `/products/:id` | public | cached in Redis for 5 minutes |
 | POST | `/products/images` | V | multipart, field `images`, up to 6 jpg/png/webp files of 5 MB each → `{ urls }` |
 | POST | `/products` | V (approved) | `{ title, description, category, brand?, price, stock, images[], tags[] }` |

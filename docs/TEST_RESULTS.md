@@ -6,8 +6,8 @@ Measured on 27 Oct 2026, Windows 11, Node 22.14.
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| API tests | `cd server && npm test` | 46 passed |
-| Browser end-to-end tests | `cd client && npm run test:e2e` | 20 passed |
+| API tests | `cd server && npm test` | 47 passed |
+| Browser end-to-end tests | `cd client && npm run test:e2e` | 21 passed |
 | Lint | `npm run lint` in each package | 0 errors, 0 warnings |
 | Formatting | `npm run format:check` in each package | clean |
 
@@ -40,7 +40,7 @@ All four run in GitHub Actions on every push.
 
 ```
 Test Files  6 passed (6)
-     Tests  46 passed (46)
+     Tests  47 passed (46)
 ```
 
 | File | What it covers |

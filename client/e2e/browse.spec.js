@@ -49,6 +49,16 @@ test.describe('browsing as a guest', () => {
     await expect(page.getByText('Page 2 of 9')).toBeVisible();
   });
 
+  test('search box suggests products while typing', async ({ page }) => {
+    await page.goto('/');
+    await page.getByPlaceholder('Search products, brands…').fill('lipst');
+    const suggestion = page.locator('.suggestions button').first();
+    await expect(suggestion).toContainText(/Lipstick/i);
+    await suggestion.click();
+    await expect(page).toHaveURL(/\/products\//);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Lipstick/i);
+  });
+
   test('product page shows details, gallery, reviews and the store', async ({ page }) => {
     await page.goto('/?q=iPhone');
     await page.locator('.product-card').first().click();

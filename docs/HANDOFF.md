@@ -14,7 +14,7 @@ Where the project stands, how to pick it up, and what's left before the 20 Nov 2
 | 6. Stripe Connect split payments | Done. Verified with SDK-level tests and mock mode. Not yet run with real test keys |
 | 7. Reviews, coupons, PDF invoices, admin analytics, separate deploys | Done. Deploy config ready, not deployed yet |
 
-Verified: 46 API tests (94% line coverage), 20 browser end-to-end tests covering every flow, clean lint and formatting, a fresh clone installs, tests, lints and builds, both Docker images build, and the full stack runs in containers. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
+Verified: 47 API tests (94% line coverage), 21 browser end-to-end tests covering every flow, clean lint and formatting, a fresh clone installs, tests, lints and builds, both Docker images build, and the full stack runs in containers. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Getting started
 

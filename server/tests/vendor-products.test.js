@@ -115,4 +115,15 @@ describe('search (mongo fallback)', () => {
     const res = await api().get('/api/products');
     expect(res.body.total).toBe(0);
   });
+
+  it('suggests titles by word prefix', async () => {
+    const v = await approvedVendor();
+    await makeProduct(v.vendorId, { title: 'Red Running Shoes' });
+    await makeProduct(v.vendorId, { title: 'Coffee Mug' });
+
+    const res = await api().get('/api/products/suggest?q=run');
+    expect(res.body.items.map((i) => i.title)).toEqual(['Red Running Shoes']);
+    expect((await api().get('/api/products/suggest?q=r')).body.items).toEqual([]);
+    expect((await api().get('/api/products/suggest?q=(')).status).toBe(200);
+  });
 });

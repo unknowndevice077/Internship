@@ -5,7 +5,7 @@ import Product from '../models/Product.js';
 import { requireAuth, requireVendor } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
 import { cached, getRedis } from '../lib/redis.js';
-import { indexProduct, removeProduct, searchProducts } from '../lib/search.js';
+import { indexProduct, removeProduct, searchProducts, suggestProducts } from '../lib/search.js';
 import { ALLOWED_TYPES, uploadImage } from '../lib/storage.js';
 
 const router = Router();
@@ -35,6 +35,13 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     res.json(await searchProducts(req.query));
+  }),
+);
+
+router.get(
+  '/suggest',
+  asyncHandler(async (req, res) => {
+    res.json({ items: await suggestProducts(req.query.q) });
   }),
 );
 

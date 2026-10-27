@@ -12,5 +12,5 @@
    - Making payment completion idempotent when the webhook and client confirm race each other
    - Keeping the search index in sync with approvals, edits and ratings
    - Running everything offline for development and tests (fallbacks and SDK mocks)
-5. **Results (1 min)**: 46 API tests, 20 browser tests, 94% line coverage, bugs the E2E tests caught, latency numbers from TEST_RESULTS.md
+5. **Results (1 min)**: 47 API tests, 21 browser tests, 94% line coverage, bugs the E2E tests caught, latency numbers from TEST_RESULTS.md
 6. **Next steps (1 min)**: retry queue for failed transfers, shipping rates, vendor refunds for partial orders, search suggestions, email notifications

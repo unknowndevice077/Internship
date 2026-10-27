@@ -238,3 +238,29 @@ async function searchMongo(p, page, limit) {
     },
   };
 }
+
+// Title prefix matches for the search box dropdown. Plain Mongo so it works with or without ES.
+export async function suggestProducts(q, limit = 6) {
+  const term = String(q || '').trim();
+  if (term.length < 2) return [];
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const approved = await Vendor.find({ status: 'approved' }).distinct('_id');
+  return Product.find({
+    isActive: true,
+    vendor: { $in: approved },
+    title: { $regex: `(^|\\s)${escaped}`, $options: 'i' },
+  })
+    .sort({ ratingCount: -1 })
+    .limit(limit)
+    .select('title price images category')
+    .lean()
+    .then((docs) =>
+      docs.map((d) => ({
+        _id: d._id,
+        title: d.title,
+        price: d.price,
+        image: d.images?.[0],
+        category: d.category,
+      })),
+    );
+}
