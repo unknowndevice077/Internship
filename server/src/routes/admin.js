@@ -4,10 +4,9 @@ import User from '../models/User.js';
 import Vendor from '../models/Vendor.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { destroyUserSessions, requireAuth, requireRole } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
-import { reindexVendorProducts } from './products.js';
-import { reindexAll } from '../lib/search.js';
+import { reindexAll, reindexVendorProducts } from '../lib/search.js';
 
 const router = Router();
 router.use(requireAuth, requireRole('admin'));
@@ -138,6 +137,7 @@ router.patch(
     if (req.params.id === req.user.id) throw new HttpError(400, "You can't disable yourself");
     const user = await User.findByIdAndUpdate(req.params.id, { isActive }, { returnDocument: 'after' });
     if (!user) throw new HttpError(404, 'User not found');
+    if (!isActive) await destroyUserSessions(user._id.toString());
     res.json({ user });
   }),
 );

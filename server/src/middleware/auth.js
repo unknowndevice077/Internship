@@ -1,28 +1,39 @@
 import jwt from 'jsonwebtoken';
 import config from '../config.js';
 import { getRedis } from '../lib/redis.js';
-import User from '../models/User.js';
 import Vendor from '../models/Vendor.js';
 import { HttpError } from './error.js';
 
 const sessionKey = (sid) => `session:${sid}`;
+// set of a user's session ids, so an admin can log them out everywhere
+const userSessionsKey = (userId) => `user-sessions:${userId}`;
 
 export async function createSession(user) {
   const sid = crypto.randomUUID();
-  const payload = { id: user._id.toString(), role: user.role, name: user.name, email: user.email };
-  await getRedis().set(sessionKey(sid), JSON.stringify(payload), 'EX', config.sessionTtlSeconds);
-  const token = jwt.sign({ sub: payload.id, role: user.role, sid }, config.jwtSecret, {
+  const userId = user._id.toString();
+  const payload = { id: userId, role: user.role, name: user.name, email: user.email };
+  await getRedis()
+    .multi()
+    .set(sessionKey(sid), JSON.stringify(payload), 'EX', config.sessionTtlSeconds)
+    .sadd(userSessionsKey(userId), sid)
+    .expire(userSessionsKey(userId), config.sessionTtlSeconds)
+    .exec();
+  return jwt.sign({ sub: userId, role: user.role, sid }, config.jwtSecret, {
     expiresIn: config.jwtExpiresIn,
   });
-  return token;
 }
 
-export async function destroySession(sid) {
-  await getRedis().del(sessionKey(sid));
+export async function destroySession(sid, userId) {
+  await getRedis().multi().del(sessionKey(sid)).srem(userSessionsKey(userId), sid).exec();
 }
 
-// Verifies the JWT and checks the session still exists in Redis, so logout
-// actually kills the token instead of waiting for it to expire.
+export async function destroyUserSessions(userId) {
+  const redis = getRedis();
+  const sids = await redis.smembers(userSessionsKey(userId));
+  await redis.del(userSessionsKey(userId), ...sids.map(sessionKey));
+}
+
+// session check in Redis so logout actually kills the token
 export async function requireAuth(req, _res, next) {
   try {
     const header = req.headers.authorization || '';
@@ -56,7 +67,6 @@ export function requireRole(...roles) {
   };
 }
 
-// Loads the caller's vendor profile onto req.vendor.
 export function requireVendor({ approved = false } = {}) {
   return async (req, _res, next) => {
     try {
@@ -72,11 +82,4 @@ export function requireVendor({ approved = false } = {}) {
       next(err);
     }
   };
-}
-
-export async function refreshSession(sid, userId) {
-  const user = await User.findById(userId);
-  if (!user) return;
-  const payload = { id: user._id.toString(), role: user.role, name: user.name, email: user.email };
-  await getRedis().set(sessionKey(sid), JSON.stringify(payload), 'EX', config.sessionTtlSeconds);
 }

@@ -2,6 +2,7 @@ import { Client } from '@elastic/elasticsearch';
 import config from '../config.js';
 import Product from '../models/Product.js';
 import Vendor from '../models/Vendor.js';
+import { getRedis } from './redis.js';
 
 let es;
 
@@ -65,7 +66,7 @@ function toDoc(product, vendorName) {
   };
 }
 
-// Called after any product write. Search is best-effort, it never breaks the request.
+// best-effort, a search outage shouldn't fail the product write
 export async function indexProduct(product) {
   const client = getElastic();
   if (!client) return;
@@ -96,6 +97,14 @@ export async function removeProduct(id) {
   }
 }
 
+// after a store is approved/suspended its product pages and search docs both change
+export async function reindexVendorProducts(vendorId) {
+  const products = await Product.find({ vendor: vendorId });
+  if (!products.length) return;
+  await getRedis().del(...products.map((p) => `product:${p._id}`));
+  await Promise.all(products.map(indexProduct));
+}
+
 export async function reindexAll() {
   const client = getElastic();
   if (!client) return 0;
@@ -115,10 +124,6 @@ export async function reindexAll() {
   return products.length;
 }
 
-/**
- * Filters: q, category, brand, vendor, minPrice, maxPrice, minRating, inStock
- * Sort: relevance (default with q), price_asc, price_desc, rating, newest
- */
 export async function searchProducts(params) {
   const page = Math.max(1, Number(params.page) || 1);
   const limit = Math.min(60, Math.max(1, Number(params.limit) || 20));

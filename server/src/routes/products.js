@@ -18,14 +18,14 @@ const upload = multer({
 
 const productSchema = z.object({
   title: z.string().trim().min(2).max(200),
-  description: z.string().max(5000).default(''),
+  description: z.string().max(5000).optional(),
   category: z.string().trim().min(2).max(60),
   brand: z.string().trim().max(60).optional(),
   price: z.coerce.number().min(0.5).max(100000),
-  stock: z.coerce.number().int().min(0).default(0),
-  images: z.array(z.string()).max(6).default([]),
-  tags: z.array(z.string().trim()).max(20).default([]),
-  isActive: z.boolean().default(true),
+  stock: z.coerce.number().int().min(0).optional(),
+  images: z.array(z.string()).max(6).optional(),
+  tags: z.array(z.string().trim()).max(20).optional(),
+  isActive: z.boolean().optional(),
 });
 
 const cacheKey = (id) => `product:${id}`;
@@ -38,7 +38,7 @@ router.get(
   }),
 );
 
-// vendor's own catalogue (includes inactive products)
+// includes hidden products
 router.get(
   '/mine',
   requireAuth,
@@ -119,12 +119,5 @@ router.delete(
     res.status(204).end();
   }),
 );
-
-export async function reindexVendorProducts(vendorId) {
-  const products = await Product.find({ vendor: vendorId });
-  for (const p of products) {
-    await Promise.all([dropCache(p._id), indexProduct(p)]);
-  }
-}
 
 export default router;

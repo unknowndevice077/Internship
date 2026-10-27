@@ -33,7 +33,9 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }));
 
   if (config.env !== 'test') {
-    app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 50 }));
+    // only the password endpoints, /auth/me runs on every page load
+    const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 50 });
+    app.use(['/api/auth/login', '/api/auth/register'], authLimiter);
   }
   app.use('/uploads', express.static(LOCAL_UPLOAD_DIR, { maxAge: '7d' }));
 

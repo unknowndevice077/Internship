@@ -11,7 +11,6 @@ import { round2 } from '../lib/payments.js';
 const router = Router();
 router.use(requireAuth);
 
-// customer preview: what would this code take off my current cart?
 router.post(
   '/validate',
   requireRole('customer'),
@@ -32,10 +31,10 @@ const couponSchema = z.object({
   code: z.string().trim().min(3).max(40),
   type: z.enum(['percent', 'fixed']),
   value: z.coerce.number().positive(),
-  minOrder: z.coerce.number().min(0).default(0),
-  maxUses: z.coerce.number().int().min(0).default(0),
+  minOrder: z.coerce.number().min(0).optional(),
+  maxUses: z.coerce.number().int().min(0).optional(),
   expiresAt: z.coerce.date().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean().optional(),
 });
 
 // admins manage platform coupons, vendors manage their own store's coupons
@@ -60,7 +59,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const filter = await scope(req);
     const data = couponSchema.parse(req.body);
-    if (data.type === 'percent' && data.value > 90) throw new HttpError(400, 'Percent coupons max out at 90%');
+    if (data.type === 'percent' && data.value > 90)
+      throw new HttpError(400, 'Percent coupons max out at 90%');
     const coupon = await Coupon.create({ ...data, vendor: filter.vendor ?? null });
     res.status(201).json({ coupon });
   }),

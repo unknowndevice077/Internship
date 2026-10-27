@@ -9,7 +9,10 @@ const PNG = Buffer.from(
 describe('vendor onboarding and products', () => {
   it('needs admin approval before listing products', async () => {
     const v = await login('vendor');
-    const onboard = await api().post('/api/vendors/onboard').set(auth(v.token)).send({ storeName: 'Glow Co' });
+    const onboard = await api()
+      .post('/api/vendors/onboard')
+      .set(auth(v.token))
+      .send({ storeName: 'Glow Co' });
     expect(onboard.status).toBe(201);
     expect(onboard.body.vendor.status).toBe('pending');
     expect(onboard.body.vendor.slug).toBe('glow-co');
@@ -33,6 +36,14 @@ describe('vendor onboarding and products', () => {
     const res = await api().post('/api/vendors/me/payouts').set(auth(v.token));
     expect(res.status).toBe(200);
     expect(res.body.vendor.stripeAccountId).toBeTruthy();
+  });
+
+  it('partial updates leave the other fields alone', async () => {
+    const v = await approvedVendor();
+    const p = await makeProduct(v.vendorId, { stock: 7, images: ['/uploads/a.png'], tags: ['x'] });
+    await api().patch(`/api/products/${p._id}`).set(auth(v.token)).send({ isActive: false });
+    const res = await api().patch(`/api/products/${p._id}`).set(auth(v.token)).send({ isActive: true });
+    expect(res.body.product).toMatchObject({ stock: 7, images: ['/uploads/a.png'], tags: ['x'] });
   });
 
   it('only lets the owner edit or delete a product', async () => {

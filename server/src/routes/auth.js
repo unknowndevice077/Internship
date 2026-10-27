@@ -56,7 +56,7 @@ router.post(
   '/logout',
   requireAuth,
   asyncHandler(async (req, res) => {
-    await destroySession(req.user.sid);
+    await destroySession(req.user.sid, req.user.id);
     res.status(204).end();
   }),
 );

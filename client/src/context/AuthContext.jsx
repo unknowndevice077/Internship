@@ -19,9 +19,9 @@ export function AuthProvider({ children }) {
       const data = await api('/auth/me');
       setUser(data.user);
       setVendor(data.vendor);
-    } catch {
-      setToken(null);
-      setUser(null);
+    } catch (err) {
+      // api() already drops the token on a 401; a 500 or network blip shouldn't log you out
+      if (err.status === 401) setUser(null);
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,8 @@ export function AuthProvider({ children }) {
       setVendor,
       loading,
       refresh,
-      login: async (email, password) => handleAuth(await api('/auth/login', { method: 'POST', body: { email, password } })),
+      login: async (email, password) =>
+        handleAuth(await api('/auth/login', { method: 'POST', body: { email, password } })),
       register: async (form) => handleAuth(await api('/auth/register', { method: 'POST', body: form })),
       logout: async () => {
         await api('/auth/logout', { method: 'POST' }).catch(() => {});
