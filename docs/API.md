@@ -9,6 +9,10 @@ POST /api/auth/register/   {"email", "password", "full_name", "workspace_name"}
 POST /api/auth/token/      {"email", "password"}          -> {"access", "refresh"}
 POST /api/auth/token/refresh/ {"refresh"}                  -> {"access"}
 GET  /api/auth/me/                                         -> user + workspaces and roles
+POST /api/auth/password-reset/ {"email"}                    -> 204, emails a link if the account exists
+POST /api/auth/password-reset/confirm/ {"uid", "token", "password"} -> 204
+POST /api/auth/verify-email/ {"token"}                     -> 204
+POST /api/auth/verify-email/resend/                        -> 204 (signed in)
 ```
 
 Access tokens last 30 minutes and refresh tokens 7 days. Send `Authorization: Bearer <access>`.
@@ -59,6 +63,7 @@ Standard DRF format. Field errors look like `{"title": ["This field is required.
 |---|---|
 | 400 | validation, missing `X-Workspace`, workflow doesn't allow the move |
 | 401 | missing or expired token |
+| 429 | rate limited; auth endpoints allow 10 requests a minute per IP by default |
 | 402 | plan limit: `{"detail", "code": "plan_limit", "resource", "limit"}` |
 | 403 | role too low |
 | 404 | not found, or it belongs to another workspace |

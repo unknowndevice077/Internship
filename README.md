@@ -10,6 +10,7 @@ Nexvia Technologies full-stack internship project (FS-04), Oct-Nov 2026.
 ## Features
 
 - Workspaces with owner, admin, member and viewer roles
+- Password reset and email verification
 - Kanban board with drag and drop, backlog and sprint planning
 - Custom workflows per project (statuses and allowed transitions)
 - Comments with @mentions, file attachments, audit log with field-level history
@@ -97,13 +98,13 @@ Without a key the app runs on the Free plan and the Billing page shows that upgr
 
 | Suite | Command | Count |
 |---|---|---|
-| Backend unit and API tests | `cd backend && pytest --cov` | 89 tests, 92% coverage |
+| Backend unit and API tests | `cd backend && pytest --cov` | 96 tests, 92% coverage |
 | Frontend unit tests | `cd frontend && npm test` | 6 tests |
-| End-to-end (Playwright) | `cd frontend && npm run e2e` | 30 tests |
+| End-to-end (Playwright) | `cd frontend && npm run e2e` | 33 tests |
 
 The end-to-end suite starts its own API (port 8020) and Vite server (port 5191), seeds the database and drives the
 UI in Chromium: sign up and sign in, projects and plan limits, drag and drop, every field in the issue drawer,
-comments, attachments, workflows, sprints and reports, roles and workspace switching, webhooks, notifications and
+password reset, email verification, comments, attachments, workflows, sprints and reports, roles and workspace switching, webhooks, notifications and
 billing. Locally you can use an installed Chrome instead of downloading one:
 
 ```bash
@@ -120,10 +121,34 @@ Lint and format checks: `ruff check . && ruff format --check .` (backend) and `n
 1. backend: ruff, migrations check, pytest against Postgres and Redis service containers, coverage report
 2. frontend: ESLint, Prettier, TypeScript, unit tests, production build
 3. e2e: Playwright against a real API, database and Vite server
-4. images: builds the backend and web Docker images, and pushes them to GHCR on `main`
-5. deploy: on `main`, calls the Render deploy hooks when the `RENDER_DEPLOY_HOOK_*` secrets are set
+4. security: `pip-audit` and `npm audit` for known vulnerabilities, `manage.py check --deploy` with production
+   settings
+5. images: builds the backend and web Docker images once everything above passes, and pushes them to GHCR on
+   `main` (`latest`) and `staging`
+6. deploy: pushes to `staging` deploy to the staging environment, pushes to `main` to production. Each GitHub
+   environment holds its own `RENDER_DEPLOY_HOOK_API`, `_WORKER` and `_WEB` secrets; without them the step is
+   skipped. Add required reviewers to the `production` environment to gate releases.
 
-`render.yaml` defines the Render services (API, worker, static frontend, Postgres, Redis).
+Dependabot opens weekly PRs for pip and npm updates and monthly ones for Docker base images and actions.
+
+`render.yaml` defines the Render services (API, worker, static frontend, Postgres, Redis). The API and worker share
+one env var group so they sign tokens with the same secret key.
+
+## Production settings
+
+`DJANGO_DEBUG` is off unless set, and the app refuses to start without `DJANGO_SECRET_KEY` in that mode. With
+debug off it also turns on HTTPS redirects, secure cookies and HSTS (one year, `SECURE_HSTS_SECONDS`).
+
+| Variable | Purpose |
+|---|---|
+| `AWS_STORAGE_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_REGION_NAME` | store attachments in S3. Set `AWS_S3_ENDPOINT_URL` too for Cloudflare R2 or MinIO. Without a bucket files go to local disk, which Render wipes on each deploy |
+| `SENTRY_DSN` | report errors from the API and the Celery worker to Sentry |
+| `THROTTLE_AUTH_RATE` | login, signup, password reset and verification requests per IP (default `10/min`) |
+| `THROTTLE_ANON_RATE`, `THROTTLE_USER_RATE` | other requests per IP / per user (defaults `60/min`, `600/min`) |
+| `NUM_PROXIES` | how many proxies sit in front of gunicorn, so throttling uses the real client IP (`1` behind nginx or Render) |
+
+Throttle counters live in Redis so they hold across gunicorn workers. Database backups come from the host;
+Render's free Postgres has none, so use a paid instance (daily backups) for anything real.
 
 ## Project layout
 

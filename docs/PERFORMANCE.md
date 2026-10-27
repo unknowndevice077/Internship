@@ -39,7 +39,8 @@ The board was 75.3 ms p50 / 121.8 ms p95 before it stopped going through DRF ser
 
 ## Load test (HTTP, full Docker stack)
 
-`python scripts/loadtest.py --users 20 --seconds 20` against nginx -> gunicorn, mixing the board, issue list,
+`python scripts/loadtest.py --users 20 --seconds 20` (with `THROTTLE_USER_RATE=100000/min`, since every
+virtual user shares one account) against nginx -> gunicorn, mixing the board, issue list,
 search and unread-count endpoints.
 
 | Version | Throughput | Errors | Board p50 / p95 | Issue list p50 / p95 |
@@ -53,7 +54,7 @@ not waiting on Postgres. Cutting serializer work on the heaviest endpoint gave t
 
 ## Test suite
 
-- Backend: 89 tests, 92% line coverage (`pytest --cov`), ~30 s locally.
+- Backend: 96 tests, 92% line coverage (`pytest --cov`), ~35 s locally.
   Switching tests to the MD5 password hasher took the suite from 77 s to 16.5 s.
 - Frontend: 6 unit tests for the drag-and-drop ordering and workflow rules (`npm test`).
 

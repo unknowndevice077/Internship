@@ -1,20 +1,21 @@
 # Test results
 
-Last run 27 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
+Last run 28 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
 
-## Backend: 89 passed, 92% coverage
+## Backend: 96 passed, 92% coverage
 
 ```
 $ pytest --cov
 ...
-89 passed in 29.40s
-TOTAL   1992 statements   162 missed   92%
+96 passed in 35.75s
+TOTAL   2135 statements   170 missed   92%
 ```
 
 | Test file | Tests | What it covers |
 |---|---:|---|
 | `test_models.py` | 10 | default workflow, per-project numbering, ranks, unique constraints, one active sprint, workspace deletion cascade |
 | `test_auth_api.py` | 5 | register, invited-user claim, login with email, unique slugs |
+| `test_account_security.py` | 7 | password reset (no account enumeration, single-use token, weak password), email verification (tampered, stale and wrong-salt tokens), resend, login rate limit |
 | `test_tenancy_api.py` | 16 | missing header, non-member gets 404, cross-tenant read/write/FK smuggling, role matrix, last-owner protection |
 | `test_issues_api.py` | 9 | defaults, filters, move between neighbours, top of column, rank rebalancing, board, sprint lifecycle |
 | `test_activity_api.py` | 12 | open vs custom workflow, transition validation, comments ownership, attachments up/download/isolation/size limit, audit diffs |
@@ -52,15 +53,16 @@ $ npm test
 
 Covers finding a card's column, moving across columns and into an empty column, the neighbour ids sent to the move
 API, and the workflow rule check used to block columns. `npm run typecheck` (strict TypeScript) and
-`npm run build` both pass. The production bundle is 308 kB (97 kB gzipped).
+`npm run build` both pass. The production bundle is 328 kB (103 kB gzipped).
 
-## End-to-end: 30 passed (Playwright, Chromium)
+## End-to-end: 33 passed (Playwright, Chromium)
 
 `npm run e2e` starts the API and Vite, migrates and seeds the database, then drives the real UI. The suite passed
 three full runs in a row (90/90) before being added to CI.
 
 | Spec | Tests | Flows covered |
 |---|---:|---|
+| `account.spec.ts` | 3 | forgot password, emailed reset link, weak password, reused link rejected, verify banner, resend, confirm link, bad link |
 | `auth.spec.ts` | 5 | register, duplicate email, weak password, missing workspace name, wrong password, sign out, session after reload, page links |
 | `board.spec.ts` | 6 | create project, key validation, auto key, Free plan project limit and billing link, default columns, issue keys, create/cancel modal, drag between and within columns with reload, every drawer field, close by Escape/backdrop/button, history |
 | `activity.spec.ts` | 3 | add/delete comments, history entries, upload/download/remove attachment, size limit |

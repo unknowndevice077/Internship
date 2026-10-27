@@ -154,6 +154,16 @@ webhook arrives (`customer.subscription.*`, `checkout.session.completed`). Event
 constraint, so a redelivered event is processed once. Plan limits (projects, members, storage, webhooks) are
 checked in the API and return `402` with `code: plan_limit`.
 
+**Accounts.** Password reset uses Django's token generator, which hashes the current password, so a link stops
+working once it has been used. The reset endpoint answers 204 whether or not the email exists. Verification links
+are signed with the secret key and carry the email address, so changing the address voids old links; they expire
+after 3 days. Unverified users can still work and see a banner until they confirm.
+
+**Hardening.** Auth endpoints are rate limited per IP (10/min) and everything else per IP or user, with counters
+in Redis. Debug is off unless `DJANGO_DEBUG` is set; production adds HTTPS redirects, secure cookies and HSTS.
+Attachments go to S3-compatible storage when a bucket is configured and are always downloaded through the API, so
+tenant checks apply. Errors from the API and worker go to Sentry when `SENTRY_DSN` is set.
+
 ## Roles
 
 | Action | viewer | member | admin | owner |
@@ -170,9 +180,10 @@ checked in the API and return `402` with `code: plan_limit`.
 
 ```mermaid
 flowchart LR
-    dev["git push main"] --> ci["GitHub Actions<br/>lint, tests, build"]
+    dev["git push staging / main"] --> ci["GitHub Actions<br/>lint, tests, e2e,<br/>dependency audit, deploy checks"]
     ci --> ghcr["GHCR images<br/>backend, web"]
-    ci -->|deploy hooks| render["Render<br/>api, worker, static web,<br/>Postgres, Redis"]
+    ci -->|staging hooks| staging["Render staging"]
+    ci -->|production hooks| render["Render production<br/>api, worker, static web,<br/>Postgres, Redis"]
 ```
 
 Migrations run when the API container starts (`RUN_MIGRATIONS=1`). The worker runs beat with `-B`, so a single
