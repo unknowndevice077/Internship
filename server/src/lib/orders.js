@@ -8,6 +8,7 @@ import { clearCart, getCart } from './cart.js';
 import { applyCoupon } from './coupons.js';
 import { createPaymentIntent, getPaymentIntent, refundPayment, round2, transferToVendor } from './payments.js';
 import { getRedis } from './redis.js';
+import { indexProduct } from './search.js';
 
 const orderNumber = () =>
   `VD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
@@ -125,7 +126,7 @@ export async function completePayment(paymentGroup) {
   const code = pending[0].couponCode;
   if (code) await Coupon.updateOne({ code }, { $inc: { usedCount: 1 } });
   await clearCart(pending[0].customer.toString());
-  await bustProductCache(pending.flatMap((o) => o.items.map((i) => i.product)));
+  await syncProducts(pending.flatMap((o) => o.items.map((i) => i.product)));
 
   return Order.find({ paymentGroup });
 }
@@ -147,8 +148,12 @@ async function reserveStock(items) {
   return true;
 }
 
-async function bustProductCache(ids) {
-  if (ids.length) await getRedis().del(...ids.map((id) => `product:${id}`));
+// stock changed, so drop the cached page and push the new stock to search
+async function syncProducts(ids) {
+  if (!ids.length) return;
+  await getRedis().del(...ids.map((id) => `product:${id}`));
+  const products = await Product.find({ _id: { $in: ids } });
+  await Promise.all(products.map(indexProduct));
 }
 
 export async function cancelOrder(order, status = 'cancelled', { restock = true } = {}) {
@@ -156,7 +161,7 @@ export async function cancelOrder(order, status = 'cancelled', { restock = true 
     await Promise.all(
       order.items.map((i) => Product.updateOne({ _id: i.product }, { $inc: { stock: i.quantity } })),
     );
-    await bustProductCache(order.items.map((i) => i.product));
+    await syncProducts(order.items.map((i) => i.product));
   }
   if (order.payment?.paidAt) {
     await refundPayment(order.payment.intentId, order.total);

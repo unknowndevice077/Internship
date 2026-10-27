@@ -168,6 +168,19 @@ describe('with Elasticsearch enabled', () => {
     expect(es.delete).toHaveBeenCalled();
   });
 
+  it('pushes the new stock to search after a purchase', async () => {
+    const v = await approvedVendor();
+    const p = await makeProduct(v.vendorId, { stock: 5 });
+    const c = await login('customer');
+    await api().post('/api/cart/items').set(auth(c.token)).send({ productId: p._id, quantity: 2 });
+    const checkout = await api().post('/api/orders/checkout').set(auth(c.token)).send({ shippingAddress: address });
+    es.index.mockClear();
+    await api().post(`/api/orders/confirm/${checkout.body.paymentGroup}`).set(auth(c.token));
+    expect(es.index).toHaveBeenCalledWith(
+      expect.objectContaining({ id: p._id.toString(), document: expect.objectContaining({ stock: 3 }) }),
+    );
+  });
+
   it('reindexes everything on demand', async () => {
     const v = await approvedVendor();
     await makeProduct(v.vendorId);

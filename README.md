@@ -79,7 +79,7 @@ Set `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. 
 
 ```bash
 cd server
-npm test               # 42 API tests against an in-memory MongoDB
+npm test               # 43 API tests against an in-memory MongoDB
 npm run test:coverage
 ```
 
