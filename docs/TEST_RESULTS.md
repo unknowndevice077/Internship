@@ -2,13 +2,45 @@
 
 Measured on 27 Oct 2026, Windows 11, Node 22.14.
 
-## Automated tests
+## Summary
+
+| Suite | Command | Result |
+| --- | --- | --- |
+| API tests | `cd server && npm test` | 46 passed |
+| Browser end-to-end tests | `cd client && npm run test:e2e` | 20 passed |
+| Lint | `npm run lint` in each package | 0 errors, 0 warnings |
+| Formatting | `npm run format:check` in each package | clean |
+
+All four run in GitHub Actions on every push.
+
+## End-to-end tests (Playwright)
+
+`cd client && npm run test:e2e` starts its own seeded API (in-memory MongoDB) and Vite server, then drives Chrome through the app the way a user would.
+
+| File | Flow |
+| --- | --- |
+| `browse.spec.js` | shop listing and facets, category, price and rating filters, in-stock filter, sorting, header search, paging, product gallery, store page, guest "add to cart" redirect and return, role-based redirects, 404 page, wrong password |
+| `customer.spec.js` | sign up, add from two stores, change quantity, remove, bad and good coupons, checkout splits into two orders, cart empties, order timeline, invoice download, cancel restocks, out-of-stock rejection, logout |
+| `marketplace.spec.js` | the full loop in order: vendor signs up and opens a store, can't list before approval, connects payouts, admin sets 15% commission and approves, vendor lists a product with an image upload, edits it, hides and re-shows it, creates a store coupon, customer buys 2 with the coupon ($45.00), vendor sees the $38.25 payout and ships placed → packed → shipped → delivered, customer leaves a verified review, admin sees analytics, rejects a 95% coupon, suspends and re-approves the store (product disappears and comes back), disables the customer (they're logged out and can't sign back in) |
+
+### Bugs the end-to-end tests caught (all fixed, with regression tests)
+
+| Bug | Impact | Fix |
+| --- | --- | --- |
+| Toggling a product hidden/live reset its stock to 0 and wiped its images, tags and description | vendors would lose product data from a single click | update schemas no longer apply create defaults, Mongoose handles defaults on create |
+| Toggling a coupon on/off reset its minimum order and usage limit | coupons silently lost their limits | same fix |
+| The auth rate limit covered `/auth/me`, which runs on every page load | users got logged out after about 50 page loads in 15 minutes | the limit now only covers login and register |
+| Any error from `/auth/me` (500, network) logged the user out | flaky connections would sign people out | only a 401 clears the session |
+| Disabling a user didn't end their existing sessions | a banned user stayed logged in for up to 7 days | sessions are tracked per user and removed on disable |
+| "1 items" on the shop page | wording | singular/plural |
+
+## API tests
 
 `cd server && npm run test:coverage`
 
 ```
 Test Files  6 passed (6)
-     Tests  43 passed (43)
+     Tests  46 passed (46)
 ```
 
 | File | What it covers |
@@ -26,9 +58,9 @@ Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exa
 
 | | Statements | Branches | Functions | Lines |
 | --- | --- | --- | --- | --- |
-| All files | 88.4% | 70.5% | 92.3% | 94.0% |
+| All files | 89.0% | 71.1% | 93.0% | 94.3% |
 
-`npm audit --omit=dev`: 0 vulnerabilities.
+`npm audit --omit=dev`: 0 vulnerabilities in both packages. The full audit shows one moderate `uuid` advisory, which comes from a dev-only test tool and never ships.
 
 ## Against the real services
 

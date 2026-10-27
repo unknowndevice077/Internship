@@ -79,11 +79,16 @@ Set `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. 
 
 ```bash
 cd server
-npm test               # 43 API tests against an in-memory MongoDB
+npm test               # 46 API tests against an in-memory MongoDB
 npm run test:coverage
+npm run lint && npm run format:check
+
+cd ../client
+npm run test:e2e       # 20 Playwright browser tests, starts its own API and web server
+npm run lint && npm run format:check
 ```
 
-Stripe and Elasticsearch are mocked at the SDK level in `tests/integrations.test.js`, so the real code paths for both are covered without network access. Results are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
+The end-to-end tests use your installed Google Chrome (`channel: 'chrome'`), so there's no browser download. Stripe and Elasticsearch are mocked at the SDK level in `server/tests/integrations.test.js`, so the real code paths for both are covered without network access. Results are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
 ## Deployment
 

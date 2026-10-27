@@ -14,7 +14,7 @@ Where the project stands, how to pick it up, and what's left before the 20 Nov 2
 | 6. Stripe Connect split payments | Done. Verified with SDK-level tests and mock mode. Not yet run with real test keys |
 | 7. Reviews, coupons, PDF invoices, admin analytics, separate deploys | Done. Deploy config ready, not deployed yet |
 
-Verified: 43 automated tests (94% line coverage), a fresh clone installs, tests, lints and builds, both Docker images build, and the full stack runs in containers. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
+Verified: 46 API tests (94% line coverage), 20 browser end-to-end tests covering every flow, clean lint and formatting, a fresh clone installs, tests, lints and builds, both Docker images build, and the full stack runs in containers. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Getting started
 
@@ -61,7 +61,7 @@ Open http://localhost:5173 and use the demo login buttons (password `demo-pass-1
 5. **Demo recording**, using the demo script in [PRESENTATION.md](PRESENTATION.md).
 6. **Slides** from the PRESENTATION.md outline.
 7. **Reflection:** write [REFLECTION.md](REFLECTION.md).
-8. Check that the first GitHub Actions run passes.
+8. Check that the GitHub Actions run passes (server, client and e2e jobs).
 
 ## Good next features
 
