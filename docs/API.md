@@ -6,16 +6,28 @@ Base URL: `/api`. The interactive docs are at `/api/docs/` and the schema is in 
 
 ```http
 POST /api/auth/register/   {"email", "password", "full_name", "workspace_name"}
-POST /api/auth/token/      {"email", "password"}          -> {"access", "refresh"}
-POST /api/auth/token/refresh/ {"refresh"}                  -> {"access"}
+POST /api/auth/token/      {"email", "password", "otp"?}  -> {"access", "refresh"}
+POST /api/auth/token/refresh/ {"refresh"}                  -> {"access", "refresh"} (the old refresh token is revoked)
+POST /api/auth/logout/     {"refresh"}                     -> 204, revokes the refresh token
 GET  /api/auth/me/                                         -> user + workspaces and roles
+PATCH /api/auth/me/        {"full_name"}
+POST /api/auth/password/change/ {"current_password", "new_password"} -> new tokens, other sessions revoked
+POST /api/auth/2fa/setup/                                  -> {"secret", "otpauth_url"}
+POST /api/auth/2fa/enable/ {"code"}                        -> {"recovery_codes": [8 codes]}
+POST /api/auth/2fa/disable/ {"password", "code"}           -> 204
 POST /api/auth/password-reset/ {"email"}                    -> 204, emails a link if the account exists
 POST /api/auth/password-reset/confirm/ {"uid", "token", "password"} -> 204
 POST /api/auth/verify-email/ {"token"}                     -> 204
 POST /api/auth/verify-email/resend/                        -> 204 (signed in)
 ```
 
-Access tokens last 30 minutes and refresh tokens 7 days. Send `Authorization: Bearer <access>`.
+Access tokens last 15 minutes and refresh tokens 7 days. Send `Authorization: Bearer <access>`. Every refresh
+returns a new refresh token and revokes the one that was sent, so a stolen token only works until its owner next
+refreshes.
+
+When two-factor authentication is on, `/auth/token/` answers `401` with `{"code": "otp_required"}` until the request
+includes `otp`, either a 6-digit authenticator code or one of the recovery codes. After 5 wrong attempts for the same
+email from the same address the endpoint answers `429` with `{"code": "locked"}` for 15 minutes.
 
 ## Tenant header
 
@@ -32,6 +44,8 @@ curl -H "Authorization: Bearer $TOKEN" -H "X-Workspace: acme-corp" localhost:800
 |---|---|---|---|
 | GET/POST | `/workspaces/` | any user | your workspaces / create one (you become owner) |
 | GET/PATCH | `/workspace/` | viewer / admin | current workspace |
+| DELETE | `/workspace/` | owner | `{"confirm": slug}`; removes everything and cancels the subscription |
+| GET | `/workspace/export/` | owner | streams projects, issues, comments, members and the audit log as JSON |
 | GET/POST/PATCH/DELETE | `/members/` | viewer / admin | invite by email; only owners can grant owner |
 | CRUD | `/projects/` | viewer / admin | `issue_count` included |
 | GET | `/projects/{id}/board/` | viewer | columns with cards and the transition list; `?sprint=active` |
@@ -40,10 +54,10 @@ curl -H "Authorization: Bearer $TOKEN" -H "X-Workspace: acme-corp" localhost:800
 | CRUD | `/sprints/?project=` | viewer / member | |
 | POST | `/sprints/{id}/start/` | member | one active sprint per project |
 | POST | `/sprints/{id}/complete/` | member | `{"move_to": sprint_id}` optional; queues a report |
-| CRUD | `/issues/` | viewer / member | filters: `project status sprint assignee type priority backlog q`, `ordering=rank\|number\|priority\|created_at` |
+| CRUD | `/issues/` | viewer / member | filters: `project status sprint assignee type priority backlog q` (full text over title and description, or an issue key like `WEB-12`), `ordering=rank\|number\|priority\|created_at` |
 | POST | `/issues/{id}/move/` | member | `{"status", "before", "after"}` neighbour ids |
 | CRUD | `/comments/?issue=` | viewer / member | authors edit their own; admins can delete any |
-| GET/POST/DELETE | `/attachments/?issue=` | viewer / member | multipart upload; `GET /attachments/{id}/download/` |
+| GET/POST/DELETE | `/attachments/?issue=` | viewer / member | multipart upload; `GET /attachments/{id}/download/`. Executable and web-page types are rejected, and files are virus scanned when ClamAV is configured |
 | GET | `/audit-log/` | admin | `?issue=` allowed for viewers |
 | GET | `/notifications/` | viewer | `?unread=true`, `unread-count/`, `{id}/read/`, `read-all/` |
 | CRUD | `/webhooks/` | admin | paid plans; `{id}/ping/`, `{id}/deliveries/`, `{id}/deliveries/{d}/redeliver/`, `events/` |
@@ -52,7 +66,7 @@ curl -H "Authorization: Bearer $TOKEN" -H "X-Workspace: acme-corp" localhost:800
 | POST | `/billing/checkout/` | owner | `{"plan": "pro"\|"business"}` -> Stripe Checkout URL |
 | POST | `/billing/portal/` | owner | Stripe customer portal URL |
 | POST | `/billing/webhook/` | Stripe | signature-verified |
-| GET | `/health/` | public | database + redis |
+| GET | `/health/` | public | database, redis and a worker heartbeat |
 
 ## Errors
 
@@ -65,7 +79,7 @@ Standard DRF format. Field errors look like `{"title": ["This field is required.
 | 401 | missing or expired token |
 | 429 | rate limited; auth endpoints allow 10 requests a minute per IP by default |
 | 402 | plan limit: `{"detail", "code": "plan_limit", "resource", "limit"}` |
-| 403 | role too low |
+| 403 | role too low, or `{"code": "email_unverified"}` when inviting or upgrading before confirming the email |
 | 404 | not found, or it belongs to another workspace |
 | 503 | billing endpoints when Stripe isn't configured |
 

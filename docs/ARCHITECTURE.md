@@ -157,12 +157,27 @@ checked in the API and return `402` with `code: plan_limit`.
 **Accounts.** Password reset uses Django's token generator, which hashes the current password, so a link stops
 working once it has been used. The reset endpoint answers 204 whether or not the email exists. Verification links
 are signed with the secret key and carry the email address, so changing the address voids old links; they expire
-after 3 days. Unverified users can still work and see a banner until they confirm.
+after 3 days. Unverified users can still work and see a banner until they confirm, but can't invite people or
+start a checkout.
+
+Refresh tokens rotate: each refresh issues a new one and blacklists the old one, and signing out, changing the
+password or resetting it blacklists the rest. Wrong passwords are counted per email and address (5 in 15 minutes
+locks that pair), so a stranger can't lock someone out from elsewhere. Two-factor authentication is TOTP with eight
+single-use recovery codes. The secret is encrypted with a key derived from `SECRET_KEY`, and a code that has been
+accepted can't be used again in its time window.
 
 **Hardening.** Auth endpoints are rate limited per IP (10/min) and everything else per IP or user, with counters
 in Redis. Debug is off unless `DJANGO_DEBUG` is set; production adds HTTPS redirects, secure cookies and HSTS.
 Attachments go to S3-compatible storage when a bucket is configured and are always downloaded through the API, so
-tenant checks apply. Errors from the API and worker go to Sentry when `SENTRY_DSN` is set.
+tenant checks apply. Uploads of executable and web-page types are refused, and if `CLAMD_HOST` is set each file is
+streamed to ClamAV first (a failed scan rejects the upload). Errors from the API and worker go to Sentry when
+`SENTRY_DSN` is set. nginx adds a Content-Security-Policy, `X-Frame-Options` and the other usual headers.
+
+**Data lifecycle.** A scheduled task prunes audit entries older than a year and notifications older than 90 days and
+clears expired tokens from the blacklist. Owners can export a workspace as streamed JSON and delete it, which
+cascades through every tenant table and cancels the Stripe subscription. Issue search is a Postgres full-text
+query (GIN index on title and description) plus a substring match on the title, and `WEB-12` style keys resolve
+directly. The health check also reports whether a worker has written its one-minute heartbeat.
 
 ## Roles
 

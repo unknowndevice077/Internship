@@ -2,19 +2,20 @@
 
 Last run 28 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
 
-## Backend: 96 passed, 92% coverage
+## Backend: 118 passed, 93% coverage
 
 ```
 $ pytest --cov
 ...
-96 passed in 35.75s
-TOTAL   2135 statements   170 missed   92%
+118 passed in 28.20s
+TOTAL   2468 statements   181 missed   93%
 ```
 
 | Test file | Tests | What it covers |
 |---|---:|---|
 | `test_models.py` | 10 | default workflow, per-project numbering, ranks, unique constraints, one active sprint, workspace deletion cascade |
 | `test_auth_api.py` | 5 | register, invited-user claim, login with email, unique slugs |
+| `test_hardening.py` | 22 | refresh rotation and revocation, logout, password change, lockout, 2FA enrol/login/replay/recovery codes/disable, unverified-email gates, blocked attachment types and ClamAV scan, export and workspace deletion (with Stripe cancel), full-text search, pruning, worker heartbeat |
 | `test_account_security.py` | 7 | password reset (no account enumeration, single-use token, weak password), email verification (tampered, stale and wrong-salt tokens), resend, login rate limit |
 | `test_tenancy_api.py` | 16 | missing header, non-member gets 404, cross-tenant read/write/FK smuggling, role matrix, last-owner protection |
 | `test_issues_api.py` | 9 | defaults, filters, move between neighbours, top of column, rank rebalancing, board, sprint lifecycle |
@@ -29,14 +30,14 @@ Coverage by app:
 
 | App | Statements | Coverage |
 |---|---:|---:|
-| accounts | 105 | 95% |
-| tenancy | 241 | 93% |
-| projects | 583 | 95% |
-| activity | 233 | 93% |
+| accounts | 432 | 97% |
+| tenancy | 289 | 94% |
+| projects | 590 | 95% |
+| activity | 280 | 94% |
 | notifications | 119 | 92% |
 | webhooks | 203 | 87% |
 | reports | 167 | 88% |
-| billing | 248 | 88% |
+| billing | 258 | 88% |
 
 Migrations, admin, ASGI/WSGI and the `stripe_setup` command (which needs a real Stripe account) are excluded.
 
@@ -53,15 +54,16 @@ $ npm test
 
 Covers finding a card's column, moving across columns and into an empty column, the neighbour ids sent to the move
 API, and the workflow rule check used to block columns. `npm run typecheck` (strict TypeScript) and
-`npm run build` both pass. The production bundle is 328 kB (103 kB gzipped).
+`npm run build` both pass. Pages load on demand: the first load is about 241 kB of JavaScript (78 kB gzipped) split into app, React and query chunks.
 
-## End-to-end: 33 passed (Playwright, Chromium)
+## End-to-end: 39 passed (Playwright, Chromium)
 
 `npm run e2e` starts the API and Vite, migrates and seeds the database, then drives the real UI. The suite passed
 three full runs in a row (90/90) before being added to CI.
 
 | Spec | Tests | Flows covered |
 |---|---:|---|
+| `security.spec.ts` | 6 | 2FA setup, sign-in with an authenticator code, recovery codes and turning it off; password change; account lockout; board filter, backlog search and keyboard shortcuts; workspace export and deletion; phone-width menu |
 | `account.spec.ts` | 3 | forgot password, emailed reset link, weak password, reused link rejected, verify banner, resend, confirm link, bad link |
 | `auth.spec.ts` | 5 | register, duplicate email, weak password, missing workspace name, wrong password, sign out, session after reload, page links |
 | `board.spec.ts` | 6 | create project, key validation, auto key, Free plan project limit and billing link, default columns, issue keys, create/cancel modal, drag between and within columns with reload, every drawer field, close by Escape/backdrop/button, history |
@@ -80,6 +82,9 @@ project and issue through nginx, and jobs processed by the containerised worker.
 |---|---|---|
 | Deleting a workspace failed (`ProtectedError`) because `Issue.status` was `PROTECT` | seed `--reset` | `RESTRICT`, plus a regression test |
 | `GET /api/workspaces/` ran one query per workspace | query-count test | subquery annotation |
+| The API image crashed on start: `pyotp` and `cryptography` were missing from `requirements.txt` | Docker stack build | added the pinned packages |
+| Escape didn't close the create-issue dialog | shortcut e2e test | Escape handler on the modal |
+| Vitest also collected the Playwright specs and failed, which would have broken the CI frontend job | running every suite together | `include` limited to `src/` in the Vite config |
 | Celery tasks didn't run eagerly in tests (`app.conf` is overridden by Django settings) | background job tests | set `CELERY_TASK_ALWAYS_EAGER` through Django settings |
 | Webhook retries raised `Retry` in eager mode | retry test | attempts tracked on the row, next attempt scheduled with `apply_async` |
 | Stripe SDK objects are no longer dicts (`.get` fails) | billing webhook tests | normalise with `to_dict()` |

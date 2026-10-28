@@ -182,6 +182,83 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAuditLogList'
           description: ''
+  /api/auth/2fa/disable/:
+    post:
+      operationId: auth_2fa_disable_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorDisable'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TwoFactorDisable'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TwoFactorDisable'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/2fa/enable/:
+    post:
+      operationId: auth_2fa_enable_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorCode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TwoFactorCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TwoFactorCode'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/2fa/setup/:
+    post:
+      operationId: auth_2fa_setup_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutBody'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutBody'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutBody'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/auth/me/:
     get:
       operationId: auth_me_retrieve
@@ -290,6 +367,28 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/auth/password/change/:
+    post:
+      operationId: auth_password_change_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePassword'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePassword'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePassword'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/auth/register/:
     post:
       operationId: auth_register_create
@@ -329,20 +428,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/Login'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/Login'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/Login'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenObtainPair'
+                $ref: '#/components/schemas/Login'
           description: ''
   /api/auth/token/refresh/:
     post:
@@ -2491,6 +2590,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workspace'
           description: ''
+    delete:
+      operationId: workspace_destroy
+      tags:
+      - workspace
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/workspace/export/:
+    get:
+      operationId: workspace_export_retrieve
+      tags:
+      - workspace
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: JSON download of the whole workspace
   /api/workspaces/:
     get:
       operationId: workspaces_list
@@ -2672,6 +2790,18 @@ components:
         * `todo` - To do
         * `in_progress` - In progress
         * `done` - Done
+    ChangePassword:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+      required:
+      - current_password
+      - new_password
     Checkout:
       type: object
       properties:
@@ -2799,6 +2929,28 @@ components:
       - reporter
       - title
       - updated_at
+    Login:
+      type: object
+      properties:
+        otp:
+          type: string
+          writeOnly: true
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    LogoutBody:
+      type: object
+      properties:
+        refresh:
+          type: string
+      required:
+      - refresh
     Me:
       type: object
       properties:
@@ -2815,6 +2967,9 @@ components:
         email_verified:
           type: boolean
           readOnly: true
+        totp_enabled:
+          type: boolean
+          readOnly: true
         workspaces:
           type: array
           items:
@@ -2825,6 +2980,7 @@ components:
       - email
       - email_verified
       - id
+      - totp_enabled
       - workspaces
     MemberInvite:
       type: object
@@ -3166,6 +3322,9 @@ components:
           type: string
           maxLength: 150
         email_verified:
+          type: boolean
+          readOnly: true
+        totp_enabled:
           type: boolean
           readOnly: true
         workspaces:
@@ -3523,26 +3682,6 @@ components:
       - id
       - name
       - project
-    TokenObtainPair:
-      type: object
-      properties:
-        email:
-          type: string
-          writeOnly: true
-        password:
-          type: string
-          writeOnly: true
-        access:
-          type: string
-          readOnly: true
-        refresh:
-          type: string
-          readOnly: true
-      required:
-      - access
-      - email
-      - password
-      - refresh
     TokenRefresh:
       type: object
       properties:
@@ -3551,7 +3690,6 @@ components:
           readOnly: true
         refresh:
           type: string
-          writeOnly: true
       required:
       - access
       - refresh
@@ -3572,6 +3710,24 @@ components:
       - id
       - project
       - to_status
+    TwoFactorCode:
+      type: object
+      properties:
+        code:
+          type: string
+      required:
+      - code
+    TwoFactorDisable:
+      type: object
+      properties:
+        code:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - code
+      - password
     TypeEnum:
       enum:
       - task

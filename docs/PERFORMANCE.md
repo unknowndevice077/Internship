@@ -48,13 +48,20 @@ search and unread-count endpoints.
 | 3 sync gunicorn workers | 64 req/s | 0 | 334 / 547 ms | 279 / 480 ms |
 | gthread workers, 4 threads each | 66 req/s | 0 | 359 / 929 ms | 197 / 499 ms |
 | + board built from `.values()` | 112 req/s | 0 | 144 / 357 ms | 160 / 392 ms |
+| + rate limiting, Redis cache, full-text search (seed `--issues 60`) | 153 req/s | 0 | 91 / 240 ms | 128 / 308 ms |
+
+The last row was measured on a different seed size than the rows above it, so it shows the added features cost
+nothing noticeable rather than a speed-up. Search over title and description (`q=fix`) came in at 119 / 278 ms.
+
+Each gunicorn worker thread can hold a Postgres connection. The Docker stack plus a second API process used 94 of
+Postgres' default 100 connections, so on small database plans lower `WEB_CONCURRENCY` or `GUNICORN_THREADS`.
 
 More workers alone didn't help: the backend container was at ~850% CPU, so the requests were CPU-bound in Python,
 not waiting on Postgres. Cutting serializer work on the heaviest endpoint gave the 75% throughput gain.
 
 ## Test suite
 
-- Backend: 96 tests, 92% line coverage (`pytest --cov`), ~35 s locally.
+- Backend: 118 tests, 93% line coverage (`pytest --cov`), ~30 s locally.
   Switching tests to the MD5 password hasher took the suite from 77 s to 16.5 s.
 - Frontend: 6 unit tests for the drag-and-drop ordering and workflow rules (`npm test`).
 

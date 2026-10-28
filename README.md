@@ -16,7 +16,10 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 - Webhooks signed with HMAC and retried with backoff, plus in-app and email notifications
 - Sprint reports with CSV export, and a weekly summary email
 - Free, Pro and Business plans billed through Stripe (test mode), with limits enforced by the API
-- Password reset and email verification
+- Password reset and email verification, two-factor authentication (authenticator app plus recovery codes), account
+  lockout, and refresh tokens that rotate and can be revoked
+- Issue search over titles and descriptions (or jump straight to `WEB-12`), keyboard shortcuts, and a layout that works on a phone
+- Workspace export as JSON and workspace deletion for owners
 - OpenAPI docs at `/api/docs/`
 
 Django 5.2 + DRF, PostgreSQL 16, Celery and Redis on the backend; React 18 + TypeScript (Vite, TanStack Query,
@@ -98,19 +101,20 @@ To try real checkout in test mode:
 5. Restart Django and the worker, then upgrade from the Billing page with card `4242 4242 4242 4242`.
 
 The plan only changes when Stripe's webhook arrives, not on the redirect back. If an upgrade doesn't show up,
-check that `stripe listen` is still running.
+check that `stripe listen` is still running. [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) has the full walkthrough,
+test cards and troubleshooting.
 
 ## Tests
 
 ```bash
-cd backend && pytest --cov      # 96 tests, 92% coverage
+cd backend && pytest --cov      # 118 tests, 93% coverage
 cd frontend && npm test         # 6 unit tests
-cd frontend && npm run e2e      # 33 Playwright tests
+cd frontend && npm run e2e      # 39 Playwright tests
 ```
 
 The Playwright suite starts its own API and Vite server (ports 8020 and 5191), reseeds the database and clicks
-through the real UI: signup, plan limits, drag and drop, the issue drawer, password reset, workflows, sprints,
-roles, webhooks and billing. To use your installed Chrome instead of downloading Chromium:
+through the real UI: signup, plan limits, drag and drop, the issue drawer, password reset, two-factor sign-in,
+workflows, sprints, roles, webhooks and billing. To use your installed Chrome instead of downloading Chromium:
 
 ```bash
 PW_CHANNEL=chrome E2E_PYTHON=../backend/.venv/bin/python npm run e2e
@@ -150,6 +154,10 @@ With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and H
   Cloudflare R2 or MinIO). Render's disk is wiped on every deploy, so this matters there.
 - `SENTRY_DSN` to send errors from the API and worker to Sentry
 - `NUM_PROXIES=1` behind nginx or Render, so rate limits see the real client IP
+- `LOGIN_MAX_FAILURES` and `LOGIN_LOCKOUT_SECONDS` for the sign-in lockout (5 failures, 15 minutes), and
+  `REQUIRE_VERIFIED_EMAIL=0` to drop the confirmed-email requirement for inviting people and upgrading
+- `CLAMD_HOST` / `CLAMD_PORT` to scan uploads with ClamAV; without it uploads are only filtered by file type
+- `AUDIT_RETENTION_DAYS` and `NOTIFICATION_RETENTION_DAYS` (365 and 90) for the nightly cleanup
 - `THROTTLE_AUTH_RATE` / `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` to change the rate limits (default 10, 60
   and 600 a minute)
 ## How it's put together
@@ -160,6 +168,10 @@ than a 403, so you can't tell whether another company's data exists.
 
 Card order on the board is a float `rank`. Moving a card writes one row (the midpoint of its neighbours), and a
 column only gets renumbered when the gaps run out.
+
+Sessions are short-lived access tokens plus refresh tokens that rotate on every use, with the old one blacklisted.
+Signing out, changing the password or resetting it revokes the rest. Sign-in failures are counted per email and
+address, and two-factor codes can't be replayed within their time window.
 
 Every change goes through the audit log. After the transaction commits, one Celery task turns each entry into
 notifications and webhook deliveries, so a request that rolls back never fires a webhook.
