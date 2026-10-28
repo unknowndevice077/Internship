@@ -6,6 +6,10 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import "./styles.css";
+import "./motion.css";
+import { applyTheme, storedTheme } from "./theme";
+
+applyTheme(storedTheme());
 
 const queryClient = new QueryClient({
   defaultOptions: {

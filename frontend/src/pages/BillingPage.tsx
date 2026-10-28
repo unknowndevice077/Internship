@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { api } from "../api/client";
 import { useAuth, useCan } from "../auth/useAuth";
+import { PageSkeleton } from "../components/Skeleton";
 
 interface Plan {
   code: string;
@@ -52,7 +53,12 @@ export default function BillingPage() {
   const portal = useMutation({ mutationFn: () => redirect("/billing/portal/") });
 
   if (!isAdmin) return <div className="page">Only workspace admins can see billing.</div>;
-  if (!data) return <div className="page muted">Loading…</div>;
+  if (!data)
+    return (
+      <div className="page" aria-busy="true">
+        <PageSkeleton />
+      </div>
+    );
 
   const current = data.plan;
   const error = upgrade.error?.message || portal.error?.message;

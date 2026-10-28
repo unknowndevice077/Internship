@@ -6,6 +6,7 @@ import { useCan } from "../auth/useAuth";
 import CreateIssueModal from "../components/CreateIssueModal";
 import IssueDrawer from "../components/IssueDrawer";
 import KanbanBoard from "../components/KanbanBoard";
+import { BoardSkeleton } from "../components/Skeleton";
 import { useShortcut } from "../components/useShortcut";
 
 export default function BoardPage() {
@@ -32,7 +33,12 @@ export default function BoardPage() {
   }, [board, query]);
   const filtering = query.trim() !== "";
 
-  if (isLoading) return <div className="page muted">Loading board…</div>;
+  if (isLoading)
+    return (
+      <div className="page page-board" aria-busy="true">
+        <BoardSkeleton />
+      </div>
+    );
   if (error || !board) return <div className="page">Could not load this board.</div>;
 
   return (

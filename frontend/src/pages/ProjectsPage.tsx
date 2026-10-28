@@ -6,6 +6,7 @@ import { api, ApiError, fieldErrors } from "../api/client";
 import { keys, useProjects } from "../api/queries";
 import type { Project } from "../api/types";
 import { useAuth, useCan } from "../auth/useAuth";
+import { GridSkeleton } from "../components/Skeleton";
 
 export default function ProjectsPage() {
   const { workspace } = useAuth();
@@ -30,7 +31,7 @@ export default function ProjectsPage() {
       {creating && <NewProjectForm onDone={() => setCreating(false)} />}
 
       {isLoading ? (
-        <p className="muted">Loading…</p>
+        <GridSkeleton />
       ) : projects?.length ? (
         <div className="project-grid">
           {projects.map((p) => (

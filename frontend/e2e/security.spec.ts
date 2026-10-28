@@ -160,7 +160,9 @@ test("filtering the board, searching the backlog and keyboard shortcuts", async 
 
 test("owners can export the workspace and delete it", async ({ page }) => {
   const email = uniqueEmail("owner");
-  await register(page, { name: "Olga", email, workspace: "Doomed Co" });
+  // unique per run, because slugs get a suffix when a name is already taken
+  const slug = `doomed-${Date.now()}`;
+  await register(page, { name: "Olga", email, workspace: slug });
   await createProject(page, "Keep Me", "KEP");
 
   await page.getByRole("link", { name: "Settings", exact: true }).click();
@@ -168,15 +170,15 @@ test("owners can export the workspace and delete it", async ({ page }) => {
     page.waitForEvent("download"),
     page.getByRole("button", { name: "Export workspace data" }).click(),
   ]);
-  expect(download.suggestedFilename()).toBe("doomed-co-export.json");
+  expect(download.suggestedFilename()).toBe(`${slug}-export.json`);
   const fs = await import("node:fs/promises");
   const data = JSON.parse(await fs.readFile((await download.path())!, "utf8"));
-  expect(data.workspace.slug).toBe("doomed-co");
+  expect(data.workspace.slug).toBe(slug);
   expect(data.projects.map((p: { name: string }) => p.name)).toEqual(["Keep Me"]);
 
   const remove = page.getByRole("button", { name: "Delete workspace" });
   await expect(remove).toBeDisabled();
-  await page.getByLabel("Type the workspace slug to confirm").fill("doomed-co");
+  await page.getByLabel("Type the workspace slug to confirm").fill(slug);
   await remove.click();
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });

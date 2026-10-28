@@ -5,7 +5,12 @@ import { api } from "../api/client";
 
 import { useProjects } from "../api/queries";
 import { useAuth, useCan } from "../auth/useAuth";
+import { MOD_KEY } from "../platform";
+import CommandPalette from "./CommandPalette";
 import NotificationBell from "./NotificationBell";
+import ShortcutsHelp from "./ShortcutsHelp";
+import ThemeToggle from "./ThemeToggle";
+import { useShortcut } from "./useShortcut";
 
 export default function Layout() {
   const { me, workspace, switchWorkspace, logout } = useAuth();
@@ -13,7 +18,22 @@ export default function Layout() {
   const { projectId } = useParams();
   const isAdmin = useCan("admin");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [palette, setPalette] = useState(false);
+  const [help, setHelp] = useState(false);
   const location = useLocation();
+
+  useShortcut("?", () => setHelp(true), !palette && !help);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPalette((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // close the drawer after navigating on small screens
   useEffect(() => setMenuOpen(false), [location.pathname]);
@@ -50,6 +70,11 @@ export default function Layout() {
           ))}
         </select>
 
+        <button className="palette-trigger" onClick={() => setPalette(true)}>
+          <span>Search or jump to</span>
+          <kbd>{MOD_KEY} K</kbd>
+        </button>
+
         <nav>
           <NavLink to="/" end>
             Projects
@@ -78,15 +103,28 @@ export default function Layout() {
               <div className="muted small">{workspace?.role}</div>
             </div>
           </div>
-          <button className="btn btn-ghost" onClick={logout}>
-            Sign out
-          </button>
+          <div className="sidebar-tools">
+            <ThemeToggle />
+            <button
+              className="btn btn-ghost"
+              onClick={() => setHelp(true)}
+              aria-label="Shortcuts help"
+              title="Keyboard shortcuts (?)"
+            >
+              <kbd>?</kbd>
+            </button>
+            <button className="btn btn-ghost" onClick={logout}>
+              Sign out
+            </button>
+          </div>
         </div>
       </aside>
       <main className="content">
         {me && !me.email_verified && <VerifyBanner email={me.email} />}
         <Outlet />
       </main>
+      {palette && <CommandPalette onClose={() => setPalette(false)} />}
+      {help && <ShortcutsHelp onClose={() => setHelp(false)} />}
     </div>
   );
 }

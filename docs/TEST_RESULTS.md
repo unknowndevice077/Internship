@@ -1,6 +1,6 @@
 # Test results
 
-Last run 28 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
+Last run 29 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
 
 ## Backend: 118 passed, 93% coverage
 
@@ -56,13 +56,14 @@ Covers finding a card's column, moving across columns and into an empty column, 
 API, and the workflow rule check used to block columns. `npm run typecheck` (strict TypeScript) and
 `npm run build` both pass. Pages load on demand: the first load is about 241 kB of JavaScript (78 kB gzipped) split into app, React and query chunks.
 
-## End-to-end: 39 passed (Playwright, Chromium)
+## End-to-end: 43 passed (Playwright, Chromium)
 
 `npm run e2e` starts the API and Vite, migrates and seeds the database, then drives the real UI. The suite passed
 three full runs in a row (90/90) before being added to CI.
 
 | Spec | Tests | Flows covered |
 |---|---:|---|
+| `polish.spec.ts` | 4 | command palette (Ctrl+K, filtering, Enter, Escape, empty state), shortcuts list, light/dark theme and its persistence, page animation and reduced motion |
 | `security.spec.ts` | 6 | 2FA setup, sign-in with an authenticator code, recovery codes and turning it off; password change; account lockout; board filter, backlog search and keyboard shortcuts; workspace export and deletion; phone-width menu |
 | `account.spec.ts` | 3 | forgot password, emailed reset link, weak password, reused link rejected, verify banner, resend, confirm link, bad link |
 | `auth.spec.ts` | 5 | register, duplicate email, weak password, missing workspace name, wrong password, sign out, session after reload, page links |
@@ -85,6 +86,8 @@ Run against a real Stripe test account with the Stripe CLI forwarding webhooks t
 | Subscription cancelled | `customer.subscription.deleted` forwarded, 200, workspace back on Free |
 
 The card form on Stripe's hosted page wasn't driven by the script, so that part is checked by hand with `4242 4242 4242 4242`.
+
+The whole suite also passes with animations switched on (`E2E_MOTION=1`), and the e2e API is started with blank Stripe keys so tests never reach a real account.
 
 Also checked by hand: the full Docker stack (`docker compose --profile full up`) with health check, register, create
 project and issue through nginx, and jobs processed by the containerised worker.

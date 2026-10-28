@@ -20,6 +20,8 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
   lockout, and refresh tokens that rotate and can be revoked
 - Issue search over titles and descriptions (or jump straight to `WEB-12`), keyboard shortcuts, and a layout that works on a phone
 - Workspace export as JSON and workspace deletion for owners
+- Light and dark themes (following the system by default), a command palette on Ctrl+K, a shortcuts list on `?`,
+  skeleton loading states, and animations that switch off for people who ask for reduced motion
 - OpenAPI docs at `/api/docs/`
 
 Django 5.2 + DRF, PostgreSQL 16, Celery and Redis on the backend; React 18 + TypeScript (Vite, TanStack Query,
@@ -109,12 +111,13 @@ test cards and troubleshooting.
 ```bash
 cd backend && pytest --cov      # 118 tests, 93% coverage
 cd frontend && npm test         # 6 unit tests
-cd frontend && npm run e2e      # 39 Playwright tests
+cd frontend && npm run e2e      # 43 Playwright tests
 ```
 
 The Playwright suite starts its own API and Vite server (ports 8020 and 5191), reseeds the database and clicks
 through the real UI: signup, plan limits, drag and drop, the issue drawer, password reset, two-factor sign-in,
-workflows, sprints, roles, webhooks and billing. To use your installed Chrome instead of downloading Chromium:
+workflows, sprints, roles, webhooks and billing. The suite runs with animations off; set `E2E_MOTION=1` to run it with them on. To use your installed Chrome instead of
+downloading Chromium:
 
 ```bash
 PW_CHANNEL=chrome E2E_PYTHON=../backend/.venv/bin/python npm run e2e

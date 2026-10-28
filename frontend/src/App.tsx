@@ -19,10 +19,19 @@ const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const WorkspaceSettingsPage = lazy(() => import("./pages/WorkspaceSettingsPage"));
 
+function Splash() {
+  return (
+    <div className="splash" role="status">
+      <span className="spinner" />
+      Loading…
+    </div>
+  );
+}
+
 export default function App() {
   const { me, loading } = useAuth();
 
-  if (loading) return <div className="splash">Loading…</div>;
+  if (loading) return <Splash />;
 
   if (!me) {
     return (
@@ -38,7 +47,7 @@ export default function App() {
   }
 
   return (
-    <Suspense fallback={<div className="splash">Loading…</div>}>
+    <Suspense fallback={<Splash />}>
       <Routes>
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route element={<Layout />}>

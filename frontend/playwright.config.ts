@@ -19,6 +19,8 @@ export default defineConfig({
     baseURL: `http://localhost:${WEB_PORT}`,
     channel: process.env.PW_CHANNEL,
     viewport: { width: 1440, height: 900 },
+    // animations are covered by their own spec; the rest of the suite runs without them
+    reducedMotion: process.env.E2E_MOTION ? "no-preference" : "reduce",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -35,6 +37,9 @@ export default defineConfig({
         DJANGO_DEBUG: "1",
         // the suite invites people from freshly registered accounts
         REQUIRE_VERIFIED_EMAIL: "0",
+        // never talk to a real Stripe account from tests, even if the developer has keys in .env
+        STRIPE_SECRET_KEY: "",
+        STRIPE_WEBHOOK_SECRET: "",
         // the suite signs in far more often than a person would
         THROTTLE_AUTH_RATE: "1000/min",
         THROTTLE_ANON_RATE: "1000/min",
