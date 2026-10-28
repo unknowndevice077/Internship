@@ -44,10 +44,14 @@ test.describe('customer shopping flow', () => {
     await page.getByRole('button', { name: 'Apply' }).click();
     await expect(page.getByText('Coupon WELCOME10')).toBeVisible();
     const sub = Number(subtotal.replace(/[$,]/g, ''));
-    const total = Number(
-      (await page.locator('.summary .total span').last().textContent()).replace(/[$,]/g, ''),
-    );
-    expect(total).toBeCloseTo(sub * 0.9, 1);
+    const toNumber = (text) => Number(text.replace(/[$,]/g, ''));
+    const total = toNumber(await page.locator('.summary .total span').last().textContent());
+    // Glow Beauty is under its free-shipping limit, so its flat rate is added
+    const shippingRow = page.locator('.summary .row', { hasText: 'Shipping from Glow Beauty Co' });
+    await expect(shippingRow).toBeVisible();
+    const shipping = toNumber(await shippingRow.locator('span').last().textContent());
+    expect(shipping).toBe(4.99);
+    expect(total).toBeCloseTo(sub * 0.9 + shipping, 1);
 
     await fillAddress(page);
     await page.getByRole('button', { name: 'Place order' }).click();
@@ -61,7 +65,8 @@ test.describe('customer shopping flow', () => {
   test('order detail shows the timeline, invoice and cancel restocks', async ({ page }) => {
     await register(page, { name: 'Leo Test', email: `${unique('leo')}@test.dev` });
     await openProduct(page, 'Ice Cube Tray');
-    const stockBefore = Number((await page.getByText(/in stock/).textContent()).match(/\d+/)[0]);
+    const stockText = await page.getByText(/in stock/).textContent();
+    const stockBefore = Number(stockText.match(/\d+/)[0]);
     await page.getByRole('button', { name: 'Add to cart' }).click();
     await page.goto('/checkout');
     await fillAddress(page);

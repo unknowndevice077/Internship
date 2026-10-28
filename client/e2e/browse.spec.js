@@ -52,7 +52,7 @@ test.describe('browsing as a guest', () => {
   test('search box suggests products while typing', async ({ page }) => {
     await page.goto('/');
     await page.getByPlaceholder('Search products, brands…').fill('lipst');
-    const suggestion = page.locator('.suggestions button').first();
+    const suggestion = page.getByRole('option').first();
     await expect(suggestion).toContainText(/Lipstick/i);
     await suggestion.click();
     await expect(page).toHaveURL(/\/products\//);

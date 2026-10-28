@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ErrorText } from '../components/ui';
+import type { Role } from '../types';
 
-export const homeFor = (role) => ({ vendor: '/vendor', admin: '/admin' })[role] || '/';
+export const homeFor = (role: Role) => ({ vendor: '/vendor', admin: '/admin', customer: '/' })[role];
 
 const DEMO = [
   ['Customer', 'customer@vendora.test'],
@@ -17,10 +18,10 @@ export default function Login() {
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
@@ -41,6 +42,8 @@ export default function Login() {
         <input
           type="email"
           placeholder="Email"
+          aria-label="Email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -48,6 +51,8 @@ export default function Login() {
         <input
           type="password"
           placeholder="Password"
+          aria-label="Password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -57,6 +62,9 @@ export default function Login() {
         </button>
         <ErrorText error={error} />
       </form>
+      <p>
+        <Link to="/forgot-password">Forgot your password?</Link>
+      </p>
       <p>
         New here? <Link to="/register">Create an account</Link>
       </p>

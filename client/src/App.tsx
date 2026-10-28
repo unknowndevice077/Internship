@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import { RequireRole, Spinner } from './components/ui';
@@ -7,24 +7,28 @@ import ProductPage from './pages/ProductPage';
 import Store from './pages/Store';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { ForgotPassword, ResetPassword, VerifyEmail } from './pages/AccountLinks';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import Wishlist from './pages/Wishlist';
 import VendorLayout from './pages/vendor/VendorLayout';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorProducts from './pages/vendor/VendorProducts';
 import ProductForm from './pages/vendor/ProductForm';
 import VendorOrders from './pages/vendor/VendorOrders';
 import VendorPayouts from './pages/vendor/VendorPayouts';
+import VendorSettings from './pages/vendor/VendorSettings';
 import Coupons from './pages/Coupons';
 import AdminLayout from './pages/admin/AdminLayout';
-// recharts is heavy and only admins need it
-const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 import AdminVendors from './pages/admin/AdminVendors';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminPayouts from './pages/admin/AdminPayouts';
+// recharts is heavy and only admins need it
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 
-const customer = (el) => <RequireRole roles={['customer']}>{el}</RequireRole>;
+const customer = (el: ReactNode) => <RequireRole roles={['customer']}>{el}</RequireRole>;
 
 export default function App() {
   return (
@@ -35,9 +39,13 @@ export default function App() {
         <Route path="stores/:slug" element={<Store />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="verify-email" element={<VerifyEmail />} />
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={customer(<Checkout />)} />
         <Route path="orders" element={customer(<Orders />)} />
+        <Route path="wishlist" element={customer(<Wishlist />)} />
         <Route
           path="orders/:id"
           element={
@@ -62,6 +70,7 @@ export default function App() {
           <Route path="orders" element={<VendorOrders />} />
           <Route path="coupons" element={<Coupons />} />
           <Route path="payouts" element={<VendorPayouts />} />
+          <Route path="settings" element={<VendorSettings />} />
         </Route>
 
         <Route
@@ -81,6 +90,7 @@ export default function App() {
             }
           />
           <Route path="vendors" element={<AdminVendors />} />
+          <Route path="payouts" element={<AdminPayouts />} />
           <Route path="coupons" element={<Coupons />} />
           <Route path="users" element={<AdminUsers />} />
         </Route>

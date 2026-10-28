@@ -1,25 +1,76 @@
-import { useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
 import { ErrorText, Spinner, Stars, useFetch } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import type { Items, Product, ProductSummary, Review } from '../types';
+import { ProductCard } from './Shop';
+
+function shippingNote(vendor: Product['vendor']) {
+  if (!vendor.shippingFee) return 'Free shipping';
+  if (vendor.freeShippingOver != null) {
+    return `${money(vendor.shippingFee)} shipping, free over ${money(vendor.freeShippingOver)} from this store`;
+  }
+  return `${money(vendor.shippingFee)} shipping`;
+}
+
+function SaveButton({ productId }: { productId: string }) {
+  const saved = useFetch(
+    () => api<Items<ProductSummary>>('/me/wishlist').then((d) => d.items.some((p) => p._id === productId)),
+    [productId],
+  );
+  const [on, setOn] = useState<boolean | null>(null);
+  const isOn = on ?? saved.data ?? false;
+
+  const toggle = async () => {
+    await api(`/me/wishlist/${productId}`, { method: isOn ? 'DELETE' : 'PUT' });
+    setOn(!isOn);
+  };
+
+  return (
+    <button type="button" className="save-button" aria-pressed={isOn} onClick={toggle}>
+      {isOn ? '♥ Saved' : '♡ Save'}
+    </button>
+  );
+}
+
+function RecentlyViewed({ exclude }: { exclude: string }) {
+  const { data } = useFetch(() => api<Items<ProductSummary>>('/me/recent'), [exclude]);
+  const items = data?.items.filter((p) => p._id !== exclude).slice(0, 6) ?? [];
+  if (!items.length) return null;
+  return (
+    <section className="recent">
+      <h2>Recently viewed</h2>
+      <div className="grid">
+        {items.map((p) => (
+          <ProductCard key={p._id} p={p} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function ProductPage() {
-  const { id } = useParams();
+  const { id = '' } = useParams();
   const { user } = useAuth();
   const { add } = useCart();
   const navigate = useNavigate();
-  const product = useFetch(() => api(`/products/${id}`).then((d) => d.product), [id]);
-  const reviews = useFetch(() => api(`/products/${id}/reviews`).then((d) => d.items), [id]);
+  const product = useFetch(() => api<{ product: Product }>(`/products/${id}`).then((d) => d.product), [id]);
+  const reviews = useFetch(() => api<Items<Review>>(`/products/${id}/reviews`).then((d) => d.items), [id]);
 
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
-  const [msg, setMsg] = useState(null);
-  const [error, setError] = useState(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const isCustomer = user?.role === 'customer';
+
+  useEffect(() => {
+    if (isCustomer) api(`/me/recent/${id}`, { method: 'POST' }).catch(() => {});
+  }, [id, isCustomer]);
 
   if (product.loading) return <Spinner />;
-  if (product.error) return <ErrorText error={product.error} />;
+  if (product.error || !product.data) return <ErrorText error={product.error} />;
   const p = product.data;
 
   const addToCart = async () => {
@@ -43,7 +94,13 @@ export default function ProductPage() {
           {p.images.length > 1 && (
             <div className="thumbs">
               {p.images.map((src, i) => (
-                <button key={src} className={i === active ? 'active' : ''} onClick={() => setActive(i)}>
+                <button
+                  key={src}
+                  className={i === active ? 'active' : ''}
+                  onClick={() => setActive(i)}
+                  aria-label={`Show image ${i + 1}`}
+                  aria-pressed={i === active}
+                >
                   <img src={imageUrl(src)} alt="" />
                 </button>
               ))}
@@ -62,20 +119,27 @@ export default function ProductPage() {
           <p>{p.description}</p>
           <p className={p.stock > 0 ? 'ok' : 'error'}>
             {p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
+            {p.stock > 0 && p.stock <= 5 && <span className="warn"> · selling fast</span>}
           </p>
+          <p className="muted small">{shippingNote(p.vendor)}</p>
 
-          {(!user || user.role === 'customer') && p.stock > 0 && (
+          {(!user || isCustomer) && (
             <div className="buy-row">
-              <select value={qty} onChange={(e) => setQty(Number(e.target.value))}>
-                {Array.from({ length: Math.min(10, p.stock) }, (_, i) => i + 1).map((n) => (
-                  <option key={n}>{n}</option>
-                ))}
-              </select>
-              <button className="primary" onClick={addToCart}>
-                Add to cart
-              </button>
+              {p.stock > 0 && (
+                <>
+                  <select value={qty} onChange={(e) => setQty(Number(e.target.value))} aria-label="Quantity">
+                    {Array.from({ length: Math.min(10, p.stock) }, (_, i) => i + 1).map((n) => (
+                      <option key={n}>{n}</option>
+                    ))}
+                  </select>
+                  <button className="primary" onClick={addToCart}>
+                    Add to cart
+                  </button>
+                </>
+              )}
+              {isCustomer && <SaveButton productId={p._id} />}
               {msg && (
-                <Link to="/cart" className="ok">
+                <Link to="/cart" className="ok" role="status">
                   {msg} · view cart
                 </Link>
               )}
@@ -87,7 +151,7 @@ export default function ProductPage() {
 
       <section className="reviews">
         <h2>Customer reviews</h2>
-        {user?.role === 'customer' && (
+        {isCustomer && (
           <ReviewForm
             productId={id}
             onSaved={() => {
@@ -108,16 +172,18 @@ export default function ProductPage() {
           </div>
         ))}
       </section>
+
+      {isCustomer && <RecentlyViewed exclude={p._id} />}
     </>
   );
 }
 
-function ReviewForm({ productId, onSaved }) {
+function ReviewForm({ productId, onSaved }: { productId: string; onSaved: () => void }) {
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<unknown>(null);
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     try {
       await api(`/products/${productId}/reviews`, { method: 'POST', body: { rating, body } });
@@ -144,6 +210,7 @@ function ReviewForm({ productId, onSaved }) {
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="What did you think?"
+        aria-label="Your review"
         rows={3}
       />
       <button type="submit">Post review</button>

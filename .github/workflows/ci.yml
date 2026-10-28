@@ -38,6 +38,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
+      - run: npm run typecheck
       - run: npm run build
 
   e2e:
@@ -52,7 +53,6 @@ jobs:
         working-directory: server
       - run: npm ci
         working-directory: client
-      # the seed pulls products from dummyjson.com, the runner has internet so that's fine
       - run: npx playwright test
         working-directory: client
       - uses: actions/upload-artifact@v4

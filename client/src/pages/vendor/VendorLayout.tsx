@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { api } from '../../api/client';
 import { ErrorText } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
+import type { Vendor } from '../../types';
 
 export default function VendorLayout() {
   const { vendor } = useAuth();
@@ -10,7 +11,7 @@ export default function VendorLayout() {
 
   return (
     <div className="dash">
-      <nav className="side card">
+      <nav className="side card" aria-label="Seller hub">
         <strong>{vendor.storeName}</strong>
         <NavLink end to="/vendor">
           Overview
@@ -19,10 +20,11 @@ export default function VendorLayout() {
         <NavLink to="/vendor/orders">Orders</NavLink>
         <NavLink to="/vendor/coupons">Coupons</NavLink>
         <NavLink to="/vendor/payouts">Payouts</NavLink>
+        <NavLink to="/vendor/settings">Store settings</NavLink>
       </nav>
       <div>
         {vendor.status !== 'approved' && (
-          <p className="notice">
+          <p className="notice" role="status">
             {vendor.status === 'pending'
               ? 'Your store is waiting for admin approval. You can set up payouts in the meantime.'
               : 'Your store is suspended. Contact support.'}
@@ -37,12 +39,12 @@ export default function VendorLayout() {
 function Onboarding() {
   const { setVendor } = useAuth();
   const [form, setForm] = useState({ storeName: '', description: '' });
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<unknown>(null);
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const { vendor } = await api('/vendors/onboard', { method: 'POST', body: form });
+      const { vendor } = await api<{ vendor: Vendor }>('/vendors/onboard', { method: 'POST', body: form });
       setVendor(vendor);
     } catch (err) {
       setError(err);
@@ -56,12 +58,14 @@ function Onboarding() {
       <form className="stack" onSubmit={submit}>
         <input
           placeholder="Store name"
+          aria-label="Store name"
           value={form.storeName}
           onChange={(e) => setForm({ ...form, storeName: e.target.value })}
           required
         />
         <textarea
           placeholder="What do you sell?"
+          aria-label="Store description"
           rows={4}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}

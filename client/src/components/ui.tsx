@@ -1,36 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type DependencyList, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import type { OrderStatus, Role } from '../types';
 
-export function Stars({ value = 0, count }) {
+export function Stars({ value = 0, count }: { value?: number; count?: number }) {
   const full = Math.round(value);
   return (
-    <span className="stars" title={`${value} out of 5`}>
-      {'★'.repeat(full)}
-      <span className="stars-empty">{'★'.repeat(5 - full)}</span>
+    <span className="stars" title={`${value} out of 5`} aria-label={`Rated ${value} out of 5`}>
+      <span aria-hidden="true">
+        {'★'.repeat(full)}
+        <span className="stars-empty">{'★'.repeat(5 - full)}</span>
+      </span>
       {count !== undefined && <span className="muted"> ({count})</span>}
     </span>
   );
 }
 
-export function StatusBadge({ status }) {
+export function StatusBadge({ status }: { status: OrderStatus | string }) {
   return <span className={`badge badge-${status}`}>{status.replace('_', ' ')}</span>;
 }
 
 export function Spinner() {
-  return <div className="spinner" aria-label="Loading" />;
+  return <div className="spinner" role="status" aria-label="Loading" />;
 }
 
-export function ErrorText({ error }) {
+export function ErrorText({ error }: { error?: unknown }) {
   if (!error) return null;
-  return <p className="error">{error.message || String(error)}</p>;
+  return (
+    <p className="error" role="alert">
+      {error instanceof Error ? error.message : String(error)}
+    </p>
+  );
 }
 
-export function Empty({ children }) {
+export function Empty({ children }: { children: ReactNode }) {
   return <div className="empty">{children}</div>;
 }
 
-export function RequireRole({ roles, children }) {
+export function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <Spinner />;
@@ -39,8 +46,14 @@ export function RequireRole({ roles, children }) {
   return children;
 }
 
-export function useFetch(loader, deps = []) {
-  const [state, setState] = useState({ data: null, error: null, loading: true });
+interface FetchState<T> {
+  data: T | null;
+  error: Error | null;
+  loading: boolean;
+}
+
+export function useFetch<T>(loader: () => Promise<T>, deps: DependencyList = []) {
+  const [state, setState] = useState<FetchState<T>>({ data: null, error: null, loading: true });
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -48,7 +61,7 @@ export function useFetch(loader, deps = []) {
     setState((s) => ({ ...s, loading: true }));
     loader()
       .then((data) => alive && setState({ data, error: null, loading: false }))
-      .catch((error) => alive && setState({ data: null, error, loading: false }));
+      .catch((error: Error) => alive && setState({ data: null, error, loading: false }));
     return () => {
       alive = false;
     };

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
 import { Empty, ErrorText, Stars, useFetch } from '../components/ui';
+import type { ProductSummary, SearchResult } from '../types';
 
 const SORTS = [
   ['', 'Best match'],
@@ -10,11 +12,11 @@ const SORTS = [
   ['rating', 'Top rated'],
 ];
 
-export function ProductCard({ p }) {
+export function ProductCard({ p }: { p: ProductSummary }) {
   return (
     <Link to={`/products/${p._id}`} className="card product-card">
       <div className="thumb">
-        {p.image && <img src={imageUrl(p.image)} alt={p.title} loading="lazy" />}
+        {p.image && <img src={imageUrl(p.image)} alt="" loading="lazy" />}
         {p.stock === 0 && <span className="sold-out">Sold out</span>}
       </div>
       <div className="product-card-body">
@@ -29,7 +31,7 @@ export function ProductCard({ p }) {
 
 function SkeletonGrid() {
   return (
-    <div className="grid" aria-label="Loading">
+    <div className="grid" role="status" aria-label="Loading products">
       {Array.from({ length: 8 }, (_, i) => (
         <div key={i} className="card skeleton">
           <div className="thumb" />
@@ -46,24 +48,45 @@ function SkeletonGrid() {
 export default function Shop() {
   const [params, setParams] = useSearchParams();
   const query = params.toString();
-  const { data, error, loading } = useFetch(() => api(`/products?limit=24&${query}`), [query]);
+  const { data, error, loading } = useFetch(() => api<SearchResult>(`/products?limit=24&${query}`), [query]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const set = (key, value) => {
+  const set = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
     next.delete('page');
     setParams(next);
   };
+  const goToPage = (n: number) => {
+    const next = new URLSearchParams(params);
+    if (n > 1) next.set('page', String(n));
+    else next.delete('page');
+    setParams(next);
+    window.scrollTo(0, 0);
+  };
   const page = Number(params.get('page')) || 1;
   const pages = data ? Math.ceil(data.total / data.limit) : 1;
+  const activeFilters = ['category', 'minPrice', 'maxPrice', 'minRating', 'inStock'].filter((k) =>
+    params.get(k),
+  ).length;
 
   return (
     <div className="shop">
-      <aside className="filters card">
+      <button
+        type="button"
+        className="filters-toggle"
+        aria-expanded={filtersOpen}
+        aria-controls="filters"
+        onClick={() => setFiltersOpen((o) => !o)}
+      >
+        Filters{activeFilters ? ` (${activeFilters})` : ''}
+      </button>
+      <aside id="filters" className={`filters card ${filtersOpen ? 'open' : ''}`} aria-label="Filters">
         <h3>Category</h3>
         <button
           className={`facet ${!params.get('category') ? 'active' : ''}`}
+          aria-pressed={!params.get('category')}
           onClick={() => set('category', '')}
         >
           All
@@ -72,6 +95,7 @@ export default function Shop() {
           <button
             key={c.value}
             className={`facet ${params.get('category') === c.value ? 'active' : ''}`}
+            aria-pressed={params.get('category') === c.value}
             onClick={() => set('category', c.value)}
           >
             {c.value.replace(/-/g, ' ')} <span className="muted">{c.count}</span>
@@ -86,9 +110,11 @@ export default function Shop() {
             const f = new FormData(e.currentTarget);
             const next = new URLSearchParams(params);
             for (const k of ['minPrice', 'maxPrice']) {
-              if (f.get(k)) next.set(k, f.get(k));
+              const v = f.get(k);
+              if (typeof v === 'string' && v) next.set(k, v);
               else next.delete(k);
             }
+            next.delete('page');
             setParams(next);
           }}
         >
@@ -97,6 +123,7 @@ export default function Shop() {
             type="number"
             min="0"
             placeholder="Min"
+            aria-label="Minimum price"
             defaultValue={params.get('minPrice') || ''}
           />
           <input
@@ -104,6 +131,7 @@ export default function Shop() {
             type="number"
             min="0"
             placeholder="Max"
+            aria-label="Maximum price"
             defaultValue={params.get('maxPrice') || ''}
           />
           <button type="submit">Go</button>
@@ -114,6 +142,7 @@ export default function Shop() {
           <button
             key={r}
             className={`facet ${params.get('minRating') === String(r) ? 'active' : ''}`}
+            aria-pressed={params.get('minRating') === String(r)}
             onClick={() => set('minRating', params.get('minRating') === String(r) ? '' : String(r))}
           >
             <Stars value={r} /> & up
@@ -135,12 +164,16 @@ export default function Shop() {
           <div>
             {params.get('q') ? <h2>Results for “{params.get('q')}”</h2> : <h2>All products</h2>}
             {data && (
-              <span className="muted">
+              <span className="muted" role="status">
                 {data.total} {data.total === 1 ? 'item' : 'items'}
               </span>
             )}
           </div>
-          <select value={params.get('sort') || ''} onChange={(e) => set('sort', e.target.value)}>
+          <select
+            value={params.get('sort') || ''}
+            onChange={(e) => set('sort', e.target.value)}
+            aria-label="Sort by"
+          >
             {SORTS.map(([v, label]) => (
               <option key={v} value={v}>
                 {label}
@@ -170,24 +203,17 @@ export default function Shop() {
         )}
 
         {pages > 1 && (
-          <div className="pager">
-            <button disabled={page <= 1} onClick={() => set('page', String(page - 1))}>
+          <nav className="pager" aria-label="Pages">
+            <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>
               Previous
             </button>
             <span>
               Page {page} of {pages}
             </span>
-            <button
-              disabled={page >= pages}
-              onClick={() => {
-                const next = new URLSearchParams(params);
-                next.set('page', String(page + 1));
-                setParams(next);
-              }}
-            >
+            <button disabled={page >= pages} onClick={() => goToPage(page + 1)}>
               Next
             </button>
-          </div>
+          </nav>
         )}
       </section>
     </div>

@@ -14,19 +14,41 @@ import { api, money } from '../../api/client';
 import { ErrorText, Spinner, useFetch } from '../../components/ui';
 import { Stat } from '../vendor/VendorDashboard';
 
+interface Analytics {
+  totals: {
+    gmv: number;
+    commission: number;
+    payouts: number;
+    discounts: number;
+    refunds: number;
+    orders: number;
+    avgOrderValue: number;
+  };
+  daily: { date: string; gmv: number; commission: number; orders: number }[];
+  topVendors: { _id: string; storeName: string; gmv: number; orders: number }[];
+  topProducts: { _id: string; title: string; units: number; revenue: number }[];
+  byStatus: Record<string, number>;
+  counts: { customers: number; vendors: number; pendingVendors: number; products: number };
+}
+
+// works on light and dark backgrounds
+const GRID = 'rgba(128, 128, 128, 0.25)';
+const tooltipStyle = { background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' };
+const asMoney = (v: unknown) => money(Number(v));
+
 export default function AdminAnalytics() {
   const [days, setDays] = useState(30);
-  const { data, error, loading } = useFetch(() => api(`/admin/analytics?days=${days}`), [days]);
+  const { data, error, loading } = useFetch(() => api<Analytics>(`/admin/analytics?days=${days}`), [days]);
 
   if (loading && !data) return <Spinner />;
-  if (error) return <ErrorText error={error} />;
+  if (error || !data) return <ErrorText error={error} />;
   const { totals, daily, topVendors, topProducts, byStatus, counts } = data;
 
   return (
     <>
       <div className="shop-head">
         <h1>Marketplace analytics</h1>
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Date range">
           <option value={7}>Last 7 days</option>
           <option value={30}>Last 30 days</option>
           <option value={90}>Last 90 days</option>
@@ -37,6 +59,7 @@ export default function AdminAnalytics() {
         <Stat label="Gross sales (GMV)" value={money(totals.gmv)} />
         <Stat label="Commission earned" value={money(totals.commission)} />
         <Stat label="Paid out to vendors" value={money(totals.payouts)} />
+        <Stat label="Refunded" value={money(totals.refunds)} />
         <Stat label="Orders" value={totals.orders} />
         <Stat label="Avg order value" value={money(totals.avgOrderValue)} />
         <Stat label="Customers" value={counts.customers} />
@@ -48,16 +71,16 @@ export default function AdminAnalytics() {
         <h3>Daily sales and commission</h3>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={daily}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-            <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} fontSize={12} />
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+            <XAxis dataKey="date" tickFormatter={(d: string) => d.slice(5)} fontSize={12} />
             <YAxis fontSize={12} />
-            <Tooltip formatter={(v) => money(v)} />
+            <Tooltip formatter={asMoney} contentStyle={tooltipStyle} />
             <Line type="monotone" dataKey="gmv" name="Sales" stroke="#ea580c" strokeWidth={2} dot={false} />
             <Line
               type="monotone"
               dataKey="commission"
               name="Commission"
-              stroke="#2563eb"
+              stroke="#3b82f6"
               strokeWidth={2}
               dot={false}
             />
@@ -72,7 +95,7 @@ export default function AdminAnalytics() {
             <BarChart data={topVendors} layout="vertical" margin={{ left: 30 }}>
               <XAxis type="number" fontSize={12} />
               <YAxis type="category" dataKey="storeName" width={110} fontSize={12} />
-              <Tooltip formatter={(v) => money(v)} />
+              <Tooltip formatter={asMoney} contentStyle={tooltipStyle} cursor={{ fill: GRID }} />
               <Bar dataKey="gmv" name="Sales" fill="#ea580c" />
             </BarChart>
           </ResponsiveContainer>
