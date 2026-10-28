@@ -14,7 +14,9 @@ Where the project stands, how to pick it up, and what's left before the 20 Nov 2
 | 6. Stripe Connect split payments | Done. Verified with SDK-level tests and mock mode. Not yet run with real test keys |
 | 7. Reviews, coupons, PDF invoices, admin analytics, separate deploys | Done. Deploy config ready, not deployed yet |
 
-Verified: 47 API tests (94% line coverage), 21 browser end-to-end tests covering every flow, clean lint and formatting, a fresh clone installs, tests, lints and builds, both Docker images build, and the full stack runs in containers. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
+Also done beyond the brief: stock held during checkout, automatic retries for failed vendor payouts, partial refunds, per-store shipping, order and account emails, password reset and email verification, wishlist and recently viewed, vendor order filters and CSV export, partial-word search without Elasticsearch, Swagger docs, structured logs with request ids, optional Sentry, a TypeScript front end, dark mode, keyboard and screen reader support, and a phone layout for the filters.
+
+Verified: 94 API tests (97% line, 81% branch coverage), 30 browser end-to-end tests covering every flow, strict type check, clean lint and formatting. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Getting started
 
@@ -44,6 +46,9 @@ Open http://localhost:5173 and use the demo login buttons (password `demo-pass-1
 | `S3_PUBLIC_URL` | no | CloudFront domain, if used |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | yes | `sk_test_...` and `whsec_...`. Empty uses mock payments |
 | `COMMISSION_RATE` | no | default 0.10 |
+| `SMTP_URL`, `MAIL_FROM` | recommended | e.g. Resend or Brevo SMTP. Empty logs emails instead of sending them, so password reset won't work for real users |
+| `SENTRY_DSN` | no | turns on error tracking |
+| `LOG_LEVEL` | no | default `info` |
 
 **client/.env.local** (or Vercel project settings)
 
@@ -51,6 +56,7 @@ Open http://localhost:5173 and use the demo login buttons (password `demo-pass-1
 | --- | --- |
 | `VITE_API_URL` | deployed API url, e.g. `https://vendora-api.onrender.com`. Empty in dev |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` |
+| `VITE_SENTRY_DSN` | optional, browser error tracking |
 
 ## Still to do
 
@@ -58,22 +64,25 @@ Open http://localhost:5173 and use the demo login buttons (password `demo-pass-1
 2. **S3 bucket:** create it, allow public read on `vendors/*`, and upload a product image from the vendor hub.
 3. **Deploy:** the API on Render (`render.yaml`) with Atlas, Upstash and Elastic Cloud, and the web on Vercel (root `client/`). Then run `npm run seed` once against the production database, or `POST /api/admin/search/reindex` if you add data another way.
 4. **Stripe webhook** in the dashboard pointing at `https://<api>/api/webhooks/stripe` for `payment_intent.succeeded` and `account.updated`.
-5. **Demo recording**, using the demo script in [PRESENTATION.md](PRESENTATION.md).
-6. **Slides** from the PRESENTATION.md outline.
-7. **Reflection:** write [REFLECTION.md](REFLECTION.md).
-8. Check that the GitHub Actions run passes (server, client and e2e jobs).
+5. **SMTP** for real emails (a free Resend or Brevo account works). Set `SMTP_URL` and `MAIL_FROM` on Render.
+6. **Demo recording**, using the demo script in [PRESENTATION.md](PRESENTATION.md).
+7. **Slides** from the PRESENTATION.md outline.
+8. **Reflection:** write [REFLECTION.md](REFLECTION.md).
+9. Check that the GitHub Actions run passes (server, client and e2e jobs).
 
 ## Good next features
 
-- Retry queue for failed Stripe transfers (they're logged today)
-- Partial refunds per item, and returns
-- Shipping rates per vendor
-- Email notifications on status changes
+- Shipping rates by weight and destination
+- A returns flow (customer requests, vendor approves) on top of the existing partial refunds
+- Move the background jobs to a separate worker (BullMQ) if traffic grows
 - Search autocomplete with an Elasticsearch completion suggester
+- Two-factor login for vendors and admins
 
 ## Gotchas
 
 - `@elastic/elasticsearch` is pinned to 8.x. The 9.x client rejects 8.x servers.
 - Search results can lag a write by about a second (index refresh). Product pages read from MongoDB and are always current.
 - If Elasticsearch was down while products changed, run `POST /api/admin/search/reindex` as an admin.
+- The jobs runner (stock holds, payout retries) lives in the API process and uses a Redis lock, so it's safe with more than one instance.
+- Stock is taken at checkout, not at payment. An unpaid checkout holds stock for 15 minutes.
 - `ioredis-mock` is a dev dependency and only loads when `REDIS_URL` is empty, so production must set `REDIS_URL`.

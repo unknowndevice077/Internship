@@ -4,15 +4,15 @@ A multi-vendor marketplace I built for my Nexvia internship (project FS-01). Thi
 
 The hardest part was the money side. One checkout has to become one order per seller, coupons have to be split fairly between them, and payment confirmation has to be safe to run twice (Stripe's webhook and the browser can both confirm the same payment). Most of my time went into getting that right and testing it.
 
-**Built with:** React (Vite), Node.js + Express, MongoDB, Elasticsearch, Redis, Stripe Connect (test mode), AWS S3
+**Built with:** React (Vite, TypeScript), Node.js + Express, MongoDB, Elasticsearch, Redis, Stripe Connect (test mode), AWS S3
 
 ## What it does
 
-**Customers** can search with typo tolerance and live suggestions, filter by category, price, rating and stock, add items from different stores to one cart, apply coupons, check out, follow each order's status, download a PDF invoice, cancel before it ships, and leave reviews (marked "verified purchase" once the order is delivered).
+**Customers** can search with typo tolerance and live suggestions, filter by category, price, rating and stock, save products for later, see what they recently viewed, add items from different stores to one cart, apply coupons, check out, follow each order's status, download a PDF invoice, cancel before it ships, and leave reviews (marked "verified purchase" once the order is delivered). They get emails when an order is placed and when it ships, and can reset a forgotten password.
 
-**Vendors** sign up, open a store, and wait for an admin to approve it. After that they connect a Stripe Express account for payouts, list products with up to 6 images, run their own coupons, and move orders through `placed → packed → shipped → delivered`. Each order shows exactly what they'll be paid.
+**Vendors** sign up, open a store, and wait for an admin to approve it. After that they connect a Stripe Express account for payouts, set their shipping rate, list products with up to 6 images, run their own coupons, and move orders through `placed → packed → shipped → delivered`. They can refund single items, filter their orders and export them to CSV. Each order shows exactly what they'll be paid.
 
-**Admins** approve or suspend stores, set commission per store (10% by default), manage users and platform coupons, and get an analytics page with GMV, commission, average order value, daily sales and top sellers.
+**Admins** approve or suspend stores, set commission per store (10% by default), manage users and platform coupons, watch vendor payouts (and retry failed ones), and get an analytics page with GMV, commission, refunds, average order value, daily sales and top sellers.
 
 Some details under the hood:
 
@@ -20,7 +20,10 @@ Some details under the hood:
 - The cart lives in Redis. Prices are always re-read from the database, so a stale cart can't check out at an old price.
 - Product pages are cached in Redis for 5 minutes and cleared on edit.
 - Search runs on Elasticsearch when it's available and falls back to MongoDB text search when it isn't, so the app still works without it.
-- Payments use Stripe's "separate charges and transfers": the customer is charged once, then each vendor gets a transfer for their order. Without a Stripe key there's a mock provider, so the whole flow works offline.
+- Payments use Stripe's "separate charges and transfers": the customer is charged once, then each vendor gets a transfer for their order. If a transfer fails it's retried automatically with backoff. Without a Stripe key there's a mock provider, so the whole flow works offline.
+- Stock is held for 15 minutes from checkout, so nobody pays for something that sold out while they were typing their card number. A small job runner (with a Redis lock so only one server runs it) releases holds that expire.
+- Refunding part of an order also takes back the vendor's share of that part from their payout, with a Stripe transfer reversal.
+- The front end is TypeScript (strict), has a dark mode, and works with a keyboard and screen reader (labelled fields, a proper combobox for search suggestions, skip link, focus rings).
 
 ## Running it
 
@@ -91,9 +94,9 @@ cd ../client
 npm run test:e2e      # Playwright, starts its own API and web server
 ```
 
-The API tests cover auth, products, search, checkout and commission math, coupons, the order lifecycle, reviews and admin. Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exact calls the API makes to them. The Playwright tests click through the app in Chrome, including one long test that walks a new seller from sign-up to their first delivered order and payout.
+The API tests cover auth, products, search, checkout and commission math, shipping, stock holds, payout retries, refunds, coupons, the order lifecycle, emails, reviews and admin. Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exact calls the API makes to them. The Playwright tests click through the app in Chrome, including one long test that walks a new seller from sign-up to their first delivered order and payout.
 
-Both suites, plus lint and format checks, run on every push in GitHub Actions. The end-to-end tests caught a handful of real bugs along the way. Those, and the performance numbers, are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
+Both suites, plus lint, format and type checks, run on every push in GitHub Actions. The end-to-end tests caught a handful of real bugs along the way. Those, and the performance numbers, are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
 ## Deploying
 
@@ -114,16 +117,20 @@ server/src/
 server/scripts/ seed and the in-memory dev runner
 client/src/
   pages/        storefront, checkout, vendor hub, admin
+  components/   layout, search box, shared UI
   context/      auth and cart state
 client/e2e/     Playwright tests
 docs/           architecture, API reference, test results, handoff notes
 ```
 
-More detail: [architecture and schema](docs/ARCHITECTURE.md) · [API reference](docs/API.md) · [test results](docs/TEST_RESULTS.md) · [handoff notes](docs/HANDOFF.md)
+More detail: [architecture and schema](docs/ARCHITECTURE.md) · [API reference](docs/API.md) · [test results](docs/TEST_RESULTS.md) · [handoff notes](docs/HANDOFF.md). With the API running, Swagger UI is at http://localhost:4000/api/docs.
+
+### Emails and error tracking
+
+Set `SMTP_URL` (any SMTP provider, e.g. `smtp://user:pass@smtp.resend.com:587`) and `MAIL_FROM` to send real emails. Without them, emails are written to the server log, which is handy for grabbing a password reset link locally. Set `SENTRY_DSN` (API) and `VITE_SENTRY_DSN` (web) to turn on Sentry.
 
 ## What I'd add next
 
-- A retry queue for Stripe transfers that fail (right now they're just logged)
-- Warning customers before checkout when something sells out, instead of cancelling that part of the order afterwards
-- Order emails
-- Partial refunds, so a vendor can refund one item instead of the whole order
+- Shipping rates by weight and destination instead of a flat rate per store
+- A returns flow where the customer asks and the vendor approves
+- Moving the background jobs to their own worker if traffic grows

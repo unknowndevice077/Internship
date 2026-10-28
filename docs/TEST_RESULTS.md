@@ -1,17 +1,18 @@
 # Test and performance results
 
-Measured on 27 Oct 2026, Windows 11, Node 22.14.
+Measured on 28 Oct 2026, Windows 11, Node 22.14.
 
 ## Summary
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| API tests | `cd server && npm test` | 47 passed |
-| Browser end-to-end tests | `cd client && npm run test:e2e` | 21 passed |
+| API tests | `cd server && npm test` | 94 passed |
+| Browser end-to-end tests | `cd client && npm run test:e2e` | 30 passed |
+| Type check (client) | `cd client && npm run typecheck` | 0 errors, `strict` on |
 | Lint | `npm run lint` in each package | 0 errors, 0 warnings |
 | Formatting | `npm run format:check` in each package | clean |
 
-All four run in GitHub Actions on every push.
+All of these run in GitHub Actions on every push.
 
 ## End-to-end tests (Playwright)
 
@@ -21,6 +22,7 @@ All four run in GitHub Actions on every push.
 | --- | --- |
 | `browse.spec.js` | shop listing and facets, category, price and rating filters, in-stock filter, sorting, header search, paging, product gallery, store page, guest "add to cart" redirect and return, role-based redirects, 404 page, wrong password |
 | `customer.spec.js` | sign up, add from two stores, change quantity, remove, bad and good coupons, checkout splits into two orders, cart empties, order timeline, invoice download, cancel restocks, out-of-stock rejection, logout |
+| `extras.spec.js` | email verification banner, save and unsave products, recently viewed, shipping and the free-shipping hint in the cart, forgot and reset password pages, search suggestions from the keyboard, partial-word search, dark mode toggle that survives a reload, filters folding away at phone width, skip link, vendor order filters, CSV download and shipping settings, admin payouts page, OpenAPI spec |
 | `marketplace.spec.js` | the full loop in order: vendor signs up and opens a store, can't list before approval, connects payouts, admin sets 15% commission and approves, vendor lists a product with an image upload, edits it, hides and re-shows it, creates a store coupon, customer buys 2 with the coupon ($45.00), vendor sees the $38.25 payout and ships placed → packed → shipped → delivered, customer leaves a verified review, admin sees analytics, rejects a 95% coupon, suspends and re-approves the store (product disappears and comes back), disables the customer (they're logged out and can't sign back in) |
 
 ### Bugs the end-to-end tests caught (all fixed, with regression tests)
@@ -39,8 +41,8 @@ All four run in GitHub Actions on every push.
 `cd server && npm run test:coverage`
 
 ```
-Test Files  6 passed (6)
-     Tests  47 passed (46)
+Test Files  9 passed (9)
+     Tests  94 passed (94)
 ```
 
 | File | What it covers |
@@ -50,6 +52,9 @@ Test Files  6 passed (6)
 | `checkout.test.js` | cart add/update/remove, stock limit, multi-vendor checkout and commission split, confirming twice, platform and store coupons, expired coupons, lifecycle order, other vendors blocked, cancel restocks, PDF invoice |
 | `reviews-admin.test.js` | rating average, verified purchase, review upsert, analytics totals, coupon limits |
 | `integrations.test.js` | Stripe Connect onboarding, PaymentIntent amount and transfer group, webhook-driven split transfers with per-vendor commission, refunds, `account.updated`, bad signatures, Elasticsearch indexing, query building, stock sync after purchase, suspended store removal, bulk reindex |
+| `orders-payouts.test.js` | shipping fees and free-shipping limits, commission on goods only, stock held at checkout and released when the hold expires (mock and Stripe), re-checkout releasing your own hold, rollback when an item sells out mid-checkout, the jobs lock, failed transfers retried with backoff and given up after 6 tries, admin retry, partial refunds with coupon share and transfer reversal, over-refund checks, restock rules, cancel after a partial refund, order filters, CSV quoting and formula protection, order emails |
+| `accounts.test.js` | email verification (single use), resend, password reset logging out every session, no account enumeration, wishlist and recently viewed, store approval email, partial-word search fallback, Swagger UI and spec, request ids |
+| `edge-cases.test.js` | review deletion and rating recalculation, S3 upload with a mocked client, invoices with and without optional lines, error responses, coupon and store access rules, health check with Redis down, jobs timer |
 | `vendor-admin-flows.test.js` | vendor stats, storefront visibility, vendor data isolation, coupon preview, admin vendor and user management, health check, profile address |
 
 Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exact requests the API sends to them without needing network access or accounts.
@@ -58,7 +63,7 @@ Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exa
 
 | | Statements | Branches | Functions | Lines |
 | --- | --- | --- | --- | --- |
-| All files | 89.0% | 71.1% | 93.0% | 94.3% |
+| All files | 93.8% | 80.6% | 95.8% | 97.2% |
 
 `npm audit --omit=dev`: 0 vulnerabilities in both packages. The full audit shows one moderate `uuid` advisory, which comes from a dev-only test tool and never ships.
 
@@ -120,5 +125,6 @@ With Elasticsearch, filtered browsing has about 30% lower p50 latency and handle
 - The Mongo fallback search doesn't do fuzzy or partial-word matching (`phone` doesn't match `iPhone`). Elasticsearch does.
 - Search results can lag a write by up to a second (Elasticsearch refresh interval). Product pages read from MongoDB, so they're always current.
 - Not run with live Stripe test keys or a real S3 bucket. Both are covered by SDK-level tests, and the README lists the steps to turn them on.
-- Stock is checked at checkout and taken at payment. If an item sells out in between, that vendor's order is cancelled and refunded automatically, but the customer sees it as cancelled rather than getting a warning first.
-- Failed Stripe transfers are logged and the order keeps going. There is no retry queue yet.
+- Emails aren't sent anywhere until `SMTP_URL` is set. Without it they're written to the log.
+- The background jobs run inside the API process. That's fine for one or a few instances (a Redis lock stops them doubling up), but a busy deployment would want a separate worker.
+- Shipping is a flat rate per store, not by weight or destination.

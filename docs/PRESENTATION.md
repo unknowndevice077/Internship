@@ -12,5 +12,7 @@
    - Making payment completion idempotent when the webhook and client confirm race each other
    - Keeping the search index in sync with approvals, edits and ratings
    - Running everything offline for development and tests (fallbacks and SDK mocks)
-5. **Results (1 min)**: 47 API tests, 21 browser tests, 94% line coverage, bugs the E2E tests caught, latency numbers from TEST_RESULTS.md
-6. **Next steps (1 min)**: retry queue for failed transfers, shipping rates, vendor refunds for partial orders, search suggestions, email notifications
+   - Holding stock during checkout without locking it forever (15 minute holds, cleaned up by a job with a Redis lock)
+   - Partial refunds that also take back the right amount from the vendor's payout
+5. **Results (1 min)**: 94 API tests, 30 browser tests, 97% line and 81% branch coverage, bugs the E2E tests caught, latency numbers from TEST_RESULTS.md
+6. **Next steps (1 min)**: shipping rates by weight and destination, a returns flow, a separate worker for jobs, an Elasticsearch completion suggester
