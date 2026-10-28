@@ -74,10 +74,11 @@ Coupons to try: `WELCOME10` (10% off over $20), `FLAT5` ($5 off over $30), `GLOW
 
 ### Using real Stripe test mode
 
-1. Put your `sk_test_...` key in `server/.env` as `STRIPE_SECRET_KEY`, and the `pk_test_...` key in `client/.env.local` as `VITE_STRIPE_PUBLISHABLE_KEY`.
-2. Run `stripe listen --forward-to localhost:4000/api/webhooks/stripe` and copy the `whsec_...` it prints into `STRIPE_WEBHOOK_SECRET`.
-3. Log in as a vendor, go to **Payouts** and finish Stripe's onboarding.
-4. Pay with `4242 4242 4242 4242`, any future date, any CVC.
+1. In the Stripe dashboard (test mode) go to **Settings → Connect → Platform profile** and acknowledge **Refunds and chargebacks liability**. Vendor accounts are created with the Accounts v2 API as "recipients" (they only get transfers), and those need the platform to cover losses.
+2. Put your `sk_test_...` key in `server/.env` as `STRIPE_SECRET_KEY`, and the `pk_test_...` key in `client/.env.local` as `VITE_STRIPE_PUBLISHABLE_KEY`.
+3. Run `stripe listen --events payment_intent.succeeded,account.updated --forward-to localhost:4000/api/webhooks/stripe` and copy the `whsec_...` it prints into `STRIPE_WEBHOOK_SECRET`. The CLI has to be on the same Stripe account as the secret key (`stripe login`, or set `STRIPE_API_KEY` to the same key), otherwise the webhooks never arrive.
+4. Log in as a vendor, go to **Payouts** and finish Stripe's onboarding. Until a vendor finishes it, transfers to them fail and wait in the retry queue.
+5. Pay with `4242 4242 4242 4242`, any future date, any CVC.
 
 ### Using S3 for images
 

@@ -27,6 +27,8 @@ const config = {
   stripe: {
     secretKey: env.STRIPE_SECRET_KEY || '',
     webhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
+    // country for new vendor accounts (ISO code)
+    accountCountry: (env.STRIPE_ACCOUNT_COUNTRY || 'us').toLowerCase(),
   },
   mail: {
     // e.g. smtp://user:pass@smtp.example.com:587, empty = log mail instead of sending

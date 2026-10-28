@@ -6,7 +6,12 @@ import Order from '../models/Order.js';
 import User from '../models/User.js';
 import { requireAuth, requireRole, requireVendor } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
-import { createConnectAccount, createOnboardingLink, getAccountStatus } from '../lib/payments.js';
+import {
+  createConnectAccount,
+  createOnboardingLink,
+  getAccountStatus,
+  providerName,
+} from '../lib/payments.js';
 
 const router = Router();
 
@@ -60,7 +65,10 @@ router.post(
   requireVendor(),
   asyncHandler(async (req, res) => {
     const vendor = req.vendor;
-    if (!vendor.stripeAccountId) {
+    // seeded stores have mock ids, swap them for a real account once Stripe is on
+    const mockId = vendor.stripeAccountId?.startsWith('mock_') && providerName() === 'stripe';
+    if (!vendor.stripeAccountId || mockId) {
+      vendor.payoutsEnabled = false;
       const user = await User.findById(req.user.id);
       const account = await createConnectAccount(vendor, user.email);
       vendor.stripeAccountId = account.id;
@@ -78,7 +86,7 @@ router.get(
   requireVendor(),
   asyncHandler(async (req, res) => {
     const vendor = req.vendor;
-    if (vendor.stripeAccountId) {
+    if (vendor.stripeAccountId && !vendor.stripeAccountId.startsWith('mock_')) {
       const { payoutsEnabled } = await getAccountStatus(vendor.stripeAccountId);
       if (payoutsEnabled !== vendor.payoutsEnabled) {
         vendor.payoutsEnabled = payoutsEnabled;

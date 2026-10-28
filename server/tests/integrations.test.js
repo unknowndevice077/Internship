@@ -6,11 +6,19 @@ import { address, api, approvedVendor, auth, login, makeProduct } from './helper
 
 // fake Stripe SDK, records what we asked it to do
 const stripe = vi.hoisted(() => ({
-  accounts: {
-    create: vi.fn(async () => ({ id: 'acct_test_1' })),
-    retrieve: vi.fn(async () => ({ charges_enabled: true, payouts_enabled: true })),
+  v2: {
+    core: {
+      accounts: {
+        create: vi.fn(async () => ({ id: 'acct_test_1' })),
+        retrieve: vi.fn(async () => ({
+          configuration: {
+            recipient: { capabilities: { stripe_balance: { stripe_transfers: { status: 'active' } } } },
+          },
+        })),
+      },
+      accountLinks: { create: vi.fn(async () => ({ url: 'https://connect.stripe.test/onboard' })) },
+    },
   },
-  accountLinks: { create: vi.fn(async () => ({ url: 'https://connect.stripe.test/onboard' })) },
   paymentIntents: {
     create: vi.fn(async (p) => ({ id: 'pi_test_1', client_secret: 'pi_test_1_secret', ...p })),
     retrieve: vi.fn(async () => ({ id: 'pi_test_1', status: 'succeeded', latest_charge: 'ch_test_1' })),
@@ -61,7 +69,12 @@ describe('with Stripe Connect enabled', () => {
     await Vendor.updateOne({ _id: v.vendorId }, { $unset: { stripeAccountId: 1 } });
     const res = await api().post('/api/vendors/me/payouts').set(auth(v.token));
     expect(res.body.url).toBe('https://connect.stripe.test/onboard');
-    expect(stripe.accounts.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'express' }));
+    expect(stripe.v2.core.accounts.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dashboard: 'express',
+        defaults: { responsibilities: { fees_collector: 'application', losses_collector: 'application' } },
+      }),
+    );
 
     const status = await api().get('/api/vendors/me/payouts').set(auth(v.token));
     expect(status.body.vendor.payoutsEnabled).toBe(true);

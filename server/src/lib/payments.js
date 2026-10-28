@@ -18,11 +18,17 @@ export const round2 = (n) => Math.round(n * 100) / 100;
 export async function createConnectAccount(vendor, email) {
   const s = getStripe();
   if (!s) return { id: `mock_acct_${vendor._id}`, mock: true };
-  const account = await s.accounts.create({
-    type: 'express',
-    email,
-    business_profile: { name: vendor.storeName },
-    capabilities: { transfers: { requested: true } },
+  // Accounts v2 (new platforms can't use v1). A "recipient" account only receives transfers from us,
+  // with an Express dashboard, and the platform covers losses
+  const account = await s.v2.core.accounts.create({
+    contact_email: email,
+    display_name: vendor.storeName,
+    dashboard: 'express',
+    identity: { country: config.stripe.accountCountry },
+    configuration: {
+      recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
+    },
+    defaults: { responsibilities: { fees_collector: 'application', losses_collector: 'application' } },
     metadata: { vendorId: vendor._id.toString() },
   });
   return { id: account.id };
@@ -31,11 +37,15 @@ export async function createConnectAccount(vendor, email) {
 export async function createOnboardingLink(accountId) {
   const s = getStripe();
   if (!s) return null;
-  const link = await s.accountLinks.create({
+  const link = await s.v2.core.accountLinks.create({
     account: accountId,
-    refresh_url: `${config.clientUrl}/vendor/payouts?refresh=1`,
-    return_url: `${config.clientUrl}/vendor/payouts?done=1`,
-    type: 'account_onboarding',
+    use_case: {
+      type: 'account_onboarding',
+      account_onboarding: {
+        refresh_url: `${config.clientUrl}/vendor/payouts?refresh=1`,
+        return_url: `${config.clientUrl}/vendor/payouts?done=1`,
+      },
+    },
   });
   return link.url;
 }
@@ -43,8 +53,9 @@ export async function createOnboardingLink(accountId) {
 export async function getAccountStatus(accountId) {
   const s = getStripe();
   if (!s) return { payoutsEnabled: true };
-  const account = await s.accounts.retrieve(accountId);
-  return { payoutsEnabled: Boolean(account.charges_enabled && account.payouts_enabled) };
+  const account = await s.v2.core.accounts.retrieve(accountId, { include: ['configuration.recipient'] });
+  const transfers = account.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers;
+  return { payoutsEnabled: transfers?.status === 'active' };
 }
 
 export async function createPaymentIntent({ amount, paymentGroup, customerId }) {
