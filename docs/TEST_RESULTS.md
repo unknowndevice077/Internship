@@ -73,6 +73,19 @@ three full runs in a row (90/90) before being added to CI.
 | `members.spec.ts` | 5 | invite, claim invited account, viewer read-only UI, promote and remove, admin limits on owner role, workspace switching and isolation, member limit, duplicate invite |
 | `integrations.spec.ts` | 5 | webhooks need a paid plan, add/ping/deliver/disable/delete endpoint, HMAC signature check, event filter, bell notifications for assignment and mention, mark read, billing page states |
 
+## Stripe test mode
+
+Run against a real Stripe test account with the Stripe CLI forwarding webhooks to the API:
+
+| Step | Result |
+|---|---|
+| `stripe_setup` | Pro and Business prices created |
+| `POST /api/billing/checkout/` as the Initech owner | 200, Stripe Checkout URL on `checkout.stripe.com` |
+| Subscription created with Stripe's test payment method `pm_card_visa` | `customer.subscription.created` forwarded, webhook answered 200, workspace became Pro, limits read 25 projects |
+| Subscription cancelled | `customer.subscription.deleted` forwarded, 200, workspace back on Free |
+
+The card form on Stripe's hosted page wasn't driven by the script, so that part is checked by hand with `4242 4242 4242 4242`.
+
 Also checked by hand: the full Docker stack (`docker compose --profile full up`) with health check, register, create
 project and issue through nginx, and jobs processed by the containerised worker.
 
