@@ -1,19 +1,23 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "./auth/useAuth";
 import Layout from "./components/Layout";
-import BacklogPage from "./pages/BacklogPage";
-import BillingPage from "./pages/BillingPage";
-import BoardPage from "./pages/BoardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
-import ProjectSettingsPage from "./pages/ProjectSettingsPage";
-import ProjectsPage from "./pages/ProjectsPage";
 import RegisterPage from "./pages/RegisterPage";
-import ReportsPage from "./pages/ReportsPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import WorkspaceSettingsPage from "./pages/WorkspaceSettingsPage";
+
+// signed-in pages load on demand, so the login screen stays small
+const AccountPage = lazy(() => import("./pages/AccountPage"));
+const BacklogPage = lazy(() => import("./pages/BacklogPage"));
+const BillingPage = lazy(() => import("./pages/BillingPage"));
+const BoardPage = lazy(() => import("./pages/BoardPage"));
+const ProjectSettingsPage = lazy(() => import("./pages/ProjectSettingsPage"));
+const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const WorkspaceSettingsPage = lazy(() => import("./pages/WorkspaceSettingsPage"));
 
 export default function App() {
   const { me, loading } = useAuth();
@@ -34,18 +38,21 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
-      <Route element={<Layout />}>
-        <Route path="/" element={<ProjectsPage />} />
-        <Route path="/projects/:projectId/board" element={<BoardPage />} />
-        <Route path="/projects/:projectId/backlog" element={<BacklogPage />} />
-        <Route path="/projects/:projectId/settings" element={<ProjectSettingsPage />} />
-        <Route path="/projects/:projectId/reports" element={<ReportsPage />} />
-        <Route path="/settings" element={<WorkspaceSettingsPage />} />
-        <Route path="/billing" element={<BillingPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<div className="splash">Loading…</div>}>
+      <Routes>
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<ProjectsPage />} />
+          <Route path="/projects/:projectId/board" element={<BoardPage />} />
+          <Route path="/projects/:projectId/backlog" element={<BacklogPage />} />
+          <Route path="/projects/:projectId/settings" element={<ProjectSettingsPage />} />
+          <Route path="/projects/:projectId/reports" element={<ReportsPage />} />
+          <Route path="/settings" element={<WorkspaceSettingsPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/billing" element={<BillingPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }

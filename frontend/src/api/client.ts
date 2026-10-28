@@ -57,6 +57,11 @@ export class ApiError extends Error {
   get isPlanLimit() {
     return this.status === 402;
   }
+
+  get code() {
+    const code = typeof this.data === "object" && this.data ? (this.data as { code?: unknown }).code : null;
+    return typeof code === "string" ? code : null;
+  }
 }
 
 type Options = {

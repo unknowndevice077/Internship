@@ -8,6 +8,8 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [needsOtp, setNeedsOtp] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -16,9 +18,12 @@ export default function LoginPage() {
     setBusy(true);
     setError("");
     try {
-      await login(email, password);
+      await login(email, password, needsOtp ? otp : undefined);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) setError("Wrong email or password.");
+      if (err instanceof ApiError && err.code === "otp_required") setNeedsOtp(true);
+      else if (err instanceof ApiError && err.code === "invalid_otp") setError("That code didn't work.");
+      else if (err instanceof ApiError && err.code === "locked") setError(err.message);
+      else if (err instanceof ApiError && err.status === 401) setError("Wrong email or password.");
       else if (err instanceof ApiError && err.status === 429)
         setError("Too many attempts. Wait a minute and try again.");
       else setError("Could not sign in.");
@@ -36,6 +41,19 @@ export default function LoginPage() {
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
+        {needsOtp && (
+          <label>
+            Authentication code
+            <input
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              autoComplete="one-time-code"
+              placeholder="6-digit code or recovery code"
+              required
+              autoFocus
+            />
+          </label>
+        )}
         <label>
           Password
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />

@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { Link } from "react-router-dom";
 
-import { api, ApiError, fieldErrors } from "../api/client";
+import { api, ApiError, downloadFile, fieldErrors } from "../api/client";
 import { keys, useMembers } from "../api/queries";
 import type { Role } from "../api/types";
 import { useAuth, useCan } from "../auth/useAuth";
@@ -22,6 +22,7 @@ export default function WorkspaceSettingsPage() {
       </header>
       <Members />
       {isAdmin && <Webhooks />}
+      {workspace?.role === "owner" && <DataAndDeletion />}
     </div>
   );
 }
@@ -311,5 +312,68 @@ function Deliveries({ hookId }: { hookId: number }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+function DataAndDeletion() {
+  const { workspace, logout } = useAuth();
+  const slug = workspace?.slug ?? "";
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
+
+  async function exportData() {
+    setExporting(true);
+    setError("");
+    try {
+      await downloadFile("/api/workspace/export/", `${slug}-export.json`);
+    } catch {
+      setError("The export failed. Try again.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const remove = useMutation({
+    mutationFn: () => api("/workspace/", { method: "DELETE", body: { confirm } }),
+    // the other memberships may still exist, but this one is gone, so start from a clean session
+    onSuccess: () => logout(),
+    onError: (e) => setError(fieldErrors(e).confirm ?? (e instanceof Error ? e.message : "Could not delete.")),
+  });
+
+  return (
+    <section className="card settings-section">
+      <h2>Data and deletion</h2>
+      <p className="muted">
+        Download projects, issues, comments, members and the audit log as JSON. Attachment files aren&apos;t included.
+      </p>
+      <button className="btn" onClick={exportData} disabled={exporting}>
+        {exporting ? "Preparing…" : "Export workspace data"}
+      </button>
+
+      <div className="danger-zone">
+        <h3>Delete this workspace</h3>
+        <p className="muted">
+          Removes every project, issue and file, and cancels the subscription. This can&apos;t be undone. Type{" "}
+          <code>{slug}</code> to confirm.
+        </p>
+        <div className="row-inline">
+          <input
+            aria-label="Type the workspace slug to confirm"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder={slug}
+          />
+          <button
+            className="btn btn-danger"
+            disabled={confirm !== slug || remove.isPending}
+            onClick={() => remove.mutate()}
+          >
+            Delete workspace
+          </button>
+        </div>
+      </div>
+      {error && <p className="form-error">{error}</p>}
+    </section>
   );
 }

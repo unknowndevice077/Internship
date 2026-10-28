@@ -6,7 +6,7 @@ export interface AuthState {
   me: Me | undefined;
   loading: boolean;
   workspace: WorkspaceBrief | undefined;
-  login(email: string, password: string): Promise<void>;
+  login(email: string, password: string, otp?: string): Promise<void>;
   register(data: { email: string; password: string; full_name?: string; workspace_name?: string }): Promise<void>;
   logout(): void;
   switchWorkspace(slug: string): void;

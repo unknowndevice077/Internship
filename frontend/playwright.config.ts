@@ -33,6 +33,8 @@ export default defineConfig({
         CELERY_TASK_ALWAYS_EAGER: "1",
         WEBHOOK_ALLOW_PRIVATE_URLS: "1",
         DJANGO_DEBUG: "1",
+        // the suite invites people from freshly registered accounts
+        REQUIRE_VERIFIED_EMAIL: "0",
         // the suite signs in far more often than a person would
         THROTTLE_AUTH_RATE: "1000/min",
         THROTTLE_ANON_RATE: "1000/min",

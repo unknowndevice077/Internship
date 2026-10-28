@@ -31,7 +31,7 @@ test("plan, start and complete a sprint, then read its report", async ({ page })
   await expect(section(page, "Backlog")).toContainText("3 issues");
 
   await page.getByRole("button", { name: "New sprint" }).click();
-  await expect(page.locator(".page-header input").first()).toHaveValue("Sprint 1");
+  await expect(page.locator(".page-header input:not(.search)").first()).toHaveValue("Sprint 1");
   await page.getByPlaceholder("Sprint goal").fill("Ship refunds");
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(section(page, "Sprint 1")).toContainText("Ship refunds");

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { fieldErrors } from "../api/client";
 import { useCreateIssue, useMembers } from "../api/queries";
@@ -15,6 +15,12 @@ export default function CreateIssueModal({ projectId, sprintId = null, onClose }
   const { data: members = [] } = useMembers();
   const [form, setForm] = useState({ title: "", type: "task", priority: "medium", assignee: "", description: "" });
   const errors = fieldErrors(create.error);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   function submit(e: FormEvent) {
     e.preventDefault();

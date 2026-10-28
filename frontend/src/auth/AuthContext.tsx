@@ -32,10 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, otp?: string) => {
       const tokens = await api<{ access: string; refresh: string }>("/auth/token/", {
         method: "POST",
-        body: { email, password },
+        body: { email, password, ...(otp ? { otp } : {}) },
         auth: false,
       });
       session.setTokens(tokens.access, tokens.refresh);
@@ -62,6 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshMe = useCallback(() => queryClient.invalidateQueries({ queryKey: ["me"] }), [queryClient]);
 
   const logout = useCallback(() => {
+    // revoke the refresh token server side; failing to reach the API shouldn't block signing out
+    if (session.refresh) {
+      api("/auth/logout/", { method: "POST", body: { refresh: session.refresh }, auth: false }).catch(() => {});
+    }
     session.clear();
     session.setWorkspace(null);
     setHasToken(false);

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink, Outlet, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useParams } from "react-router-dom";
 
 import { api } from "../api/client";
 
@@ -12,9 +12,25 @@ export default function Layout() {
   const { data: projects = [] } = useProjects();
   const { projectId } = useParams();
   const isAdmin = useCan("admin");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // close the drawer after navigating on small screens
+  useEffect(() => setMenuOpen(false), [location.pathname]);
 
   return (
-    <div className="app">
+    <div className={`app ${menuOpen ? "menu-open" : ""}`}>
+      <header className="topbar">
+        <button
+          className="btn btn-ghost"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label="Menu"
+          aria-expanded={menuOpen}
+        >
+          Menu
+        </button>
+        <div className="brand">Sprintboard</div>
+      </header>
       <aside className="sidebar">
         <div className="sidebar-top">
           <div className="brand">Sprintboard</div>
@@ -39,6 +55,7 @@ export default function Layout() {
             Projects
           </NavLink>
           <NavLink to="/settings">Settings</NavLink>
+          <NavLink to="/account">Account</NavLink>
           {isAdmin && <NavLink to="/billing">Billing</NavLink>}
           {projects.map((p) => (
             <div key={p.id} className={`nav-project ${String(p.id) === projectId ? "open" : ""}`}>

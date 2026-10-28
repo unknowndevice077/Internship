@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 
 import { api } from "../api/client";
@@ -9,16 +9,23 @@ import { useCan } from "../auth/useAuth";
 import CreateIssueModal from "../components/CreateIssueModal";
 import IssueDrawer from "../components/IssueDrawer";
 import { TYPE_ICON } from "../components/kanban";
+import { useDebounced, useShortcut } from "../components/useShortcut";
 
 export default function BacklogPage() {
   const projectId = Number(useParams().projectId);
   const { data: board } = useBoard(projectId);
   const { data: sprints = [] } = useSprints(projectId);
-  const { data: issues = [] } = useIssues({ project: String(projectId), ordering: "number" });
+  const [query, setQuery] = useState("");
+  const q = useDebounced(query.trim());
+  const { data: issues = [] } = useIssues({ project: String(projectId), ordering: "number", ...(q ? { q } : {}) });
+  const searchRef = useRef<HTMLInputElement>(null);
   const canEdit = useCan("member");
   const [openIssue, setOpenIssue] = useState<number | null>(null);
   const [createIn, setCreateIn] = useState<number | null | undefined>(undefined);
   const invalidate = useInvalidateProjectData();
+
+  useShortcut("c", () => setCreateIn(null), canEdit && createIn === undefined && openIssue === null);
+  useShortcut("/", () => searchRef.current?.focus());
 
   const sprintAction = useMutation({
     mutationFn: ({ id, action }: { id: number; action: "start" | "complete" }) =>
@@ -40,7 +47,18 @@ export default function BacklogPage() {
           <p className="muted small">{board?.project.name}</p>
           <h1>Backlog</h1>
         </div>
-        {canEdit && <NewSprint projectId={projectId} count={sprints.length} />}
+        <div className="header-actions">
+          <input
+            ref={searchRef}
+            className="search"
+            type="search"
+            placeholder="Search issues  ( / )"
+            aria-label="Search issues"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {canEdit && <NewSprint projectId={projectId} count={sprints.length} />}
+        </div>
       </header>
 
       {open.map((sprint) => (

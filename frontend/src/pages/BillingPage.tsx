@@ -79,7 +79,7 @@ export default function BillingPage() {
       {checkout === "cancelled" && <div className="notice">Checkout cancelled. You haven't been charged.</div>}
       {!data.stripe_enabled && (
         <div className="notice">
-          Stripe isn't configured on this server, so upgrades are disabled. See the README for setup.
+          Stripe isn't configured on this server, so upgrades are disabled. See docs/STRIPE_SETUP.md for setup.
         </div>
       )}
       {error && <p className="form-error">{error}</p>}
