@@ -87,7 +87,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         default="postgres://sprintboard:sprintboard@localhost:5433/sprintboard",
-        conn_max_age=60,
+        # gunicorn reuses connections; runserver opens one per request thread, so set 0 there
+        conn_max_age=int(os.environ.get("DB_CONN_MAX_AGE", "60")),
     )
 }
 

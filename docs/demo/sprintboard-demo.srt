@@ -1,163 +1,175 @@
 1
-00:00:00,889 --> 00:00:08,257
+00:00:00,896 --> 00:00:08,264
 This is Sprintboard, a multi-tenant project tracker in the style of Jira, built for the Nexvia full-stack internship.
 
 2
-00:00:08,645 --> 00:00:16,925
+00:00:08,648 --> 00:00:16,928
 Every company gets its own private workspace, with projects, a Kanban board, sprints, custom workflows, and billing through Stripe.
 
 3
-00:00:17,309 --> 00:00:19,181
+00:00:17,324 --> 00:00:19,196
 Let me show you around.
 
 4
-00:00:19,573 --> 00:00:23,245
+00:00:19,591 --> 00:00:23,263
 I'll sign in as the owner of a demo company called Acme.
 
 5
-00:00:26,115 --> 00:00:33,315
+00:00:26,675 --> 00:00:33,875
 Acme is one of three seeded companies. When I switch workspace, every project and issue changes with it.
 
 6
-00:00:33,709 --> 00:00:44,725
+00:00:34,262 --> 00:00:45,278
 Behind the scenes, each request carries the workspace in a header, and the API returns a not-found for any workspace you don't belong to. So one company can never see another's data.
 
 7
-00:00:45,119 --> 00:00:50,687
+00:00:45,660 --> 00:00:51,228
 Here's the board for one of Acme's projects. The columns come from the project's own workflow.
 
 8
-00:00:51,075 --> 00:01:00,267
+00:00:51,620 --> 00:01:00,812
 Dragging a card changes its status. The order inside a column is stored as a rank, so a move writes a single row, instead of renumbering the whole column.
 
 9
-00:01:00,651 --> 00:01:06,099
+00:01:01,206 --> 00:01:06,654
 If the workflow doesn't allow a move, the drop is rejected and the card stays where it was.
 
 10
-00:01:06,490 --> 00:01:13,546
+00:01:07,044 --> 00:01:14,100
 Opening a card shows every field, its comments and attachments, and a full history of who changed what, and when.
 
 11
-00:01:13,932 --> 00:01:18,636
+00:01:14,494 --> 00:01:19,198
 You can filter the board as you type, and slash jumps straight to the filter box.
 
 12
-00:01:19,029 --> 00:01:22,437
+00:01:19,585 --> 00:01:22,993
 Pressing C creates an issue from anywhere.
 
 13
-00:01:23,928 --> 00:01:32,112
+00:01:24,610 --> 00:01:32,794
 The backlog groups issues by sprint. Search uses Postgres full text search, or you can type an issue key to jump straight to it.
 
 14
-00:01:32,495 --> 00:01:38,279
+00:01:33,175 --> 00:01:38,959
 Sprints can be started and completed, and finishing one sends unfinished work back to the backlog.
 
 15
-00:01:38,669 --> 00:01:45,077
+00:01:39,342 --> 00:01:45,750
 Admins design each project's workflow, with their own statuses and the transitions that are allowed between them.
 
 16
-00:01:45,467 --> 00:01:53,867
+00:01:46,130 --> 00:01:54,530
 Completing a sprint queues a Celery job that builds a report with a CSV download. A weekly summary also goes out by email every Monday.
 
 17
-00:01:54,258 --> 00:01:59,874
+00:01:54,923 --> 00:02:00,539
 Workspace settings hold the members, with owner, admin, member and viewer roles.
 
 18
-00:02:00,261 --> 00:02:07,173
+00:02:00,927 --> 00:02:07,839
 Webhooks are signed with an HMAC, retried with backoff, and blocked from calling private network addresses.
 
 19
-00:02:07,561 --> 00:02:13,033
+00:02:08,230 --> 00:02:13,702
 Owners can also export everything as JSON, or delete the workspace entirely.
 
 20
-00:02:13,427 --> 00:02:20,171
+00:02:14,090 --> 00:02:20,834
 Security got a lot of attention. Passwords can be reset by email, and email addresses are verified.
 
 21
-00:02:20,561 --> 00:02:27,113
+00:02:21,221 --> 00:02:27,773
 Two-factor authentication works with any authenticator app, and comes with eight single-use recovery codes.
 
 22
-00:02:27,498 --> 00:02:33,066
+00:02:28,156 --> 00:02:33,724
 Refresh tokens rotate on every use, and signing out or changing your password revokes them.
 
 23
-00:02:33,451 --> 00:02:37,795
+00:02:34,108 --> 00:02:38,452
 After five wrong passwords, sign-in locks for fifteen minutes.
 
 24
-00:02:53,776 --> 00:03:01,048
+00:02:54,653 --> 00:03:01,925
 Uploads are filtered by file type and can be virus scanned, and everything sits behind rate limits and strict security headers.
 
 25
-00:03:01,444 --> 00:03:06,844
+00:03:02,310 --> 00:03:07,710
 Now billing. I'll sign in as the owner of Initech, which is on the free plan.
 
 26
-00:03:08,428 --> 00:03:20,236
+00:03:09,051 --> 00:03:20,859
 The billing page shows the plan, the limits, and how much of each is used. The API enforces them, so going over a limit returns a payment-required response, which the app turns into an upgrade prompt.
 
 27
-00:03:20,880 --> 00:03:26,904
-Payments run through Stripe in test mode. Here's how to connect your own account in a few minutes.
+00:03:21,239 --> 00:03:28,007
+With a Stripe key set, the upgrade buttons are live. Choosing Pro opens Stripe's hosted checkout page.
 
 28
-00:03:27,553 --> 00:03:38,089
-Step one. Create a free Stripe account, switch on test mode, and copy the secret key that starts with s k underscore test. Put it in the backend env file.
+00:03:29,052 --> 00:03:38,556
+This is where you would enter the test card. To keep the demo hands-free, I'll complete the subscription with Stripe's test payment method instead, and let the webhook do the rest.
 
 29
-00:03:38,745 --> 00:03:46,953
-Step two. Run the stripe setup command. It creates the Pro and Business prices, and it refuses to run against a live key.
+00:03:45,161 --> 00:03:52,625
+The workspace is now on Pro, and the limits have lifted. Cancelling the subscription sends it back to the free plan.
 
 30
-00:03:47,598 --> 00:03:59,694
-Step three. Install the Stripe command line tool, log in, and forward webhooks to the API. It prints a signing secret that starts with w h sec. Add that to the env file too.
+00:03:57,871 --> 00:04:03,439
+Payments run through Stripe in test mode. Here's how to connect your own account in a few minutes.
 
 31
-00:04:00,339 --> 00:04:06,651
-Step four. In the Stripe dashboard, open the customer portal settings and save them once.
+00:04:04,108 --> 00:04:15,172
+Step one. Create a free Stripe account, switch on test mode, and copy the secret key that starts with s k underscore test. Put it in the backend env file.
 
 32
-00:04:07,301 --> 00:04:13,709
-Step five. Restart the API and the worker, open the billing page as an owner, and choose Pro.
+00:04:15,825 --> 00:04:24,057
+Step two. Run the stripe setup command. It creates the Pro and Business prices, and it refuses to run against a live key.
 
 33
-00:04:14,355 --> 00:04:24,435
-Step six. On Stripe's checkout page, pay with the test card four two four two, repeated four times, with any future date and any security code.
+00:04:24,703 --> 00:04:36,991
+Step three. Install the Stripe command line tool, log in, and forward webhooks to the API. It prints a signing secret that starts with w h sec. Add that to the env file too.
 
 34
-00:04:24,822 --> 00:04:29,670
-Another card is always declined, and a third one triggers three D secure.
+00:04:37,639 --> 00:04:43,687
+Step four. In the Stripe dashboard, open the customer portal settings and save them once.
 
 35
-00:04:30,319 --> 00:04:39,991
-Step seven. The webhook arrives, the workspace flips to Pro, and the limits lift. Cancel from the portal, and it drops back to free.
+00:04:44,334 --> 00:04:50,934
+Step five. Restart the API and the worker, open the billing page as an owner, and choose Pro.
 
 36
-00:04:41,929 --> 00:04:47,809
-The layout works on a phone too. The sidebar becomes a menu, and the board scrolls sideways.
+00:04:51,588 --> 00:05:01,548
+Step six. On Stripe's checkout page, pay with the test card four two four two, repeated four times, with any future date and any security code.
 
 37
-00:04:52,240 --> 00:05:03,448
-Under the hood, every change is written to an audit log. After the transaction commits, one Celery task turns each entry into notifications and webhook deliveries.
+00:05:01,940 --> 00:05:07,004
+Another card is always declined, and a third one triggers three D secure.
 
 38
-00:05:04,100 --> 00:05:12,500
-Tenancy uses a shared schema with a workspace id on every table, enforced by a base viewset, and covered by cross-tenant tests.
+00:05:07,653 --> 00:05:16,773
+Step seven. The webhook arrives, the workspace flips to Pro, and the limits lift. Cancel from the portal, and it drops back to free.
 
 39
-00:05:13,144 --> 00:05:22,696
-GitHub Actions runs linting, the backend tests, the browser tests, dependency audits, and builds the Docker images, then deploys to staging or production.
+00:05:18,582 --> 00:05:24,678
+The layout works on a phone too. The sidebar becomes a menu, and the board scrolls sideways.
 
 40
-00:05:23,351 --> 00:05:29,111
-In total there are one hundred eighteen backend tests, six unit tests, and thirty nine browser tests.
+00:05:28,684 --> 00:05:39,772
+Under the hood, every change is written to an audit log. After the transaction commits, one Celery task turns each entry into notifications and webhook deliveries.
 
 41
-00:05:29,784 --> 00:05:37,920
+00:05:40,422 --> 00:05:49,326
+Tenancy uses a shared schema with a workspace id on every table, enforced by a base viewset, and covered by cross-tenant tests.
+
+42
+00:05:49,975 --> 00:05:58,879
+GitHub Actions runs linting, the backend tests, the browser tests, dependency audits, and builds the Docker images, then deploys to staging or production.
+
+43
+00:05:59,723 --> 00:06:05,747
+In total there are one hundred eighteen backend tests, six unit tests, and thirty nine browser tests.
+
+44
+00:06:06,661 --> 00:06:14,989
 That's Sprintboard. The code, the architecture notes, the API docs and the test results are all in the repository. Thanks for watching.

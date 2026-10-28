@@ -153,6 +153,7 @@ With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and H
 - `AWS_STORAGE_BUCKET_NAME` and the usual `AWS_*` keys to keep attachments in S3 (`AWS_S3_ENDPOINT_URL` for
   Cloudflare R2 or MinIO). Render's disk is wiped on every deploy, so this matters there.
 - `SENTRY_DSN` to send errors from the API and worker to Sentry
+- `DB_CONN_MAX_AGE` (default 60) for how long gunicorn keeps database connections; use 0 with `runserver`
 - `NUM_PROXIES=1` behind nginx or Render, so rate limits see the real client IP
 - `LOGIN_MAX_FAILURES` and `LOGIN_LOCKOUT_SECONDS` for the sign-in lockout (5 failures, 15 minutes), and
   `REQUIRE_VERIFIED_EMAIL=0` to drop the confirmed-email requirement for inviting people and upgrading
