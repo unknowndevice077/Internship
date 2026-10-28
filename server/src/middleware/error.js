@@ -15,7 +15,7 @@ export function notFound(_req, _res, next) {
   next(new HttpError(404, 'Route not found'));
 }
 
-export function errorHandler(err, _req, res, _next) {
+export function errorHandler(err, req, res, _next) {
   if (err instanceof ZodError) {
     return res.status(400).json({ error: 'Validation failed', details: err.flatten().fieldErrors });
   }
@@ -30,7 +30,7 @@ export function errorHandler(err, _req, res, _next) {
   }
 
   const status = err.status || 500;
-  if (status >= 500) console.error(err);
+  if (status >= 500) req.log.error({ err }, 'request failed');
   res.status(status).json({
     error: status >= 500 ? 'Something went wrong' : err.message,
     ...(err.details && { details: err.details }),

@@ -4,9 +4,7 @@ import Coupon from '../models/Coupon.js';
 import Vendor from '../models/Vendor.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
-import { applyCoupon } from '../lib/coupons.js';
-import { getCart } from '../lib/cart.js';
-import { round2 } from '../lib/payments.js';
+import { publicQuote, quote } from '../lib/orders.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -16,14 +14,7 @@ router.post(
   requireRole('customer'),
   asyncHandler(async (req, res) => {
     const { code } = z.object({ code: z.string().min(1) }).parse(req.body);
-    const cart = await getCart(req.user.id);
-    const groups = new Map();
-    for (const i of cart.items.filter((x) => x.available)) {
-      groups.set(i.vendorId, round2((groups.get(i.vendorId) || 0) + i.price * i.quantity));
-    }
-    const { coupon, discounts } = await applyCoupon(code, groups);
-    const discount = round2([...discounts.values()].reduce((a, b) => a + b, 0));
-    res.json({ code: coupon.code, discount, total: round2(cart.subtotal - discount) });
+    res.json(publicQuote(await quote(req.user.id, code)));
   }),
 );
 

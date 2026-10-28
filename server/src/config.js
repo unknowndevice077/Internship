@@ -28,6 +28,11 @@ const config = {
     secretKey: env.STRIPE_SECRET_KEY || '',
     webhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
   },
+  mail: {
+    // e.g. smtp://user:pass@smtp.example.com:587, empty = log mail instead of sending
+    smtpUrl: env.SMTP_URL || '',
+    from: env.MAIL_FROM || 'Vendora <no-reply@vendora.test>',
+  },
   currency: env.CURRENCY || 'usd',
   commissionRate: Number(env.COMMISSION_RATE ?? 0.1),
 };

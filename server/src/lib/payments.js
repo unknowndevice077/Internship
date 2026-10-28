@@ -90,6 +90,24 @@ export async function refundPayment(intentId, amount) {
   return s.refunds.create({ payment_intent: intentId, amount: toCents(amount) });
 }
 
+// takes back part of a vendor's transfer, used for refunds after the payout went out
+export async function reverseTransfer(transferId, amount) {
+  const s = getStripe();
+  if (!s || !transferId || amount <= 0) return { id: transferId ? `mock_trr_${transferId}` : null };
+  return s.transfers.createReversal(transferId, { amount: toCents(amount) });
+}
+
+export async function cancelPaymentIntent(id) {
+  const s = getStripe();
+  if (!s) return null;
+  try {
+    return await s.paymentIntents.cancel(id);
+  } catch {
+    // already succeeded or cancelled, the caller checks the status
+    return null;
+  }
+}
+
 export function constructWebhookEvent(rawBody, signature) {
   return getStripe().webhooks.constructEvent(rawBody, signature, config.stripe.webhookSecret);
 }

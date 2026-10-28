@@ -20,6 +20,8 @@ const storeSchema = z.object({
   storeName: z.string().trim().min(2).max(80),
   description: z.string().max(1000).optional(),
   logoUrl: z.string().url().or(z.string().startsWith('/uploads/')).optional(),
+  shippingFee: z.coerce.number().min(0).max(500).optional(),
+  freeShippingOver: z.coerce.number().min(0).nullable().optional(),
 });
 
 router.post(
@@ -126,7 +128,7 @@ router.get(
   '/:slug',
   asyncHandler(async (req, res) => {
     const vendor = await Vendor.findOne({ slug: req.params.slug, status: 'approved' }).select(
-      'storeName slug description logoUrl createdAt',
+      'storeName slug description logoUrl shippingFee freeShippingOver createdAt',
     );
     if (!vendor) throw new HttpError(404, 'Store not found');
     res.json({ vendor });

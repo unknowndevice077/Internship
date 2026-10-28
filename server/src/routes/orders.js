@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import Order from '../models/Order.js';
+import Order, { ORDER_STATUSES } from '../models/Order.js';
 import User from '../models/User.js';
 import Vendor from '../models/Vendor.js';
 import { requireAuth, requireRole, requireVendor } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
-import { advanceOrder, cancelOrder, checkout, completePayment } from '../lib/orders.js';
+import { advanceOrder, cancelOrder, checkout, completePayment, refundItems } from '../lib/orders.js';
 import { providerName } from '../lib/payments.js';
 import { writeInvoice } from '../lib/invoice.js';
 
@@ -50,25 +50,101 @@ router.post(
   }),
 );
 
+const listSchema = z.object({
+  status: z.enum(ORDER_STATUSES).optional(),
+  q: z.string().trim().max(60).optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+});
+
+// what the current user is allowed to see, plus the optional filters
+async function orderFilter(req) {
+  const { status, q, from, to } = listSchema.parse(req.query);
+  const filter = {};
+  if (req.user.role === 'customer') filter.customer = req.user.id;
+  else if (req.user.role === 'vendor') {
+    const vendor = await Vendor.findOne({ owner: req.user.id });
+    if (!vendor) return null;
+    filter.vendor = vendor._id;
+    filter.status = { $ne: 'pending_payment' };
+  }
+  if (status) filter.status = status;
+  if (q) filter.orderNumber = { $regex: q.replace(/[^\w-]/g, ''), $options: 'i' };
+  if (from || to) {
+    filter.createdAt = {};
+    if (from) filter.createdAt.$gte = from;
+    // "to" is a day, so include all of it
+    if (to) filter.createdAt.$lt = new Date(to.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return filter;
+}
+
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const filter = {};
-    if (req.user.role === 'customer') filter.customer = req.user.id;
-    else if (req.user.role === 'vendor') {
-      const vendor = await Vendor.findOne({ owner: req.user.id });
-      if (!vendor) return res.json({ items: [] });
-      filter.vendor = vendor._id;
-      filter.status = { $ne: 'pending_payment' };
-    }
-    if (req.query.status) filter.status = req.query.status;
-
+    const filter = await orderFilter(req);
+    if (!filter) return res.json({ items: [] });
     const items = await Order.find(filter)
       .sort({ createdAt: -1 })
       .limit(100)
       .populate('vendor', 'storeName slug')
       .populate('customer', 'name email');
     res.json({ items });
+  }),
+);
+
+const csvCell = (v) => {
+  const s = v == null ? '' : String(v);
+  // quote anything with commas/quotes/newlines, and stop spreadsheets running formulas
+  const safe = /^[=+\-@]/.test(s) ? `'${s}` : s;
+  return /[",\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
+};
+
+router.get(
+  '/export.csv',
+  requireRole('vendor', 'admin'),
+  asyncHandler(async (req, res) => {
+    const filter = (await orderFilter(req)) ?? { _id: null };
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(5000)
+      .populate('customer', 'name email')
+      .populate('vendor', 'storeName');
+    const header = [
+      'order',
+      'date',
+      'status',
+      'store',
+      'customer',
+      'email',
+      'items',
+      'subtotal',
+      'discount',
+      'shipping',
+      'total',
+      'commission',
+      'payout',
+      'refunded',
+    ];
+    const rows = orders.map((o) => [
+      o.orderNumber,
+      o.createdAt.toISOString().slice(0, 10),
+      o.status,
+      o.vendor?.storeName,
+      o.customer?.name,
+      o.customer?.email,
+      o.items.map((i) => `${i.quantity} x ${i.title}`).join('; '),
+      o.subtotal,
+      o.discount,
+      o.shippingFee,
+      o.total,
+      o.commission,
+      o.vendorPayout,
+      o.refundedTotal,
+    ]);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="orders.csv"');
+    res.send([header, ...rows].map((r) => r.map(csvCell).join(',')).join('\n'));
   }),
 );
 
@@ -107,6 +183,21 @@ router.patch(
       return res.json({ order: await cancelOrder(order) });
     }
     res.json({ order: await advanceOrder(order, status) });
+  }),
+);
+
+router.post(
+  '/:id/refund',
+  requireVendor(),
+  asyncHandler(async (req, res) => {
+    const { items, reason } = z
+      .object({
+        items: z.array(z.object({ product: z.string(), quantity: z.coerce.number().int().min(1) })).min(1),
+        reason: z.string().trim().max(300).optional(),
+      })
+      .parse(req.body);
+    const order = await loadOrder(req);
+    res.json(await refundItems(order, items, reason));
   }),
 );
 

@@ -12,6 +12,9 @@ const vendorSchema = new mongoose.Schema(
     commissionRate: { type: Number, min: 0, max: 1 },
     stripeAccountId: String,
     payoutsEnabled: { type: Boolean, default: false },
+    // flat rate per order; free when the store subtotal reaches freeShippingOver
+    shippingFee: { type: Number, default: 0, min: 0 },
+    freeShippingOver: { type: Number, min: 0 },
   },
   { timestamps: true },
 );

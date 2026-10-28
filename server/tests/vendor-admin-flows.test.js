@@ -91,7 +91,7 @@ describe('coupon preview', () => {
     await Coupon.create({ code: 'GONE', type: 'fixed', value: 1, maxUses: 1, usedCount: 1 });
 
     const ok = await api().post('/api/coupons/validate').set(auth(c.token)).send({ code: 'ten' });
-    expect(ok.body).toEqual({ code: 'TEN', discount: 4, total: 36 });
+    expect(ok.body).toMatchObject({ code: 'TEN', subtotal: 40, discount: 4, shipping: 0, total: 36 });
 
     const min = await api().post('/api/coupons/validate').set(auth(c.token)).send({ code: 'BIGSPEND' });
     expect(min.body.error).toMatch(/minimum/);

@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ROLES, default: 'customer' },
     address: addressSchema,
     isActive: { type: Boolean, default: true },
+    emailVerified: { type: Boolean, default: false },
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
   },
   { timestamps: true },
 );

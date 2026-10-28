@@ -65,7 +65,13 @@ async function main() {
   await getRedis().flushdb();
   await Promise.all([User, Vendor, Product, Review, Order, Coupon].map((m) => m.syncIndexes()));
 
-  await User.create({ name: 'Admin', email: 'admin@vendora.test', password: PASSWORD, role: 'admin' });
+  await User.create({
+    name: 'Admin',
+    email: 'admin@vendora.test',
+    password: PASSWORD,
+    emailVerified: true,
+    role: 'admin',
+  });
 
   const customers = [];
   for (const [i, name] of ['Maya Cruz', 'Leo Santos', 'Ava Reyes', 'Noah Lim', 'Zoe Tan'].entries()) {
@@ -74,6 +80,7 @@ async function main() {
         name,
         email: i === 0 ? 'customer@vendora.test' : `customer${i + 1}@vendora.test`,
         password: PASSWORD,
+        emailVerified: true,
         address: { line1: `${12 + i} Market St`, city: 'Manila', postalCode: '1000', country: 'PH' },
       }),
     );
@@ -85,6 +92,7 @@ async function main() {
       name: `${store.storeName} Owner`,
       email: i === 0 ? 'vendor@vendora.test' : `vendor${i + 1}@vendora.test`,
       password: PASSWORD,
+      emailVerified: true,
       role: 'vendor',
     });
     vendors.push(
@@ -96,6 +104,8 @@ async function main() {
         status: 'approved',
         stripeAccountId: `mock_acct_${i}`,
         payoutsEnabled: true,
+        shippingFee: 4.99,
+        freeShippingOver: 50,
       }),
     );
   }
@@ -104,6 +114,7 @@ async function main() {
     name: 'New Seller',
     email: 'newseller@vendora.test',
     password: PASSWORD,
+    emailVerified: true,
     role: 'vendor',
   });
   await Vendor.create({ owner: pendingOwner._id, storeName: 'Fresh Finds', slug: 'fresh-finds' });
@@ -193,6 +204,8 @@ async function main() {
           provider: 'mock',
           intentId: `mock_pi_seed_${n}`,
           transferId: `mock_tr_seed_${n}`,
+          transferStatus: 'paid',
+          transferAttempts: 1,
           paidAt: at,
         },
         createdAt: at,

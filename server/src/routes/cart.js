@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
 import { clearCart, getCart, getRawCart, setItem } from '../lib/cart.js';
+import { publicQuote, quote } from '../lib/orders.js';
 
 const router = Router();
 router.use(requireAuth, requireRole('customer'));
@@ -11,6 +12,15 @@ router.use(requireAuth, requireRole('customer'));
 router.get(
   '/',
   asyncHandler(async (req, res) => res.json(await getCart(req.user.id))),
+);
+
+// totals with shipping per store, and the coupon if one is given
+router.get(
+  '/quote',
+  asyncHandler(async (req, res) => {
+    const code = typeof req.query.coupon === 'string' ? req.query.coupon.trim() : '';
+    res.json(publicQuote(await quote(req.user.id, code || undefined)));
+  }),
 );
 
 const itemSchema = z.object({

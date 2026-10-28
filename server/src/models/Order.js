@@ -10,6 +10,7 @@ const itemSchema = new mongoose.Schema(
     image: String,
     price: Number,
     quantity: { type: Number, min: 1 },
+    refundedQuantity: { type: Number, default: 0 },
   },
   { _id: false },
 );
@@ -24,6 +25,7 @@ const orderSchema = new mongoose.Schema(
     items: [itemSchema],
     subtotal: Number,
     discount: { type: Number, default: 0 },
+    shippingFee: { type: Number, default: 0 },
     total: Number,
     commissionRate: Number,
     commission: Number,
@@ -41,11 +43,34 @@ const orderSchema = new mongoose.Schema(
     payment: {
       provider: String,
       intentId: String,
+      chargeId: String,
       transferId: String,
       paidAt: Date,
+      // payout to the vendor; failed ones are retried by the jobs runner
+      transferStatus: { type: String, enum: ['pending', 'paid', 'failed', 'skipped'] },
+      transferAttempts: { type: Number, default: 0 },
+      transferError: String,
+      nextTransferAt: Date,
     },
+    // stock is held from checkout until this time, then released if still unpaid
+    reservedUntil: Date,
+    refunds: [
+      {
+        items: [{ product: mongoose.Schema.Types.ObjectId, quantity: Number, _id: false }],
+        amount: Number,
+        vendorReversal: Number,
+        reason: String,
+        refundId: String,
+        at: { type: Date, default: Date.now },
+        _id: false,
+      },
+    ],
+    refundedTotal: { type: Number, default: 0 },
   },
   { timestamps: true },
 );
+
+orderSchema.index({ status: 1, reservedUntil: 1 });
+orderSchema.index({ 'payment.transferStatus': 1, 'payment.nextTransferAt': 1 });
 
 export default mongoose.model('Order', orderSchema);

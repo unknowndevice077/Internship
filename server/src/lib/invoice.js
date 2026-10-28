@@ -52,7 +52,9 @@ export function writeInvoice(stream, { order, vendor, customer }) {
     ...(order.discount
       ? [[`Discount${order.couponCode ? ` (${order.couponCode})` : ''}`, `-${money(order.discount)}`]]
       : []),
+    ...(order.shippingFee ? [['Shipping', money(order.shippingFee)]] : []),
     ['Total paid', money(order.total)],
+    ...(order.refundedTotal ? [['Refunded', `-${money(order.refundedTotal)}`]] : []),
   ];
   for (const [label, value] of totals) {
     doc.font(label === 'Total paid' ? 'Helvetica-Bold' : 'Helvetica');

@@ -60,7 +60,9 @@ router.get(
   '/:id',
   asyncHandler(async (req, res) => {
     const product = await cached(cacheKey(req.params.id), 300, async () => {
-      const p = await Product.findById(req.params.id).populate('vendor', 'storeName slug status').lean();
+      const p = await Product.findById(req.params.id)
+        .populate('vendor', 'storeName slug status shippingFee freeShippingOver')
+        .lean();
       return p && p.isActive && p.vendor?.status === 'approved' ? p : null;
     });
     if (!product) throw new HttpError(404, 'Product not found');

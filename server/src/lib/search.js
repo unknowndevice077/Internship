@@ -3,6 +3,7 @@ import config from '../config.js';
 import Product from '../models/Product.js';
 import Vendor from '../models/Vendor.js';
 import { getRedis } from './redis.js';
+import logger from './logger.js';
 
 let es;
 
@@ -83,7 +84,7 @@ export async function indexProduct(product) {
       document: toDoc(product, vendor.storeName),
     });
   } catch (err) {
-    console.warn('search index failed:', err.message);
+    logger.warn({ err: err.message }, 'search index failed');
   }
 }
 
@@ -93,7 +94,7 @@ export async function removeProduct(id) {
   try {
     await client.delete({ index: config.elasticIndex, id: id.toString() });
   } catch (err) {
-    if (err.meta?.statusCode !== 404) console.warn('search delete failed:', err.message);
+    if (err.meta?.statusCode !== 404) logger.warn({ err: err.message }, 'search delete failed');
   }
 }
 
@@ -189,6 +190,17 @@ async function searchElastic(client, p, page, limit) {
   };
 }
 
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function partialTerms(q) {
+  return String(q)
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 6)
+    .map((t) => new RegExp(escapeRegex(t), 'i'));
+}
+
 async function searchMongo(p, page, limit) {
   const approved = await Vendor.find({ status: 'approved' }).select('_id storeName');
   const names = new Map(approved.map((v) => [v._id.toString(), v.storeName]));
@@ -210,13 +222,23 @@ async function searchMongo(p, page, limit) {
     if (p.maxPrice) query.price.$lte = Number(p.maxPrice);
   }
 
+  // $text only matches whole words, so fall back to substring matching ("phone" -> "iPhone")
+  let textScore = Boolean(p.q);
+  if (p.q && !(await Product.exists(query))) {
+    delete query.$text;
+    textScore = false;
+    query.$and = partialTerms(p.q).map((re) => ({
+      $or: [{ title: re }, { brand: re }, { category: re }, { tags: re }],
+    }));
+  }
+
   const sortCfg = SORTS[p.sort];
   let sort = { createdAt: -1 };
   if (sortCfg) sort = { [sortCfg.field]: sortCfg.dir === 'asc' ? 1 : -1 };
-  else if (p.q) sort = { score: { $meta: 'textScore' } };
+  else if (textScore) sort = { score: { $meta: 'textScore' } };
 
   const [docs, total, categories, brands] = await Promise.all([
-    Product.find(query, p.q ? { score: { $meta: 'textScore' } } : {})
+    Product.find(query, textScore ? { score: { $meta: 'textScore' } } : {})
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)
@@ -243,7 +265,7 @@ async function searchMongo(p, page, limit) {
 export async function suggestProducts(q, limit = 6) {
   const term = String(q || '').trim();
   if (term.length < 2) return [];
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = escapeRegex(term);
   const approved = await Vendor.find({ status: 'approved' }).distinct('_id');
   return Product.find({
     isActive: true,

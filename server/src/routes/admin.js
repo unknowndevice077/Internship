@@ -7,6 +7,8 @@ import Product from '../models/Product.js';
 import { destroyUserSessions, requireAuth, requireRole } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
 import { reindexAll, reindexVendorProducts } from '../lib/search.js';
+import { payVendor } from '../lib/orders.js';
+import { sendMail, templates } from '../lib/mail.js';
 
 const router = Router();
 router.use(requireAuth, requireRole('admin'));
@@ -30,6 +32,7 @@ router.get(
             commission: { $sum: '$commission' },
             payouts: { $sum: '$vendorPayout' },
             discounts: { $sum: '$discount' },
+            refunds: { $sum: '$refundedTotal' },
             orders: { $sum: 1 },
           },
         },
@@ -82,7 +85,7 @@ router.get(
       ]),
     ]);
 
-    const t = totals[0] || { gmv: 0, commission: 0, payouts: 0, discounts: 0, orders: 0 };
+    const t = totals[0] || { gmv: 0, commission: 0, payouts: 0, discounts: 0, refunds: 0, orders: 0 };
     res.json({
       totals: { ...t, avgOrderValue: t.orders ? Math.round((t.gmv / t.orders) * 100) / 100 : 0 },
       daily: daily.map((d) => ({ date: d._id, gmv: d.gmv, commission: d.commission, orders: d.orders })),
@@ -113,8 +116,13 @@ router.patch(
         commissionRate: z.coerce.number().min(0).max(0.5).nullable().optional(),
       })
       .parse(req.body);
+    const before = await Vendor.findById(req.params.id);
+    if (!before) throw new HttpError(404, 'Vendor not found');
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, data, { returnDocument: 'after' });
-    if (!vendor) throw new HttpError(404, 'Vendor not found');
+    if (before.status === 'pending' && vendor.status === 'approved') {
+      const owner = await User.findById(vendor.owner);
+      if (owner) await sendMail(owner.email, templates.storeApproved(owner, vendor));
+    }
     // approving or suspending changes which products are searchable
     if (data.status) await reindexVendorProducts(vendor._id);
     res.json({ vendor });
@@ -139,6 +147,29 @@ router.patch(
     if (!user) throw new HttpError(404, 'User not found');
     if (!isActive) await destroyUserSessions(user._id.toString());
     res.json({ user });
+  }),
+);
+
+// vendor payouts that haven't gone through yet
+router.get(
+  '/payouts',
+  asyncHandler(async (req, res) => {
+    const status = z.enum(['failed', 'pending', 'paid', 'skipped']).catch('failed').parse(req.query.status);
+    const items = await Order.find({ 'payment.transferStatus': status })
+      .sort({ updatedAt: -1 })
+      .limit(100)
+      .populate('vendor', 'storeName stripeAccountId');
+    res.json({ items });
+  }),
+);
+
+router.post(
+  '/orders/:id/retry-payout',
+  asyncHandler(async (req, res) => {
+    const order = await Order.findById(req.params.id);
+    if (!order) throw new HttpError(404, 'Order not found');
+    if (order.payment?.transferStatus !== 'failed') throw new HttpError(400, 'This payout has not failed');
+    res.json({ order: await payVendor(order) });
   }),
 );
 
