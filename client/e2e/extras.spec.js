@@ -8,8 +8,11 @@ test.describe('customer extras', () => {
     await expect(page.getByText('Please confirm your email address')).toBeVisible();
 
     await openProduct(page, 'Red Lipstick');
-    await page.getByRole('button', { name: '♡ Save' }).click();
-    await expect(page.getByRole('button', { name: '♥ Saved' })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Saved', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
 
     await openProduct(page, 'iPhone X');
     await expect(page.getByRole('heading', { name: 'Recently viewed' })).toBeVisible();

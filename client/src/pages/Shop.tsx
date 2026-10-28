@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
 import { Empty, ErrorText, Stars, useFetch } from '../components/ui';
-import type { ProductSummary, SearchResult } from '../types';
+import type { Facet, ProductSummary, SearchResult } from '../types';
 
 const SORTS = [
   ['', 'Best match'],
@@ -12,9 +12,14 @@ const SORTS = [
   ['rating', 'Top rated'],
 ];
 
-export function ProductCard({ p }: { p: ProductSummary }) {
+export function ProductCard({ p, index = 0 }: { p: ProductSummary; index?: number }) {
   return (
-    <Link to={`/products/${p._id}`} className="card product-card">
+    <Link
+      to={`/products/${p._id}`}
+      className="card product-card"
+      // stagger the fade-in a little, capped so long pages don't wait
+      style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
+    >
       <div className="thumb">
         {p.image && <img src={imageUrl(p.image)} alt="" loading="lazy" />}
         {p.stock === 0 && <span className="sold-out">Sold out</span>}
@@ -45,6 +50,37 @@ function SkeletonGrid() {
   );
 }
 
+function Hero({ categories, onPick }: { categories: Facet[]; onPick: (c: string) => void }) {
+  const top = [...categories].sort((a, b) => b.count - a.count).slice(0, 6);
+  return (
+    <section className="hero">
+      <div className="hero-text">
+        <span className="hero-kicker">Many stores, one cart</span>
+        <h1>Find something good from sellers you'll love</h1>
+        <p>Shop from independent stores, check out once, and track each package on its own.</p>
+        <div className="hero-actions">
+          <Link to="/?sort=rating" className="button primary">
+            Shop top rated
+          </Link>
+          <Link to="/?sort=newest" className="button ghost">
+            New arrivals
+          </Link>
+        </div>
+      </div>
+      {top.length > 0 && (
+        <div className="hero-chips" aria-label="Popular categories">
+          {top.map((c) => (
+            <button key={c.value} className="chip" onClick={() => onPick(c.value)}>
+              {c.value.replace(/-/g, ' ')}
+              <span>{c.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Shop() {
   const [params, setParams] = useSearchParams();
   const query = params.toString();
@@ -72,150 +108,153 @@ export default function Shop() {
   ).length;
 
   return (
-    <div className="shop">
-      <button
-        type="button"
-        className="filters-toggle"
-        aria-expanded={filtersOpen}
-        aria-controls="filters"
-        onClick={() => setFiltersOpen((o) => !o)}
-      >
-        Filters{activeFilters ? ` (${activeFilters})` : ''}
-      </button>
-      <aside id="filters" className={`filters card ${filtersOpen ? 'open' : ''}`} aria-label="Filters">
-        <h3>Category</h3>
+    <>
+      {!query && <Hero categories={data?.facets.categories ?? []} onPick={(c) => set('category', c)} />}
+      <div className="shop">
         <button
-          className={`facet ${!params.get('category') ? 'active' : ''}`}
-          aria-pressed={!params.get('category')}
-          onClick={() => set('category', '')}
+          type="button"
+          className="filters-toggle"
+          aria-expanded={filtersOpen}
+          aria-controls="filters"
+          onClick={() => setFiltersOpen((o) => !o)}
         >
-          All
+          Filters{activeFilters ? ` (${activeFilters})` : ''}
         </button>
-        {data?.facets.categories.map((c) => (
+        <aside id="filters" className={`filters card ${filtersOpen ? 'open' : ''}`} aria-label="Filters">
+          <h3>Category</h3>
           <button
-            key={c.value}
-            className={`facet ${params.get('category') === c.value ? 'active' : ''}`}
-            aria-pressed={params.get('category') === c.value}
-            onClick={() => set('category', c.value)}
+            className={`facet ${!params.get('category') ? 'active' : ''}`}
+            aria-pressed={!params.get('category')}
+            onClick={() => set('category', '')}
           >
-            {c.value.replace(/-/g, ' ')} <span className="muted">{c.count}</span>
+            All
           </button>
-        ))}
+          {data?.facets.categories.map((c) => (
+            <button
+              key={c.value}
+              className={`facet ${params.get('category') === c.value ? 'active' : ''}`}
+              aria-pressed={params.get('category') === c.value}
+              onClick={() => set('category', c.value)}
+            >
+              {c.value.replace(/-/g, ' ')} <span className="muted">{c.count}</span>
+            </button>
+          ))}
 
-        <h3>Price</h3>
-        <form
-          className="price-range"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const f = new FormData(e.currentTarget);
-            const next = new URLSearchParams(params);
-            for (const k of ['minPrice', 'maxPrice']) {
-              const v = f.get(k);
-              if (typeof v === 'string' && v) next.set(k, v);
-              else next.delete(k);
-            }
-            next.delete('page');
-            setParams(next);
-          }}
-        >
-          <input
-            name="minPrice"
-            type="number"
-            min="0"
-            placeholder="Min"
-            aria-label="Minimum price"
-            defaultValue={params.get('minPrice') || ''}
-          />
-          <input
-            name="maxPrice"
-            type="number"
-            min="0"
-            placeholder="Max"
-            aria-label="Maximum price"
-            defaultValue={params.get('maxPrice') || ''}
-          />
-          <button type="submit">Go</button>
-        </form>
-
-        <h3>Rating</h3>
-        {[4, 3].map((r) => (
-          <button
-            key={r}
-            className={`facet ${params.get('minRating') === String(r) ? 'active' : ''}`}
-            aria-pressed={params.get('minRating') === String(r)}
-            onClick={() => set('minRating', params.get('minRating') === String(r) ? '' : String(r))}
+          <h3>Price</h3>
+          <form
+            className="price-range"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              const next = new URLSearchParams(params);
+              for (const k of ['minPrice', 'maxPrice']) {
+                const v = f.get(k);
+                if (typeof v === 'string' && v) next.set(k, v);
+                else next.delete(k);
+              }
+              next.delete('page');
+              setParams(next);
+            }}
           >
-            <Stars value={r} /> & up
-          </button>
-        ))}
+            <input
+              name="minPrice"
+              type="number"
+              min="0"
+              placeholder="Min"
+              aria-label="Minimum price"
+              defaultValue={params.get('minPrice') || ''}
+            />
+            <input
+              name="maxPrice"
+              type="number"
+              min="0"
+              placeholder="Max"
+              aria-label="Maximum price"
+              defaultValue={params.get('maxPrice') || ''}
+            />
+            <button type="submit">Go</button>
+          </form>
 
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={params.get('inStock') === 'true'}
-            onChange={(e) => set('inStock', e.target.checked ? 'true' : '')}
-          />
-          In stock only
-        </label>
-      </aside>
+          <h3>Rating</h3>
+          {[4, 3].map((r) => (
+            <button
+              key={r}
+              className={`facet ${params.get('minRating') === String(r) ? 'active' : ''}`}
+              aria-pressed={params.get('minRating') === String(r)}
+              onClick={() => set('minRating', params.get('minRating') === String(r) ? '' : String(r))}
+            >
+              <Stars value={r} /> & up
+            </button>
+          ))}
 
-      <section>
-        <div className="shop-head">
-          <div>
-            {params.get('q') ? <h2>Results for “{params.get('q')}”</h2> : <h2>All products</h2>}
-            {data && (
-              <span className="muted" role="status">
-                {data.total} {data.total === 1 ? 'item' : 'items'}
-              </span>
-            )}
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={params.get('inStock') === 'true'}
+              onChange={(e) => set('inStock', e.target.checked ? 'true' : '')}
+            />
+            In stock only
+          </label>
+        </aside>
+
+        <section>
+          <div className="shop-head">
+            <div>
+              {params.get('q') ? <h2>Results for “{params.get('q')}”</h2> : <h2>All products</h2>}
+              {data && (
+                <span className="muted" role="status">
+                  {data.total} {data.total === 1 ? 'item' : 'items'}
+                </span>
+              )}
+            </div>
+            <select
+              value={params.get('sort') || ''}
+              onChange={(e) => set('sort', e.target.value)}
+              aria-label="Sort by"
+            >
+              {SORTS.map(([v, label]) => (
+                <option key={v} value={v}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </div>
-          <select
-            value={params.get('sort') || ''}
-            onChange={(e) => set('sort', e.target.value)}
-            aria-label="Sort by"
-          >
-            {SORTS.map(([v, label]) => (
-              <option key={v} value={v}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        <ErrorText error={error} />
-        {loading && !data ? (
-          <SkeletonGrid />
-        ) : data?.items.length ? (
-          <div className="grid">
-            {data.items.map((p) => (
-              <ProductCard key={p._id} p={p} />
-            ))}
-          </div>
-        ) : (
-          <Empty>
-            No products match those filters.{' '}
-            {query && (
-              <button className="link" onClick={() => setParams({})}>
-                Clear filters
+          <ErrorText error={error} />
+          {loading && !data ? (
+            <SkeletonGrid />
+          ) : data?.items.length ? (
+            <div className="grid">
+              {data.items.map((p, i) => (
+                <ProductCard key={p._id} p={p} index={i} />
+              ))}
+            </div>
+          ) : (
+            <Empty>
+              No products match those filters.{' '}
+              {query && (
+                <button className="link" onClick={() => setParams({})}>
+                  Clear filters
+                </button>
+              )}
+            </Empty>
+          )}
+
+          {pages > 1 && (
+            <nav className="pager" aria-label="Pages">
+              <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>
+                Previous
               </button>
-            )}
-          </Empty>
-        )}
-
-        {pages > 1 && (
-          <nav className="pager" aria-label="Pages">
-            <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>
-              Previous
-            </button>
-            <span>
-              Page {page} of {pages}
-            </span>
-            <button disabled={page >= pages} onClick={() => goToPage(page + 1)}>
-              Next
-            </button>
-          </nav>
-        )}
-      </section>
-    </div>
+              <span>
+                Page {page} of {pages}
+              </span>
+              <button disabled={page >= pages} onClick={() => goToPage(page + 1)}>
+                Next
+              </button>
+            </nav>
+          )}
+        </section>
+      </div>
+    </>
   );
 }

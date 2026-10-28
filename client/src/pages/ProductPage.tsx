@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
-import { ErrorText, Spinner, Stars, useFetch } from '../components/ui';
+import { ErrorText, Stars, useFetch } from '../components/ui';
+import { useToast } from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import type { Items, Product, ProductSummary, Review } from '../types';
@@ -15,6 +16,21 @@ function shippingNote(vendor: Product['vendor']) {
   return `${money(vendor.shippingFee)} shipping`;
 }
 
+function ProductSkeleton() {
+  return (
+    <div className="product-page" role="status" aria-label="Loading product">
+      <div className="card main-image skeleton-block" />
+      <div className="stack">
+        <div className="skeleton-line tall" />
+        <div className="skeleton-line short" />
+        <div className="skeleton-line" />
+        <div className="skeleton-line" />
+        <div className="skeleton-line short" />
+      </div>
+    </div>
+  );
+}
+
 function SaveButton({ productId }: { productId: string }) {
   const saved = useFetch(
     () => api<Items<ProductSummary>>('/me/wishlist').then((d) => d.items.some((p) => p._id === productId)),
@@ -22,15 +38,23 @@ function SaveButton({ productId }: { productId: string }) {
   );
   const [on, setOn] = useState<boolean | null>(null);
   const isOn = on ?? saved.data ?? false;
+  const toast = useToast();
 
   const toggle = async () => {
     await api(`/me/wishlist/${productId}`, { method: isOn ? 'DELETE' : 'PUT' });
     setOn(!isOn);
+    toast.show(isOn ? 'Removed from saved items' : 'Saved for later', {
+      tone: 'info',
+      link: isOn ? undefined : { to: '/wishlist', label: 'View saved' },
+    });
   };
 
   return (
     <button type="button" className="save-button" aria-pressed={isOn} onClick={toggle}>
-      {isOn ? '♥ Saved' : '♡ Save'}
+      <span className="heart" aria-hidden="true">
+        {isOn ? '♥' : '♡'}
+      </span>{' '}
+      {isOn ? 'Saved' : 'Save'}
     </button>
   );
 }
@@ -61,7 +85,8 @@ export default function ProductPage() {
 
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const toast = useToast();
   const [error, setError] = useState<unknown>(null);
   const isCustomer = user?.role === 'customer';
 
@@ -69,18 +94,21 @@ export default function ProductPage() {
     if (isCustomer) api(`/me/recent/${id}`, { method: 'POST' }).catch(() => {});
   }, [id, isCustomer]);
 
-  if (product.loading) return <Spinner />;
+  if (product.loading) return <ProductSkeleton />;
   if (product.error || !product.data) return <ErrorText error={product.error} />;
   const p = product.data;
 
   const addToCart = async () => {
     if (!user) return navigate('/login', { state: { from: `/products/${id}` } });
     setError(null);
+    setAdding(true);
     try {
       await add(p._id, qty);
-      setMsg('Added to cart');
+      toast.show('Added to cart', { link: { to: '/cart', label: 'View cart' } });
     } catch (err) {
       setError(err);
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -89,7 +117,14 @@ export default function ProductPage() {
       <div className="product-page">
         <div>
           <div className="main-image card">
-            {p.images[active] && <img src={imageUrl(p.images[active])} alt={p.title} />}
+            {p.images[active] && (
+              <img
+                key={p.images[active]}
+                className="fade-in"
+                src={imageUrl(p.images[active])}
+                alt={p.title}
+              />
+            )}
           </div>
           {p.images.length > 1 && (
             <div className="thumbs">
@@ -108,7 +143,7 @@ export default function ProductPage() {
           )}
         </div>
 
-        <div>
+        <div className="product-info">
           <h1>{p.title}</h1>
           <p className="muted">
             {p.brand && <>by {p.brand} · </>}sold by{' '}
@@ -132,17 +167,12 @@ export default function ProductPage() {
                       <option key={n}>{n}</option>
                     ))}
                   </select>
-                  <button className="primary" onClick={addToCart}>
-                    Add to cart
+                  <button className="primary add-button" onClick={addToCart} disabled={adding}>
+                    {adding ? 'Adding…' : 'Add to cart'}
                   </button>
                 </>
               )}
               {isCustomer && <SaveButton productId={p._id} />}
-              {msg && (
-                <Link to="/cart" className="ok" role="status">
-                  {msg} · view cart
-                </Link>
-              )}
             </div>
           )}
           <ErrorText error={error} />

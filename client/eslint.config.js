@@ -22,7 +22,10 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true, allowExportNames: ['useAuth', 'useCart', 'useFetch', 'homeFor'] },
+        {
+          allowConstantExport: true,
+          allowExportNames: ['useAuth', 'useCart', 'useFetch', 'useToast', 'homeFor'],
+        },
       ],
     },
   },

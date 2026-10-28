@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -31,6 +31,7 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const { cart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <>
@@ -67,7 +68,10 @@ export default function Layout() {
             )}
             {(!user || user.role === 'customer') && (
               <NavLink to="/cart" className="cart-link" aria-label={`Cart, ${cart.count} items`}>
-                Cart <span className="cart-count">{cart.count}</span>
+                Cart {/* keyed on the count so the bump animation replays when it changes */}
+                <span key={cart.count} className="cart-count bump">
+                  {cart.count}
+                </span>
               </NavLink>
             )}
             <ThemeToggle />
@@ -76,7 +80,9 @@ export default function Layout() {
       </header>
       {user && !user.emailVerified && <VerifyBanner />}
       <main id="main" className="container page" tabIndex={-1}>
-        <Outlet />
+        <div key={location.pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
       <footer className="footer">
         <div className="container">Vendora marketplace · payments run in Stripe test mode</div>
