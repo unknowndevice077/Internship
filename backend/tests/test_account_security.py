@@ -91,7 +91,8 @@ def test_resend_verification(api, dev):
 
 
 def test_login_is_rate_limited(api, dev):
-    for _ in range(10):
-        assert api.post("/api/auth/token/", {"email": dev.email, "password": "wrong"}).status_code == 401
+    # a different address each time, so the per-account lockout doesn't kick in first
+    for i in range(10):
+        assert api.post("/api/auth/token/", {"email": f"x{i}@acme.io", "password": "wrong"}).status_code == 401
     res = api.post("/api/auth/token/", {"email": dev.email, "password": "old-pass-123!"})
     assert res.status_code == 429

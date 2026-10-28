@@ -29,6 +29,11 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=150, blank=True)
     email_verified_at = models.DateTimeField(null=True, blank=True)
+    # encrypted, see crypto.py
+    totp_secret = models.CharField(max_length=255, blank=True)
+    totp_enabled = models.BooleanField(default=False)
+    totp_last_step = models.BigIntegerField(default=0)
+    recovery_hashes = models.JSONField(default=list, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

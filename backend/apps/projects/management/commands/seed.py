@@ -9,6 +9,7 @@ from django.utils import timezone
 from faker import Faker
 
 from apps.activity.models import AuditLog, Comment
+from apps.billing.plans import plan_for
 from apps.projects.models import Issue, Project, Sprint, Status
 from apps.tenancy.models import Membership, Role, Workspace
 
@@ -122,7 +123,10 @@ class Command(BaseCommand):
 
         people = [owner]
         roles = [Role.ADMIN] + [Role.MEMBER] * max(0, opts["users"] - 2) + [Role.VIEWER]
-        for role in roles[: opts["users"]]:
+        # a workspace shouldn't start out over its own plan's member limit
+        room = plan_for(workspace).max_members
+        count = opts["users"] if room is None else min(opts["users"], room - 1)
+        for role in roles[:count]:
             first = self.fake.unique.first_name().lower()
             user = self.user(f"{first}@{domain}", f"{first.title()} {self.fake.last_name()}")
             Membership.objects.create(workspace=workspace, user=user, role=role)

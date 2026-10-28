@@ -1,8 +1,10 @@
 from django.db import transaction
 from django.db.models import OuterRef, Subquery
-from rest_framework import exceptions, generics, mixins, viewsets
+from rest_framework import exceptions, generics, mixins, status, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from apps.accounts.permissions import require_verified_email
 from apps.activity import audit
 from apps.activity.models import AuditLog
 
@@ -74,6 +76,18 @@ class CurrentWorkspaceView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.workspace
 
+    def delete(self, request, *args, **kwargs):
+        from apps.billing import stripe_sync
+
+        workspace = request.workspace
+        if request.membership.role != Role.OWNER:
+            raise exceptions.PermissionDenied("Only owners can delete a workspace.")
+        if request.data.get("confirm") != workspace.slug:
+            raise exceptions.ValidationError({"confirm": "Type the workspace slug to confirm."})
+        stripe_sync.cancel_subscription(workspace)
+        workspace.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class MembershipViewSet(
     mixins.ListModelMixin,
@@ -98,6 +112,7 @@ class MembershipViewSet(
     def perform_create(self, serializer):
         from apps.billing import limits
 
+        require_verified_email(self.request.user)
         limits.check(self.request.workspace, "members")
         membership = serializer.save()
         audit.record(self.request.user, AuditLog.Action.CREATED, membership)

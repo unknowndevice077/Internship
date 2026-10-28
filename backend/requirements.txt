@@ -16,3 +16,5 @@ gunicorn==26.2.0
 django-storages[s3]==1.14.6
 boto3==1.43.119
 sentry-sdk[django,celery]==2.73.0
+pyotp==2.10.0
+cryptography==50.0.2

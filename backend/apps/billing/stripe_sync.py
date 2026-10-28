@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 
 import stripe
@@ -6,6 +7,8 @@ from django.db import transaction
 
 from .models import Subscription
 from .plans import PAID_PLANS, plan_by_lookup_key
+
+log = logging.getLogger(__name__)
 
 ACTIVE_STATUSES = {"active", "trialing", "past_due"}
 
@@ -56,6 +59,17 @@ def create_checkout(workspace, user, plan_code):
         **client_kwargs(),
     )
     return session.url
+
+
+def cancel_subscription(workspace):
+    """Best effort: used when a workspace is deleted so it stops being billed."""
+    sub = Subscription.objects.filter(workspace=workspace).first()
+    if not sub or not sub.stripe_subscription_id or not settings.STRIPE_SECRET_KEY:
+        return
+    try:
+        stripe.Subscription.cancel(sub.stripe_subscription_id, **client_kwargs())
+    except stripe.StripeError as exc:
+        log.warning("couldn't cancel subscription %s: %s", sub.stripe_subscription_id, exc)
 
 
 def create_portal(workspace):

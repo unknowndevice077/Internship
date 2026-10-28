@@ -8,6 +8,7 @@ from apps.tenancy.fields import WorkspaceRelatedField
 from apps.tenancy.serializers import MemberUserSerializer
 
 from .models import Attachment, AuditLog, Comment
+from .scan import validate_upload
 
 MENTION_RE = re.compile(r"@([\w.+-]+@[\w-]+(?:\.[\w-]+)+)")
 
@@ -49,6 +50,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         limit = settings.MAX_ATTACHMENT_MB * 1024 * 1024
         if f.size > limit:
             raise serializers.ValidationError(f"Files can be at most {settings.MAX_ATTACHMENT_MB} MB.")
+        validate_upload(f)
         return f
 
     def create(self, validated_data):

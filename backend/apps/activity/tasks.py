@@ -1,4 +1,10 @@
+from datetime import timedelta
+
 from celery import shared_task
+from django.conf import settings
+from django.core.cache import cache
+from django.core.management import call_command
+from django.utils import timezone
 
 from apps.notifications.models import Notification
 from apps.notifications.services import notifications_for
@@ -46,3 +52,18 @@ def handle_audit_entry(entry_id):
 
     payload = webhook_payload(entry)
     fan_out_event.delay(entry.workspace_id, payload["event"], payload)
+
+
+@shared_task
+def prune_old_records():
+    now = timezone.now()
+    AuditLog.objects.filter(created_at__lt=now - timedelta(days=settings.AUDIT_RETENTION_DAYS)).delete()
+    Notification.objects.filter(created_at__lt=now - timedelta(days=settings.NOTIFICATION_RETENTION_DAYS)).delete()
+    # drops expired refresh tokens from the blacklist tables
+    call_command("flushexpiredtokens")
+
+
+@shared_task
+def heartbeat():
+    # lets the health check tell whether a worker is alive without pinging it
+    cache.set("worker:heartbeat", timezone.now().timestamp(), 300)

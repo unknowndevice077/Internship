@@ -1,4 +1,5 @@
 import factory
+from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.projects.models import Issue, Project
@@ -12,6 +13,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     full_name = factory.Faker("name")
+    email_verified_at = factory.LazyFunction(timezone.now)
 
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):

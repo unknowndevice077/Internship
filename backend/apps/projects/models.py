@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import F
@@ -179,6 +181,7 @@ class Issue(TenantModel):
         ]
         indexes = [
             models.Index(fields=["workspace", "project", "status", "rank"]),
+            GinIndex(SearchVector("title", "description", config="english"), name="issue_search_gin"),
         ]
 
     @property

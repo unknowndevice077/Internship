@@ -1,14 +1,16 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.tenancy.models import Membership
 from apps.tenancy.serializers import create_workspace
 
-from . import tokens
+from . import tokens, twofactor
 
 User = get_user_model()
 
@@ -53,6 +55,56 @@ class RegisterSerializer(serializers.Serializer):
         return user
 
 
+class OtpRequired(AuthenticationFailed):
+    def __init__(self):
+        super().__init__({"detail": "Enter the 6-digit code from your authenticator app.", "code": "otp_required"})
+
+
+class LoginSerializer(TokenObtainPairSerializer):
+    otp = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+    def validate(self, attrs):
+        user = authenticate(self.context.get("request"), email=attrs["email"], password=attrs["password"])
+        if user is None or not user.is_active:
+            raise AuthenticationFailed(
+                {"detail": self.error_messages["no_active_account"], "code": "no_active_account"}
+            )
+        # check the second factor before any token exists
+        if user.totp_enabled:
+            if not attrs.get("otp"):
+                raise OtpRequired()
+            if not twofactor.check(user, attrs["otp"]):
+                raise AuthenticationFailed({"detail": "That code didn't work.", "code": "invalid_otp"})
+        self.user = user
+        refresh = self.get_token(user)
+        return {"refresh": str(refresh), "access": str(refresh.access_token)}
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value):
+        if not self.context["request"].user.check_password(value):
+            raise serializers.ValidationError("That isn't your current password.")
+        return value
+
+    def validate_new_password(self, value):
+        try:
+            validate_password(value, self.context["request"].user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages)) from e
+        return value
+
+
+class TwoFactorCodeSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+
+class TwoFactorDisableSerializer(TwoFactorCodeSerializer):
+    password = serializers.CharField(write_only=True)
+
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -90,11 +142,12 @@ class MembershipBriefSerializer(serializers.ModelSerializer):
 
 class MeSerializer(serializers.ModelSerializer):
     email_verified = serializers.BooleanField(read_only=True)
+    totp_enabled = serializers.BooleanField(read_only=True)
     workspaces = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "email_verified", "workspaces"]
+        fields = ["id", "email", "full_name", "email_verified", "totp_enabled", "workspaces"]
         read_only_fields = ["email"]
 
     def get_workspaces(self, obj) -> list[dict]:

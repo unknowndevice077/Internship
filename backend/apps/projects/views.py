@@ -1,6 +1,9 @@
+import re
+
 import django_filters
+from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import exceptions
 from rest_framework.decorators import action
@@ -190,9 +193,23 @@ class SprintViewSet(TenantViewSet):
         return Response(self.get_serializer(sprint).data)
 
 
+KEY_RE = re.compile(r"^([A-Za-z][A-Za-z0-9]*)-(\d+)$")
+
+
 class IssueFilter(django_filters.FilterSet):
     backlog = django_filters.BooleanFilter(field_name="sprint", lookup_expr="isnull")
-    q = django_filters.CharFilter(field_name="title", lookup_expr="icontains")
+    q = django_filters.CharFilter(method="search")
+
+    def search(self, queryset, name, value):
+        value = value.strip()
+        # "WEB-12" jumps straight to the issue
+        match = KEY_RE.match(value)
+        if match:
+            return queryset.filter(project__key__iexact=match.group(1), number=int(match.group(2)))
+        vector = SearchVector("title", "description", config="english")
+        query = SearchQuery(value, config="english", search_type="websearch")
+        # the substring match keeps partial words working ("auth" finds "authentication")
+        return queryset.annotate(search=vector).filter(Q(search=query) | Q(title__icontains=value))
 
     class Meta:
         model = Issue

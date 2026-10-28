@@ -1,5 +1,8 @@
+import time
+
 import redis
 from django.conf import settings
+from django.core.cache import cache
 from django.db import connection
 from django.http import JsonResponse
 
@@ -18,4 +21,8 @@ def health(request):
     except Exception as exc:
         checks["redis"] = f"error: {exc.__class__.__name__}"
     healthy = all(v == "ok" for v in checks.values())
-    return JsonResponse({"status": "ok" if healthy else "degraded", **checks}, status=200 if healthy else 503)
+    # informational: a stopped worker doesn't make the API unhealthy
+    beat = cache.get("worker:heartbeat")
+    worker = "ok" if beat and time.time() - beat < 180 else "no heartbeat"
+    status = {"status": "ok" if healthy else "degraded", **checks, "worker": worker}
+    return JsonResponse(status, status=200 if healthy else 503)

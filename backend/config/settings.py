@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "corsheaders",
     "drf_spectacular",
@@ -193,9 +194,23 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # each refresh hands out a new refresh token and retires the old one
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
+
+LOGIN_MAX_FAILURES = int(os.environ.get("LOGIN_MAX_FAILURES", "5"))
+LOGIN_LOCKOUT_SECONDS = int(os.environ.get("LOGIN_LOCKOUT_SECONDS", str(15 * 60)))
+REQUIRE_VERIFIED_EMAIL = env_bool("REQUIRE_VERIFIED_EMAIL", True)
+
+AUDIT_RETENTION_DAYS = int(os.environ.get("AUDIT_RETENTION_DAYS", "365"))
+NOTIFICATION_RETENTION_DAYS = int(os.environ.get("NOTIFICATION_RETENTION_DAYS", "90"))
+
+# optional ClamAV daemon; when set, every upload is scanned and rejected if the scan fails
+CLAMD_HOST = os.environ.get("CLAMD_HOST", "")
+CLAMD_PORT = int(os.environ.get("CLAMD_PORT", "3310"))
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Sprintboard API",
@@ -222,6 +237,14 @@ CELERY_BEAT_SCHEDULE = {
     "weekly-summaries": {
         "task": "apps.reports.tasks.send_weekly_summaries",
         "schedule": crontab(hour=8, minute=0, day_of_week="mon"),
+    },
+    "prune-old-records": {
+        "task": "apps.activity.tasks.prune_old_records",
+        "schedule": crontab(hour=3, minute=30),
+    },
+    "worker-heartbeat": {
+        "task": "apps.activity.tasks.heartbeat",
+        "schedule": 60.0,
     },
 }
 

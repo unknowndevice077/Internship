@@ -12,6 +12,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import require_verified_email
 from apps.tenancy.models import Membership, Role
 from apps.tenancy.permissions import WorkspaceRolePermission
 
@@ -69,6 +70,7 @@ class CheckoutView(APIView):
     @extend_schema(request=CheckoutSerializer, responses={200: URL_RESPONSE})
     def post(self, request):
         require_stripe()
+        require_verified_email(request.user)
         body = CheckoutSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         if request.workspace.plan != "free":
