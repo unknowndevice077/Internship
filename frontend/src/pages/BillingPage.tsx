@@ -88,6 +88,11 @@ export default function BillingPage() {
           Stripe isn't configured on this server, so upgrades are disabled. See docs/STRIPE_SETUP.md for setup.
         </div>
       )}
+      {current.code !== "free" && !data.has_customer && (
+        <div className="notice">
+          This plan was set directly, not through a Stripe subscription, so there's no billing account to manage here.
+        </div>
+      )}
       {error && <p className="form-error">{error}</p>}
 
       <section className="card settings-section">
@@ -134,7 +139,12 @@ export default function BillingPage() {
                 Upgrade to {plan.name}
               </button>
             ) : (
-              <button className="btn" disabled={!isOwner} onClick={() => portal.mutate()}>
+              <button
+                className="btn"
+                disabled={!isOwner || !data.has_customer}
+                title={data.has_customer ? undefined : "This plan isn't linked to a Stripe subscription"}
+                onClick={() => portal.mutate()}
+              >
                 Switch in billing portal
               </button>
             )}

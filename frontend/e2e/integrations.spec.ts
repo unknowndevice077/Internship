@@ -174,4 +174,9 @@ test("seeded business workspace shows unlimited limits", async ({ page }) => {
   await expect(page.getByText("Current plan: Business")).toBeVisible();
   await expect(page.locator(".meter", { hasText: "Projects" })).toContainText("3 / ∞");
   await expect(page.locator(".plan-card.current")).toContainText("Business");
+
+  // seeded plans have no Stripe customer, so there is nothing to open in the portal
+  await expect(page.getByText(/no billing account to manage/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Manage billing" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Switch in billing portal" })).toBeDisabled();
 });
