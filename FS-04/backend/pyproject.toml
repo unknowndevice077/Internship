@@ -1,0 +1,15 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ"]
+ignore = ["DJ001", "DJ008", "B904"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config", "tests"]
+
+[tool.coverage.run]
+source = ["apps", "config"]
+omit = ["*/migrations/*", "*/admin.py", "config/asgi.py", "config/wsgi.py", "*/management/commands/stripe_setup.py"]

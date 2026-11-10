@@ -1,0 +1,565 @@
+/* Design polish on top of styles.css: tokens, dark theme, motion. Loaded after it. */
+
+:root {
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --dur: 0.18s;
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.1), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 14px 32px rgba(16, 24, 40, 0.14), 0 2px 6px rgba(16, 24, 40, 0.08);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
+  --scrim: rgba(15, 23, 42, 0.4);
+}
+
+/* dark theme: follows the system unless the user picked one in the sidebar */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --sunken: #1d2430;
+    --border: #2b3442;
+    --text: #e6edf3;
+    --muted: #8b98a9;
+    --primary: #3b82f6;
+    --primary-hover: #5b9bff;
+    --danger: #f87171;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 14px 32px rgba(0, 0, 0, 0.55);
+    --scrim: rgba(0, 0, 0, 0.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d1117;
+  --surface: #161b22;
+  --sunken: #1d2430;
+  --border: #2b3442;
+  --text: #e6edf3;
+  --muted: #8b98a9;
+  --primary: #3b82f6;
+  --primary-hover: #5b9bff;
+  --danger: #f87171;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 32px rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.6);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  transition: background-color 0.25s var(--ease);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--ring);
+}
+
+/* surfaces that had light-only colours */
+.issue-card:hover {
+  background: color-mix(in srgb, var(--surface) 94%, var(--primary));
+}
+
+.issue-list li:hover {
+  background: color-mix(in srgb, var(--surface) 94%, var(--primary));
+}
+
+.drawer-backdrop,
+.modal-backdrop {
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+}
+
+.modal,
+.drawer {
+  box-shadow: var(--shadow-lg);
+}
+
+/* keyframes */
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bump {
+  40% {
+    transform: scale(1.35);
+  }
+}
+
+/* entrances */
+
+.page {
+  animation: page-in 0.34s var(--ease) backwards;
+}
+
+.auth-card {
+  animation: rise 0.5s var(--ease) backwards;
+}
+
+.modal-backdrop,
+.drawer-backdrop {
+  animation: fade-in 0.18s ease backwards;
+}
+
+.modal {
+  animation: pop-in 0.24s var(--ease) backwards;
+}
+
+.drawer {
+  animation: slide-in 0.3s var(--ease) backwards;
+}
+
+.toast {
+  animation: toast-in 0.28s var(--ease) backwards;
+}
+
+.bell-panel {
+  transform-origin: top left;
+  animation: pop-in 0.18s var(--ease) backwards;
+}
+
+.notice,
+.verify-banner {
+  animation: page-in 0.35s var(--ease) backwards;
+}
+
+.bell-count {
+  animation: bump 0.4s var(--ease);
+}
+
+/* lists and grids come in one after another */
+.project-grid > *,
+.plans > *,
+.stats > *,
+.usage > *,
+.column {
+  animation: rise 0.45s var(--ease) backwards;
+}
+
+.project-grid > :nth-child(2),
+.plans > :nth-child(2),
+.stats > :nth-child(2),
+.usage > :nth-child(2),
+.column:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.project-grid > :nth-child(3),
+.plans > :nth-child(3),
+.stats > :nth-child(3),
+.usage > :nth-child(3),
+.column:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.project-grid > :nth-child(4),
+.stats > :nth-child(4),
+.column:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.project-grid > :nth-child(n + 5),
+.column:nth-child(n + 5) {
+  animation-delay: 0.2s;
+}
+
+.issue-card:not(.overlay) {
+  animation: fade-in 0.3s ease backwards;
+}
+
+.table tbody tr {
+  animation: fade-in 0.3s ease backwards;
+}
+
+.meter-fill,
+.bar {
+  transform-origin: left;
+  animation: grow 0.8s var(--ease) backwards;
+}
+
+/* interaction */
+
+.btn,
+.icon-btn,
+.link {
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform 0.12s var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 38%, transparent);
+}
+
+input,
+select,
+textarea {
+  transition:
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+a {
+  transition: color var(--dur) var(--ease);
+}
+
+.sidebar nav a {
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    padding-left 0.2s var(--ease);
+}
+
+.sidebar nav a:hover {
+  padding-left: 14px;
+}
+
+.project-card,
+.plan-card {
+  transition:
+    transform 0.22s var(--ease),
+    box-shadow 0.22s var(--ease),
+    border-color 0.22s var(--ease);
+}
+
+.project-card:hover,
+.plan-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.plan-card.current:hover {
+  box-shadow:
+    0 0 0 1px var(--primary),
+    var(--shadow-lg);
+}
+
+/* the cards are moved by dnd-kit with inline transforms, so only shadows and colours transition here */
+.issue-card {
+  transition:
+    box-shadow 0.18s var(--ease),
+    background-color 0.18s var(--ease);
+}
+
+.issue-card:hover:not(.overlay) {
+  box-shadow: var(--shadow-md);
+}
+
+.issue-card.overlay {
+  box-shadow: var(--shadow-lg);
+}
+
+.column {
+  transition:
+    background-color 0.2s var(--ease),
+    outline-color 0.2s var(--ease);
+}
+
+.column.over {
+  background: color-mix(in srgb, var(--primary) 9%, var(--sunken));
+}
+
+.tabs button {
+  transition:
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.meter-fill {
+  transition: background-color 0.3s var(--ease);
+}
+
+.issue-list li {
+  transition: background-color var(--dur) var(--ease);
+}
+
+.bell-panel li {
+  transition: background-color var(--dur) var(--ease);
+}
+
+/* loading */
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--sunken) 25%,
+    color-mix(in srgb, var(--surface) 55%, var(--sunken)) 50%,
+    var(--sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.sk-board {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.sk-column {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--sunken);
+  border-radius: var(--radius);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sk-card {
+  height: 74px;
+  background-color: var(--surface);
+}
+
+.sk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.sk-project {
+  height: 112px;
+}
+
+/* sidebar tools, shortcuts help, command palette */
+
+.sidebar-tools {
+  display: flex;
+  gap: 4px;
+}
+
+.sidebar-tools .btn {
+  padding: 5px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.palette-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  color: var(--muted);
+  background: var(--sunken);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.palette-trigger:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+kbd {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 18px;
+  align-items: center;
+  margin: 0;
+}
+
+.shortcuts dt {
+  display: flex;
+  gap: 4px;
+}
+
+.shortcuts dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.palette-backdrop {
+  place-items: start center;
+  padding-top: 14vh;
+}
+
+.palette {
+  width: min(560px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: pop-in 0.2s var(--ease) backwards;
+}
+
+.palette input {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 14px 16px;
+  font-size: 15px;
+}
+
+.palette input:focus {
+  box-shadow: none;
+}
+
+.palette ul {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.palette li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.12s var(--ease);
+}
+
+.palette li[aria-selected="true"] {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+
+.palette .palette-empty {
+  padding: 18px;
+  text-align: center;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,120 @@
+# Render blueprint: New > Blueprint > pick this repo.
+# Fill in the env vars marked sync: false in the dashboard afterwards.
+envVarGroups:
+  # shared by the API and worker; both must sign and check the same tokens
+  - name: sprintboard-shared
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: SENTRY_DSN
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+
+services:
+  - type: web
+    name: sprintboard-api
+    runtime: docker
+    rootDir: backend
+    plan: free
+    healthCheckPath: /api/health/
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sprintboard-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: sprintboard-redis
+          property: connectionString
+      - fromGroup: sprintboard-shared
+      # Render's router sits in front of gunicorn
+      - key: NUM_PROXIES
+        value: "1"
+      - key: RUN_MIGRATIONS
+        value: "1"
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+
+  - type: worker
+    name: sprintboard-worker
+    runtime: docker
+    rootDir: backend
+    plan: starter
+    # -B runs beat inside the worker so one instance covers both
+    dockerCommand: celery -A config worker -B -l info --concurrency 2
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sprintboard-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: sprintboard-redis
+          property: connectionString
+      - fromGroup: sprintboard-shared
+      - key: FRONTEND_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+
+  - type: keyvalue
+    name: sprintboard-redis
+    plan: free
+    ipAllowList: []
+
+  - type: web
+    name: sprintboard-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: same-origin
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://sprintboard-api.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: sprintboard-db
+    plan: free
+    databaseName: sprintboard
+    user: sprintboard
+

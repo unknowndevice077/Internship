@@ -1,0 +1,60 @@
+from django.db import models, transaction
+
+from .models import AuditLog
+
+SKIP_FIELDS = {
+    "id",
+    "workspace",
+    "updated_at",
+    "created_at",
+    "rank",
+    "completed_at",
+    "issue_counter",
+    "password",
+    "last_login",
+}
+
+
+def snapshot(instance):
+    data = {}
+    for field in instance._meta.concrete_fields:
+        if field.name in SKIP_FIELDS:
+            continue
+        value = getattr(instance, field.attname)
+        if isinstance(field, models.FileField):
+            value = value.name if value else None
+        elif hasattr(value, "isoformat"):
+            value = value.isoformat()
+        data[field.name] = value
+    return data
+
+
+def diff(before, after):
+    return {k: [before.get(k), v] for k, v in after.items() if before.get(k) != v}
+
+
+def issue_of(instance):
+    from apps.projects.models import Issue
+
+    if isinstance(instance, Issue):
+        return instance
+    return getattr(instance, "issue", None)
+
+
+def record(user, action, instance, changes=None, workspace=None):
+    from .tasks import handle_audit_entry
+
+    issue = issue_of(instance)
+    entry = AuditLog.objects.create(
+        workspace=workspace or instance.workspace,
+        actor=user if user and user.is_authenticated else None,
+        action=action,
+        entity_type=instance._meta.model_name,
+        entity_id=instance.pk,
+        entity_label=str(instance)[:255],
+        changes=changes or {},
+        issue=issue if issue and issue.pk else None,
+    )
+    # only enqueue once the row is committed
+    transaction.on_commit(lambda: handle_audit_entry.delay(entry.id))
+    return entry
