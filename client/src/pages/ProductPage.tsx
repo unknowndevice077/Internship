@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
-import { ErrorText, Stars, useFetch } from '../components/ui';
+import { flyToCart, Reveal } from '../components/motion';
+import { ErrorState, ErrorText, Stars, useFetch, useTitle } from '../components/ui';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -59,19 +60,41 @@ function SaveButton({ productId }: { productId: string }) {
   );
 }
 
+// how many reviews gave each star count, as little bars
+function RatingBars({ reviews }: { reviews: Review[] }) {
+  return (
+    <div className="rating-bars" aria-label="Rating breakdown">
+      {[5, 4, 3, 2, 1].map((n) => {
+        const count = reviews.filter((r) => r.rating === n).length;
+        return (
+          <div key={n} className="rating-bar">
+            <span>{n} star</span>
+            <div className="bar">
+              <div style={{ width: `${(count / reviews.length) * 100}%` }} />
+            </div>
+            <span className="muted">{count}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function RecentlyViewed({ exclude }: { exclude: string }) {
   const { data } = useFetch(() => api<Items<ProductSummary>>('/me/recent'), [exclude]);
   const items = data?.items.filter((p) => p._id !== exclude).slice(0, 6) ?? [];
   if (!items.length) return null;
   return (
-    <section className="recent">
-      <h2>Recently viewed</h2>
-      <div className="grid">
-        {items.map((p) => (
-          <ProductCard key={p._id} p={p} />
-        ))}
-      </div>
-    </section>
+    <Reveal>
+      <section className="recent">
+        <h2>Recently viewed</h2>
+        <div className="grid">
+          {items.map((p) => (
+            <ProductCard key={p._id} p={p} />
+          ))}
+        </div>
+      </section>
+    </Reveal>
   );
 }
 
@@ -89,13 +112,15 @@ export default function ProductPage() {
   const toast = useToast();
   const [error, setError] = useState<unknown>(null);
   const isCustomer = user?.role === 'customer';
+  const imageRef = useRef<HTMLImageElement>(null);
+  useTitle(product.data?.title);
 
   useEffect(() => {
     if (isCustomer) api(`/me/recent/${id}`, { method: 'POST' }).catch(() => {});
   }, [id, isCustomer]);
 
   if (product.loading) return <ProductSkeleton />;
-  if (product.error || !product.data) return <ErrorText error={product.error} />;
+  if (product.error || !product.data) return <ErrorState error={product.error} onRetry={product.reload} />;
   const p = product.data;
 
   const addToCart = async () => {
@@ -104,6 +129,7 @@ export default function ProductPage() {
     setAdding(true);
     try {
       await add(p._id, qty);
+      flyToCart(imageRef.current);
       toast.show('Added to cart', { link: { to: '/cart', label: 'View cart' } });
     } catch (err) {
       setError(err);
@@ -112,14 +138,30 @@ export default function ProductPage() {
     }
   };
 
+  // zoom follows the pointer, like a loupe
+  const zoom = (e: MouseEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - box.left) / box.width) * 100;
+    const y = ((e.clientY - box.top) / box.height) * 100;
+    if (imageRef.current) imageRef.current.style.transformOrigin = `${x}% ${y}%`;
+  };
+
   return (
     <>
+      <nav className="crumbs" aria-label="Breadcrumb">
+        <Link to="/">Shop</Link>
+        <span aria-hidden="true">/</span>
+        <Link to={`/?category=${p.category}`}>{p.category.replace(/-/g, ' ')}</Link>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{p.title}</span>
+      </nav>
       <div className="product-page">
         <div>
-          <div className="main-image card">
+          <div className="main-image card" onMouseMove={zoom}>
             {p.images[active] && (
               <img
                 key={p.images[active]}
+                ref={imageRef}
                 className="fade-in"
                 src={imageUrl(p.images[active])}
                 alt={p.title}
@@ -179,29 +221,32 @@ export default function ProductPage() {
         </div>
       </div>
 
-      <section className="reviews">
-        <h2>Customer reviews</h2>
-        {isCustomer && (
-          <ReviewForm
-            productId={id}
-            onSaved={() => {
-              reviews.reload();
-              product.reload();
-            }}
-          />
-        )}
-        {reviews.data?.length === 0 && <p className="muted">No reviews yet.</p>}
-        {reviews.data?.map((r) => (
-          <div key={r._id} className="review">
-            <Stars value={r.rating} /> <strong>{r.title}</strong>
-            <div className="muted small">
-              {r.user?.name} · {new Date(r.createdAt).toLocaleDateString()}
-              {r.verifiedPurchase && <span className="ok"> · Verified purchase</span>}
+      <Reveal>
+        <section className="reviews">
+          <h2>Customer reviews</h2>
+          {!!reviews.data?.length && <RatingBars reviews={reviews.data} />}
+          {isCustomer && (
+            <ReviewForm
+              productId={id}
+              onSaved={() => {
+                reviews.reload();
+                product.reload();
+              }}
+            />
+          )}
+          {reviews.data?.length === 0 && <p className="muted">No reviews yet.</p>}
+          {reviews.data?.map((r) => (
+            <div key={r._id} className="review">
+              <Stars value={r.rating} /> <strong>{r.title}</strong>
+              <div className="muted small">
+                {r.user?.name} · {new Date(r.createdAt).toLocaleDateString()}
+                {r.verifiedPurchase && <span className="ok"> · Verified purchase</span>}
+              </div>
+              {r.body && <p>{r.body}</p>}
             </div>
-            {r.body && <p>{r.body}</p>}
-          </div>
-        ))}
-      </section>
+          ))}
+        </section>
+      </Reveal>
 
       {isCustomer && <RecentlyViewed exclude={p._id} />}
     </>
@@ -210,6 +255,7 @@ export default function ProductPage() {
 
 function ReviewForm({ productId, onSaved }: { productId: string; onSaved: () => void }) {
   const [rating, setRating] = useState(5);
+  const [hover, setHover] = useState(0);
   const [body, setBody] = useState('');
   const [error, setError] = useState<unknown>(null);
 
@@ -226,16 +272,23 @@ function ReviewForm({ productId, onSaved }: { productId: string; onSaved: () => 
 
   return (
     <form className="card review-form" onSubmit={submit}>
-      <label>
-        Your rating{' '}
-        <select value={rating} onChange={(e) => setRating(Number(e.target.value))}>
-          {[5, 4, 3, 2, 1].map((n) => (
-            <option key={n} value={n}>
-              {n} star{n > 1 && 's'}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="star-picker" role="radiogroup" aria-label="Your rating">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={rating === n}
+            aria-label={`${n} star${n > 1 ? 's' : ''}`}
+            className={n <= (hover || rating) ? 'on' : ''}
+            onMouseEnter={() => setHover(n)}
+            onMouseLeave={() => setHover(0)}
+            onClick={() => setRating(n)}
+          >
+            ★
+          </button>
+        ))}
+      </div>
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}

@@ -56,12 +56,12 @@ export default function AdminAnalytics() {
       </div>
 
       <div className="stats">
-        <Stat label="Gross sales (GMV)" value={money(totals.gmv)} />
-        <Stat label="Commission earned" value={money(totals.commission)} />
-        <Stat label="Paid out to vendors" value={money(totals.payouts)} />
-        <Stat label="Refunded" value={money(totals.refunds)} />
+        <Stat label="Gross sales (GMV)" value={totals.gmv} money />
+        <Stat label="Commission earned" value={totals.commission} money />
+        <Stat label="Paid out to vendors" value={totals.payouts} money />
+        <Stat label="Refunded" value={totals.refunds} money />
         <Stat label="Orders" value={totals.orders} />
-        <Stat label="Avg order value" value={money(totals.avgOrderValue)} />
+        <Stat label="Avg order value" value={totals.avgOrderValue} money />
         <Stat label="Customers" value={counts.customers} />
         <Stat label="Live vendors" value={counts.vendors} />
         <Stat label="Awaiting approval" value={counts.pendingVendors} />

@@ -87,6 +87,22 @@ test.describe('search, theme and layout', () => {
     await expect(toggle).toHaveText('Filters (1)');
   });
 
+  test('product page has a breadcrumb and a star picker', async ({ page }) => {
+    await login(page, 'customer@vendora.test');
+    await openProduct(page, 'Red Lipstick');
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText(/beauty/i);
+    const three = page.getByRole('radio', { name: '3 stars' });
+    await three.click();
+    await expect(three).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('unknown pages offer a way back', async ({ page }) => {
+    await page.goto('/definitely-not-a-page');
+    await expect(page.getByText('Page not found.')).toBeVisible();
+    await page.getByRole('link', { name: 'Back to the shop' }).click();
+    await expect(page.locator('.product-card').first()).toBeVisible();
+  });
+
   test('skip link jumps to the content', async ({ page }) => {
     await page.goto('/');
     await page.keyboard.press('Tab');

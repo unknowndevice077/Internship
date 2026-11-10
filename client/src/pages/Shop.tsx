@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
-import { Empty, ErrorText, Stars, useFetch } from '../components/ui';
+import { Empty, ErrorState, Stars, useFetch, useTitle } from '../components/ui';
 import type { Facet, ProductSummary, SearchResult } from '../types';
 
 const SORTS = [
@@ -50,7 +50,15 @@ function SkeletonGrid() {
   );
 }
 
-function Hero({ categories, onPick }: { categories: Facet[]; onPick: (c: string) => void }) {
+function Hero({
+  categories,
+  picks,
+  onPick,
+}: {
+  categories: Facet[];
+  picks: ProductSummary[];
+  onPick: (c: string) => void;
+}) {
   const top = [...categories].sort((a, b) => b.count - a.count).slice(0, 6);
   return (
     <section className="hero">
@@ -67,16 +75,28 @@ function Hero({ categories, onPick }: { categories: Facet[]; onPick: (c: string)
           </Link>
         </div>
       </div>
-      {top.length > 0 && (
-        <div className="hero-chips" aria-label="Popular categories">
-          {top.map((c) => (
-            <button key={c.value} className="chip" onClick={() => onPick(c.value)}>
-              {c.value.replace(/-/g, ' ')}
-              <span>{c.count}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="hero-side">
+        {picks.length > 0 && (
+          <div className="hero-stack" aria-hidden="true">
+            {picks.map((p) => (
+              <Link key={p._id} to={`/products/${p._id}`} tabIndex={-1} className="hero-shot">
+                <img src={imageUrl(p.image)} alt="" />
+                <span>{money(p.price)}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+        {top.length > 0 && (
+          <div className="hero-chips" aria-label="Popular categories">
+            {top.map((c) => (
+              <button key={c.value} className="chip" onClick={() => onPick(c.value)}>
+                {c.value.replace(/-/g, ' ')}
+                <span>{c.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
@@ -84,8 +104,13 @@ function Hero({ categories, onPick }: { categories: Facet[]; onPick: (c: string)
 export default function Shop() {
   const [params, setParams] = useSearchParams();
   const query = params.toString();
-  const { data, error, loading } = useFetch(() => api<SearchResult>(`/products?limit=24&${query}`), [query]);
+  const { data, error, loading, reload } = useFetch(
+    () => api<SearchResult>(`/products?limit=24&${query}`),
+    [query],
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const search = params.get('q');
+  useTitle(search ? `Results for "${search}"` : undefined);
 
   const set = (key: string, value: string) => {
     const next = new URLSearchParams(params);
@@ -109,7 +134,13 @@ export default function Shop() {
 
   return (
     <>
-      {!query && <Hero categories={data?.facets.categories ?? []} onPick={(c) => set('category', c)} />}
+      {!query && (
+        <Hero
+          categories={data?.facets.categories ?? []}
+          picks={(data?.items ?? []).filter((p) => p.image).slice(0, 3)}
+          onPick={(c) => set('category', c)}
+        />
+      )}
       <div className="shop">
         <button
           type="button"
@@ -220,8 +251,9 @@ export default function Shop() {
             </select>
           </div>
 
-          <ErrorText error={error} />
-          {loading && !data ? (
+          {error ? (
+            <ErrorState error={error} onRetry={reload} />
+          ) : loading && !data ? (
             <SkeletonGrid />
           ) : data?.items.length ? (
             <div className="grid">

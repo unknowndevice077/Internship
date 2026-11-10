@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { ScrollTop } from './motion';
 import SearchBox from './SearchBox';
 import ThemeToggle from './ThemeToggle';
 
@@ -32,13 +33,20 @@ export default function Layout() {
   const { cart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <>
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <header className="topbar">
+      <header className={`topbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container topbar-inner">
           <Link to="/" className="logo">
             vendora
@@ -84,6 +92,7 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+      <ScrollTop />
       <footer className="footer">
         <div className="container">Vendora marketplace · payments run in Stripe test mode</div>
       </footer>

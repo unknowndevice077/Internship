@@ -1,7 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
-import { RequireRole, Spinner } from './components/ui';
+import { Empty, RequireRole, Spinner } from './components/ui';
 import Shop from './pages/Shop';
 import ProductPage from './pages/ProductPage';
 import Store from './pages/Store';
@@ -29,6 +29,20 @@ import AdminPayouts from './pages/admin/AdminPayouts';
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 
 const customer = (el: ReactNode) => <RequireRole roles={['customer']}>{el}</RequireRole>;
+
+function NotFound() {
+  return (
+    <Empty>
+      <div className="big-404" aria-hidden="true">
+        404
+      </div>
+      <p>Page not found.</p>
+      <Link to="/" className="button primary">
+        Back to the shop
+      </Link>
+    </Empty>
+  );
+}
 
 export default function App() {
   return (
@@ -95,7 +109,7 @@ export default function App() {
           <Route path="users" element={<AdminUsers />} />
         </Route>
 
-        <Route path="*" element={<p>Page not found.</p>} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

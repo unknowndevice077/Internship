@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { api, imageUrl, money } from '../api/client';
-import { Empty, useFetch } from '../components/ui';
+import { Empty, useFetch, useTitle } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import type { CartItem, Quote } from '../types';
@@ -21,6 +21,8 @@ export default function Cart() {
     [cart],
   );
 
+  useTitle('Cart');
+
   if (!user) {
     return (
       <Empty>
@@ -34,7 +36,14 @@ export default function Cart() {
   if (!cart.items.length) {
     return (
       <Empty>
-        Your cart is empty. <Link to="/">Keep shopping</Link>
+        <svg className="empty-art" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M8 12h8l6 30h26l6-22H20" />
+          <circle cx="26" cy="52" r="3.5" />
+          <circle cx="46" cy="52" r="3.5" />
+        </svg>
+        <p>
+          Your cart is empty. <Link to="/">Keep shopping</Link>
+        </p>
       </Empty>
     );
   }
@@ -91,9 +100,14 @@ export default function Cart() {
         {q?.stores
           .filter((s) => s.shippingFee && s.freeShippingOver != null)
           .map((s) => (
-            <p key={s.vendorId} className="muted small">
-              Add {money(s.freeShippingOver! - s.subtotal)} more from {s.vendorName} for free shipping
-            </p>
+            <div key={s.vendorId} className="ship-progress">
+              <p className="muted small">
+                Add {money(s.freeShippingOver! - s.subtotal)} more from {s.vendorName} for free shipping
+              </p>
+              <div className="bar">
+                <div style={{ width: `${Math.min(100, (s.subtotal / s.freeShippingOver!) * 100)}%` }} />
+              </div>
+            </div>
           ))}
         <p className="muted small">Coupons and shipping address are added at checkout.</p>
         {blocked ? (

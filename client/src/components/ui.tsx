@@ -70,3 +70,29 @@ export function useFetch<T>(loader: () => Promise<T>, deps: DependencyList = [])
 
   return { ...state, reload: () => setTick((t) => t + 1) };
 }
+
+// for when a whole page or list failed to load, with a way to try again
+export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  return (
+    <div className="empty error-state" role="alert">
+      <div className="empty-icon" aria-hidden="true">
+        !
+      </div>
+      <p>{error instanceof Error ? error.message : 'Something went wrong'}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry}>
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function useTitle(title?: string) {
+  useEffect(() => {
+    document.title = title ? `${title} · Vendora` : 'Vendora';
+    return () => {
+      document.title = 'Vendora';
+    };
+  }, [title]);
+}

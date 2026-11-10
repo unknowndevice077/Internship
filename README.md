@@ -6,6 +6,18 @@ The hardest part was the money side. One checkout has to become one order per se
 
 **Built with:** React (Vite, TypeScript), Node.js + Express, MongoDB, Elasticsearch, Redis, Stripe Connect (test mode), AWS S3
 
+![The shop home page](docs/screenshots/home.png)
+
+| Product page                                  | Cart                               |
+| --------------------------------------------- | ---------------------------------- |
+| ![Product page](docs/screenshots/product.png) | ![Cart](docs/screenshots/cart.png) |
+
+| Seller hub                                     | Admin analytics                                |
+| ---------------------------------------------- | ---------------------------------------------- |
+| ![Seller hub](docs/screenshots/seller-hub.png) | ![Admin analytics](docs/screenshots/admin.png) |
+
+There's a dark mode too ([screenshot](docs/screenshots/home-dark.png)), and an [order page](docs/screenshots/order.png) with a status timeline. The screenshots come from `node client/scripts/screenshots.js`, so they're easy to redo after a UI change.
+
 ## What it does
 
 **Customers** can search with typo tolerance and live suggestions, filter by category, price, rating and stock, save products for later, see what they recently viewed, add items from different stores to one cart, apply coupons, check out, follow each order's status, download a PDF invoice, cancel before it ships, and leave reviews (marked "verified purchase" once the order is delivered). They get emails when an order is placed and when it ships, and can reset a forgotten password.
@@ -23,6 +35,7 @@ Some details under the hood:
 - Payments use Stripe's "separate charges and transfers": the customer is charged once, then each vendor gets a transfer for their order. If a transfer fails it's retried automatically with backoff. Without a Stripe key there's a mock provider, so the whole flow works offline.
 - Stock is held for 15 minutes from checkout, so nobody pays for something that sold out while they were typing their card number. A small job runner (with a Redis lock so only one server runs it) releases holds that expire.
 - Refunding part of an order also takes back the vendor's share of that part from their payout, with a Stripe transfer reversal.
+- The UI has small animations where they help (the product photo flies to the cart, numbers count up on the dashboards, sections fade in as you scroll), and all of it switches off for people who set "reduce motion".
 - The front end is TypeScript (strict), has a dark mode, and works with a keyboard and screen reader (labelled fields, a proper combobox for search suggestions, skip link, focus rings).
 
 ## Running it

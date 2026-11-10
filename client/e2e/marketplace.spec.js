@@ -164,7 +164,7 @@ test.describe.serial('seller to customer to admin', () => {
     await expect(page.locator('.order-row .badge')).toHaveText('delivered');
 
     await openProduct(page, productTitle);
-    await page.locator('.review-form select').selectOption('4');
+    await page.getByRole('radio', { name: '4 stars' }).click();
     await page.getByPlaceholder('What did you think?').fill('Lovely mug, arrived well packed.');
     await page.getByRole('button', { name: 'Post review' }).click();
     const review = page.locator('.review', { hasText: 'Lovely mug' });
