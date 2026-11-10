@@ -7,6 +7,8 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 
 ![Board](docs/screenshots/03-board.png)
 
+![Workspace overview](docs/screenshots/02-projects.png)
+
 ## What it does
 
 - Workspaces with owner, admin, member and viewer roles, invites and workspace switching
@@ -14,7 +16,9 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 - Per-project workflows: your own statuses and which moves between them are allowed
 - Comments with @mentions, attachments, and a history of every field change
 - Webhooks signed with HMAC and retried with backoff, plus in-app and email notifications
-- Sprint reports with CSV export, and a weekly summary email
+- A workspace overview on the home page: open and finished work, a 14-day created/completed chart, active sprint
+  progress, your own issues and recent activity
+- Sprint burndown charts, sprint reports with CSV export, and a weekly summary email
 - Free, Pro and Business plans billed through Stripe (test mode), with limits enforced by the API
 - Password reset and email verification, two-factor authentication (authenticator app plus recovery codes), account
   lockout, and refresh tokens that rotate and can be revoked
@@ -22,6 +26,8 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 - Workspace export as JSON and workspace deletion for owners
 - Light and dark themes (following the system by default), a command palette on Ctrl+K, a shortcuts list on `?`,
   skeleton loading states, and animations that switch off for people who ask for reduced motion
+- Links straight to an issue (`/projects/3/board?issue=41`), and a public landing page with a one-click demo sign-in
+  on local stacks
 - OpenAPI docs at `/api/docs/`
 
 Django 5.2 + DRF, PostgreSQL 16, Celery and Redis on the backend; React 18 + TypeScript (Vite, TanStack Query,
@@ -36,7 +42,7 @@ docker compose --profile full up --build
 docker compose exec backend python manage.py seed
 ```
 
-Then open http://localhost:8088 and sign in as `owner@acme-corp.test` / `demo-pass-123`.
+Then open http://localhost:8088 and press **Try the demo**, or sign in as `owner@acme-corp.test` / `demo-pass-123`.
 
 The seed creates three companies on different plans: Acme Corp (Business), Globex (Pro) and Initech (Free). Every
 demo user has the same password, so you can sign in as `owner@globex.test` or `owner@initech.test` to see how the
@@ -109,9 +115,9 @@ test cards and troubleshooting.
 ## Tests
 
 ```bash
-cd backend && pytest --cov      # 118 tests, 93% coverage
+cd backend && pytest --cov      # 125 tests, 93% coverage
 cd frontend && npm test         # 6 unit tests
-cd frontend && npm run e2e      # 43 Playwright tests
+cd frontend && npm run e2e      # 46 Playwright tests
 ```
 
 The Playwright suite starts its own API and Vite server (ports 8020 and 5191), reseeds the database and clicks
@@ -164,6 +170,7 @@ With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and H
 - `AUDIT_RETENTION_DAYS` and `NOTIFICATION_RETENTION_DAYS` (365 and 90) for the nightly cleanup
 - `THROTTLE_AUTH_RATE` / `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` to change the rate limits (default 10, 60
   and 600 a minute)
+
 ## How it's put together
 
 All tenants share one schema and every tenant table has a `workspace_id`. Requests pick a workspace with the
@@ -176,6 +183,9 @@ column only gets renumbered when the gaps run out.
 Sessions are short-lived access tokens plus refresh tokens that rotate on every use, with the old one blacklisted.
 Signing out, changing the password or resetting it revokes the rest. Sign-in failures are counted per email and
 address, and two-factor codes can't be replayed within their time window.
+
+Issues get a `completed_at` stamp when they land in a done status, and lose it if they are reopened. The burndown
+and the overview chart are computed from that on request, so there is no snapshot table to keep in sync.
 
 Every change goes through the audit log. After the transaction commits, one Celery task turns each entry into
 notifications and webhook deliveries, so a request that rolls back never fires a webhook.
@@ -192,7 +202,7 @@ backend/
     activity/       comments, attachments, audit log
     notifications/  in-app and email notifications
     webhooks/       endpoints, signing, delivery tasks
-    reports/        sprint and weekly reports
+    reports/        sprint and weekly reports, burndown and overview numbers
     billing/        plans, limits, Stripe checkout, portal and webhooks
   config/           settings, URLs, Celery app, health check
   tests/

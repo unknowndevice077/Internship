@@ -1,14 +1,14 @@
 # Test results
 
-Last run 29 Oct 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
+Last run 10 Nov 2026 (Windows 11, Python 3.11.9, Node 22, Postgres 16, Redis 7).
 
-## Backend: 118 passed, 93% coverage
+## Backend: 125 passed, 93% coverage
 
 ```
 $ pytest --cov
 ...
-118 passed in 28.20s
-TOTAL   2468 statements   181 missed   93%
+125 passed in 45.49s
+TOTAL   2569 statements   182 missed   93%
 ```
 
 | Test file | Tests | What it covers |
@@ -56,13 +56,14 @@ Covers finding a card's column, moving across columns and into an empty column, 
 API, and the workflow rule check used to block columns. `npm run typecheck` (strict TypeScript) and
 `npm run build` both pass. Pages load on demand: the first load is about 241 kB of JavaScript (78 kB gzipped) split into app, React and query chunks.
 
-## End-to-end: 43 passed (Playwright, Chromium)
+## End-to-end: 46 passed (Playwright, Chromium)
 
 `npm run e2e` starts the API and Vite, migrates and seeds the database, then drives the real UI. The suite passed
 three full runs in a row (90/90) before being added to CI.
 
 | Spec | Tests | Flows covered |
 |---|---:|---|
+| `insights.spec.ts` | 3 | landing page, demo sign-in link, home overview numbers and charts, activity feed, issue deep links surviving a reload, burndown chart for a running sprint |
 | `polish.spec.ts` | 4 | command palette (Ctrl+K, filtering, Enter, Escape, empty state), shortcuts list, light/dark theme and its persistence, page animation and reduced motion |
 | `security.spec.ts` | 6 | 2FA setup, sign-in with an authenticator code, recovery codes and turning it off; password change; account lockout; board filter, backlog search and keyboard shortcuts; workspace export and deletion; phone-width menu |
 | `account.spec.ts` | 3 | forgot password, emailed reset link, weak password, reused link rejected, verify banner, resend, confirm link, bad link |

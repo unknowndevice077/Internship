@@ -61,7 +61,7 @@ not waiting on Postgres. Cutting serializer work on the heaviest endpoint gave t
 
 ## Test suite
 
-- Backend: 118 tests, 93% line coverage (`pytest --cov`), ~30 s locally.
+- Backend: 125 tests, 93% line coverage (`pytest --cov`), ~30 s locally.
   Switching tests to the MD5 password hasher took the suite from 77 s to 16.5 s.
 - Frontend: 6 unit tests for the drag-and-drop ordering and workflow rules (`npm test`).
 
