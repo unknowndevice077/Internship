@@ -1,0 +1,47 @@
+# Local infrastructure: docker compose up -d mongo redis elasticsearch
+# Full stack (API + web too): docker compose --profile full up --build
+services:
+  mongo:
+    image: mongo:7
+    ports: ['27017:27017']
+    volumes: [mongo-data:/data/db]
+
+  redis:
+    image: redis:7-alpine
+    ports: ['6379:6379']
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports: ['9200:9200']
+    volumes: [es-data:/usr/share/elasticsearch/data]
+
+  api:
+    profiles: [full]
+    build: ./server
+    env_file: ./server/.env
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongo:27017/vendora
+      REDIS_URL: redis://redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      CLIENT_URL: http://localhost:8090
+    ports: ['4000:4000']
+    depends_on: [mongo, redis, elasticsearch]
+
+  web:
+    profiles: [full]
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: http://localhost:4000
+    ports: ['8090:80']
+    depends_on: [api]
+
+volumes:
+  mongo-data:
+  es-data:

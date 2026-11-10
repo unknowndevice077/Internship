@@ -1,0 +1,116 @@
+import { lazy, Suspense, type ReactNode } from 'react';
+import { Link, Route, Routes } from 'react-router-dom';
+import Layout from './components/Layout';
+import { Empty, RequireRole, Spinner } from './components/ui';
+import Shop from './pages/Shop';
+import ProductPage from './pages/ProductPage';
+import Store from './pages/Store';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import { ForgotPassword, ResetPassword, VerifyEmail } from './pages/AccountLinks';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+import Wishlist from './pages/Wishlist';
+import VendorLayout from './pages/vendor/VendorLayout';
+import VendorDashboard from './pages/vendor/VendorDashboard';
+import VendorProducts from './pages/vendor/VendorProducts';
+import ProductForm from './pages/vendor/ProductForm';
+import VendorOrders from './pages/vendor/VendorOrders';
+import VendorPayouts from './pages/vendor/VendorPayouts';
+import VendorSettings from './pages/vendor/VendorSettings';
+import Coupons from './pages/Coupons';
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminVendors from './pages/admin/AdminVendors';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminPayouts from './pages/admin/AdminPayouts';
+// recharts is heavy and only admins need it
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+
+const customer = (el: ReactNode) => <RequireRole roles={['customer']}>{el}</RequireRole>;
+
+function NotFound() {
+  return (
+    <Empty>
+      <div className="big-404" aria-hidden="true">
+        404
+      </div>
+      <p>Page not found.</p>
+      <Link to="/" className="button primary">
+        Back to the shop
+      </Link>
+    </Empty>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Shop />} />
+        <Route path="products/:id" element={<ProductPage />} />
+        <Route path="stores/:slug" element={<Store />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="verify-email" element={<VerifyEmail />} />
+        <Route path="cart" element={<Cart />} />
+        <Route path="checkout" element={customer(<Checkout />)} />
+        <Route path="orders" element={customer(<Orders />)} />
+        <Route path="wishlist" element={customer(<Wishlist />)} />
+        <Route
+          path="orders/:id"
+          element={
+            <RequireRole roles={['customer', 'vendor', 'admin']}>
+              <OrderDetail />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="vendor"
+          element={
+            <RequireRole roles={['vendor']}>
+              <VendorLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<VendorDashboard />} />
+          <Route path="products" element={<VendorProducts />} />
+          <Route path="products/new" element={<ProductForm />} />
+          <Route path="products/:id/edit" element={<ProductForm />} />
+          <Route path="orders" element={<VendorOrders />} />
+          <Route path="coupons" element={<Coupons />} />
+          <Route path="payouts" element={<VendorPayouts />} />
+          <Route path="settings" element={<VendorSettings />} />
+        </Route>
+
+        <Route
+          path="admin"
+          element={
+            <RequireRole roles={['admin']}>
+              <AdminLayout />
+            </RequireRole>
+          }
+        >
+          <Route
+            index
+            element={
+              <Suspense fallback={<Spinner />}>
+                <AdminAnalytics />
+              </Suspense>
+            }
+          />
+          <Route path="vendors" element={<AdminVendors />} />
+          <Route path="payouts" element={<AdminPayouts />} />
+          <Route path="coupons" element={<Coupons />} />
+          <Route path="users" element={<AdminUsers />} />
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  );
+}
