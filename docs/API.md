@@ -54,6 +54,7 @@ curl -H "Authorization: Bearer $TOKEN" -H "X-Workspace: acme-corp" localhost:800
 | CRUD | `/sprints/?project=` | viewer / member | |
 | POST | `/sprints/{id}/start/` | member | one active sprint per project |
 | POST | `/sprints/{id}/complete/` | member | `{"move_to": sprint_id}` optional; queues a report |
+| GET | `/sprints/{id}/burndown/` | viewer | points left per day next to the ideal line; future days are `null` |
 | CRUD | `/issues/` | viewer / member | filters: `project status sprint assignee type priority backlog q` (full text over title and description, or an issue key like `WEB-12`), `ordering=rank\|number\|priority\|created_at` |
 | POST | `/issues/{id}/move/` | member | `{"status", "before", "after"}` neighbour ids |
 | CRUD | `/comments/?issue=` | viewer / member | authors edit their own; admins can delete any |
@@ -62,6 +63,7 @@ curl -H "Authorization: Bearer $TOKEN" -H "X-Workspace: acme-corp" localhost:800
 | GET | `/notifications/` | viewer | `?unread=true`, `unread-count/`, `{id}/read/`, `read-all/` |
 | CRUD | `/webhooks/` | admin | paid plans; `{id}/ping/`, `{id}/deliveries/`, `{id}/deliveries/{d}/redeliver/`, `events/` |
 | GET/POST | `/reports/` | viewer / member | `{"kind": "sprint", "sprint": id}` returns 202; `{id}/download/` CSV |
+| GET | `/overview/` | viewer | home page numbers: totals, 14-day created/completed trend, active sprints, my open issues, recent activity |
 | GET | `/billing/` | admin | plan, limits, usage |
 | POST | `/billing/checkout/` | owner | `{"plan": "pro"\|"business"}` -> Stripe Checkout URL |
 | POST | `/billing/portal/` | owner | Stripe customer portal URL |

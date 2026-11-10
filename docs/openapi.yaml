@@ -1347,6 +1347,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Notification'
           description: ''
+  /api/overview/:
+    get:
+      operationId: overview_retrieve
+      description: 'Numbers for the workspace home page: totals, a 14-day trend, active
+        sprints, my work, recent activity.'
+      tags:
+      - overview
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Totals, trend, active sprints, my work, activity
   /api/projects/:
     get:
       operationId: projects_list
@@ -1965,6 +1977,23 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/sprints/{id}/burndown/:
+    get:
+      operationId: sprints_burndown_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this sprint.
+        required: true
+      tags:
+      - sprints
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Points left per day and the ideal line
   /api/sprints/{id}/complete/:
     post:
       operationId: sprints_complete_create

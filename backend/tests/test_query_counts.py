@@ -36,6 +36,7 @@ def grow(project, members, n):
         "/api/comments/?issue={issue}",
         "/api/audit-log/",
         "/api/workspaces/",
+        "/api/overview/",
     ],
 )
 def test_query_count_is_constant(api, owner, url):

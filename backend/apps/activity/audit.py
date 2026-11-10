@@ -2,7 +2,17 @@ from django.db import models, transaction
 
 from .models import AuditLog
 
-SKIP_FIELDS = {"id", "workspace", "updated_at", "created_at", "rank", "issue_counter", "password", "last_login"}
+SKIP_FIELDS = {
+    "id",
+    "workspace",
+    "updated_at",
+    "created_at",
+    "rank",
+    "completed_at",
+    "issue_counter",
+    "password",
+    "last_login",
+}
 
 
 def snapshot(instance):

@@ -4,6 +4,7 @@ from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import F
+from django.utils import timezone
 
 from apps.tenancy.managers import TenantModel
 
@@ -173,6 +174,8 @@ class Issue(TenantModel):
     rank = models.FloatField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # set when the issue lands in a done status, cleared if it's reopened
+    completed_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["rank", "id"]
@@ -211,5 +214,18 @@ class Issue(TenantModel):
                     last = Issue.objects.filter(project=self.project, status=self.status).order_by("-rank").first()
                     self.rank = (last.rank + 1024) if last else 1024
                 self.full_clean(exclude=["number"])
+                self.stamp_completed()
                 return super().save(*args, **kwargs)
+        fields = kwargs.get("update_fields")
+        if fields is None or "status" in fields:
+            self.stamp_completed()
+            if fields is not None:
+                kwargs["update_fields"] = [*fields, "completed_at"]
         return super().save(*args, **kwargs)
+
+    def stamp_completed(self):
+        done = self.status.category == Status.Category.DONE
+        if done and not self.completed_at:
+            self.completed_at = timezone.now()
+        elif not done:
+            self.completed_at = None

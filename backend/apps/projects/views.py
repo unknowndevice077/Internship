@@ -5,6 +5,7 @@ from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import exceptions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +13,7 @@ from rest_framework.response import Response
 from apps.activity import audit
 from apps.activity.models import AuditLog
 from apps.billing import limits
+from apps.reports import insights
 from apps.reports.models import Report
 from apps.reports.tasks import build_report
 from apps.tenancy.models import Role
@@ -191,6 +193,11 @@ class SprintViewSet(TenantViewSet):
             audit.record(request.user, AuditLog.Action.UPDATED, sprint, {"state": ["active", "closed"]})
             transaction.on_commit(lambda: build_report.delay(report.id))
         return Response(self.get_serializer(sprint).data)
+
+    @extend_schema(responses={200: OpenApiResponse(description="Points left per day and the ideal line")})
+    @action(detail=True, methods=["get"])
+    def burndown(self, request, pk=None):
+        return Response(insights.burndown(self.get_object()))
 
 
 KEY_RE = re.compile(r"^([A-Za-z][A-Za-z0-9]*)-(\d+)$")

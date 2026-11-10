@@ -1,14 +1,17 @@
 from django.db import transaction
 from django.http import FileResponse
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import exceptions, mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.projects.models import Project, Sprint
 from apps.tenancy.fields import WorkspaceRelatedField
 from apps.tenancy.models import Role
 from apps.tenancy.permissions import WorkspaceRolePermission
 
+from . import insights
 from .models import Report
 from .tasks import build_report
 
@@ -59,3 +62,14 @@ class ReportViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Cre
         return FileResponse(
             report.file.open("rb"), as_attachment=True, filename=f"{report.kind}-report-{report.pk}.csv"
         )
+
+
+class OverviewView(APIView):
+    """Numbers for the workspace home page: totals, a 14-day trend, active sprints, my work, recent activity."""
+
+    permission_classes = [WorkspaceRolePermission]
+    read_role = Role.VIEWER
+
+    @extend_schema(responses={200: OpenApiResponse(description="Totals, trend, active sprints, my work, activity")})
+    def get(self, request):
+        return Response(insights.overview(request.workspace, request.user))

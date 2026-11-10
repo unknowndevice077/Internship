@@ -1,9 +1,10 @@
 import random
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import F
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 from faker import Faker
@@ -11,6 +12,8 @@ from faker import Faker
 from apps.activity.models import AuditLog, Comment
 from apps.billing.plans import plan_for
 from apps.projects.models import Issue, Project, Sprint, Status
+from apps.reports.models import Report
+from apps.reports.tasks import build_report
 from apps.tenancy.models import Membership, Role, Workspace
 
 User = get_user_model()
@@ -153,7 +156,8 @@ class Command(BaseCommand):
 
         sprints = []
         for n in range(1, 4):
-            start = today - timedelta(days=14 * (4 - n))
+            # the running sprint is 9 days in, the two before it are closed
+            start = today - timedelta(days=14 * (3 - n) + 9)
             sprints.append(
                 Sprint(
                     workspace=workspace,
@@ -209,7 +213,26 @@ class Command(BaseCommand):
         # spread created_at over the last 50 days
         Issue.objects.filter(project=project).update(created_at=RawSQL("now() - random() * interval '50 days'", []))
 
-        saved = list(Issue.objects.filter(project=project))
+        saved = list(Issue.objects.filter(project=project).select_related("status", "sprint"))
+        now = timezone.now()
+        for issue in saved:
+            if issue.status.category != Status.Category.DONE:
+                continue
+            sprint = issue.sprint
+            if sprint and sprint.start_date:
+                # more gets finished towards the end of a sprint
+                last = min(sprint.end_date, today)
+                span = max((last - sprint.start_date).days, 0)
+                day = sprint.start_date + timedelta(days=round(span * random.random() ** 0.7))
+                done_at = timezone.make_aware(datetime.combine(day, time(random.randint(9, 17), random.randint(0, 59))))
+                issue.completed_at = min(done_at, now)
+            else:
+                issue.completed_at = now - timedelta(days=random.random() * 14)
+        Issue.objects.bulk_update(saved, ["completed_at"], batch_size=500)
+        # nothing can be finished before it was created
+        Issue.objects.filter(project=project, completed_at__lt=F("created_at")).update(
+            created_at=F("completed_at") - timedelta(days=2)
+        )
         comments, entries = [], []
         for issue in random.sample(saved, k=min(len(saved), count // 3)):
             for _ in range(random.randint(1, 3)):
@@ -226,5 +249,32 @@ class Command(BaseCommand):
                     issue=issue,
                 )
             )
+        # finished issues also get the move that finished them, so the activity feed has some history
+        doing = next((st.name for st in statuses if st.category == Status.Category.IN_PROGRESS), statuses[0].name)
+        for issue in saved:
+            if issue.completed_at:
+                entries.append(
+                    AuditLog(
+                        workspace=workspace,
+                        actor=issue.assignee or issue.reporter,
+                        action=AuditLog.Action.MOVED,
+                        entity_type="issue",
+                        entity_id=issue.id,
+                        entity_label=issue.key,
+                        issue=issue,
+                        changes={"status": [doing, issue.status.name]},
+                    )
+                )
         Comment.objects.bulk_create(comments, batch_size=500)
         AuditLog.objects.bulk_create(entries, batch_size=500)
+        # created_at is auto_now_add, so backdate the entries after the insert
+        for entry in entries:
+            moved = entry.action == AuditLog.Action.MOVED
+            entry.created_at = entry.issue.completed_at if moved else entry.issue.created_at
+        AuditLog.objects.bulk_update(entries, ["created_at"], batch_size=500)
+
+        for sprint in closed:
+            report = Report.objects.create(
+                workspace=workspace, kind=Report.Kind.SPRINT, project=project, sprint=sprint, requested_by=people[0]
+            )
+            build_report(report.id)
