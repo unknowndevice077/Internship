@@ -7,7 +7,7 @@ Measured on 28 Oct 2026, Windows 11, Node 22.14.
 | Suite | Command | Result |
 | --- | --- | --- |
 | API tests | `cd server && npm test` | 94 passed |
-| Browser end-to-end tests | `cd client && npm run test:e2e` | 30 passed |
+| Browser end-to-end tests | `cd client && npm run test:e2e` | 32 passed |
 | Type check (client) | `cd client && npm run typecheck` | 0 errors, `strict` on |
 | Lint | `npm run lint` in each package | 0 errors, 0 warnings |
 | Formatting | `npm run format:check` in each package | clean |

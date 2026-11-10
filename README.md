@@ -18,7 +18,7 @@ The hardest part was the money side. One checkout has to become one order per se
 
 There's a dark mode too ([screenshot](docs/screenshots/home-dark.png)), and an [order page](docs/screenshots/order.png) with a status timeline. The screenshots come from `node client/scripts/screenshots.js`, so they're easy to redo after a UI change.
 
-## What it does
+## Features
 
 **Customers** can search with typo tolerance and live suggestions, filter by category, price, rating and stock, save products for later, see what they recently viewed, add items from different stores to one cart, apply coupons, check out, follow each order's status, download a PDF invoice, cancel before it ships, and leave reviews (marked "verified purchase" once the order is delivered). They get emails when an order is placed and when it ships, and can reset a forgotten password.
 
@@ -37,6 +37,34 @@ Some details under the hood:
 - Refunding part of an order also takes back the vendor's share of that part from their payout, with a Stripe transfer reversal.
 - The UI has small animations where they help (the product photo flies to the cart, numbers count up on the dashboards, sections fade in as you scroll), and all of it switches off for people who set "reduce motion".
 - The front end is TypeScript (strict), has a dark mode, and works with a keyboard and screen reader (labelled fields, a proper combobox for search suggestions, skip link, focus rings).
+
+## Architecture
+
+```mermaid
+flowchart LR
+    W[React app] -- REST + JWT --> R[Express API]
+    W -- Stripe.js --> S[(Stripe)]
+    R --> M[(MongoDB)]
+    R --> RD[(Redis<br/>sessions, carts, cache)]
+    R --> ES[(Elasticsearch<br/>product index)]
+    R --> S3[(AWS S3<br/>product images)]
+    R -- charge, transfers, refunds --> S
+    S -- webhooks --> R
+```
+
+MongoDB is the source of truth. Elasticsearch holds a copy of each product for search, Redis holds sessions, carts and cached product pages, and S3 holds product images. The front end and the API are deployed separately. The database schema, the roles and the checkout sequence diagram are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Deliverables
+
+| What the brief asks for | Where it is |
+| --- | --- |
+| Working demo | Run it locally with the steps below, no accounts needed. Deploy steps are in [docs/DEPLOY.md](docs/DEPLOY.md) |
+| README and setup instructions | This file |
+| Architecture diagram, data and API docs | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md), Swagger UI at `/api/docs` |
+| Test results and performance numbers | [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md): 94 API tests, 32 browser tests, latency with and without Elasticsearch |
+| Screenshots | [docs/screenshots](docs/screenshots) |
+| Final presentation | [docs/PRESENTATION.md](docs/PRESENTATION.md) |
+| Reflection | [docs/REFLECTION.md](docs/REFLECTION.md) |
 
 ## Running it
 

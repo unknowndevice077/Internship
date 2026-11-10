@@ -16,7 +16,7 @@ Where the project stands, how to pick it up, and what's left before the 20 Nov 2
 
 Also done beyond the brief: stock held during checkout, automatic retries for failed vendor payouts, partial refunds, per-store shipping, order and account emails, password reset and email verification, wishlist and recently viewed, vendor order filters and CSV export, partial-word search without Elasticsearch, Swagger docs, structured logs with request ids, optional Sentry, a TypeScript front end, dark mode, keyboard and screen reader support, and a phone layout for the filters.
 
-Verified: 94 API tests (97% line, 81% branch coverage), 30 browser end-to-end tests covering every flow, strict type check, clean lint and formatting. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
+Verified: 94 API tests (97% line, 81% branch coverage), 32 browser end-to-end tests covering every flow, strict type check, clean lint and formatting. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Getting started
 
