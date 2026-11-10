@@ -10,6 +10,7 @@ import CreateIssueModal from "../components/CreateIssueModal";
 import IssueDrawer from "../components/IssueDrawer";
 import { TYPE_ICON } from "../components/kanban";
 import { useDebounced, useShortcut } from "../components/useShortcut";
+import { confetti } from "../confetti";
 
 export default function BacklogPage() {
   const projectId = Number(useParams().projectId);
@@ -30,7 +31,10 @@ export default function BacklogPage() {
   const sprintAction = useMutation({
     mutationFn: ({ id, action }: { id: number; action: "start" | "complete" }) =>
       api(`/sprints/${id}/${action}/`, { method: "POST", body: {} }),
-    onSuccess: invalidate,
+    onSuccess: (_data, { action }) => {
+      if (action === "complete") confetti();
+      return invalidate();
+    },
   });
 
   const open = sprints

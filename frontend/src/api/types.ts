@@ -147,3 +147,52 @@ export interface AuditEntry {
   issue: number | null;
   created_at: string;
 }
+
+export interface Overview {
+  totals: { open: number; in_progress: number; done_this_week: number; created_this_week: number; mine: number };
+  by_category: Partial<Record<StatusCategory, number>>;
+  by_priority: Partial<Record<Priority, number>>;
+  trend: { date: string; created: number; completed: number }[];
+  sprints: {
+    id: number;
+    name: string;
+    project: number;
+    project_key: string;
+    project_name: string;
+    end_date: string | null;
+    days_left: number | null;
+    issues_total: number;
+    issues_done: number;
+    points_total: number;
+    points_done: number;
+  }[];
+  my_work: {
+    id: number;
+    key: string;
+    title: string;
+    project: number;
+    status: string;
+    category: StatusCategory;
+    priority: Priority;
+    type: IssueType;
+  }[];
+  activity: {
+    id: number;
+    actor: string;
+    action: "created" | "updated" | "deleted" | "moved" | "commented" | "attached";
+    entity: string;
+    issue: number;
+    issue_key: string;
+    issue_title: string;
+    project: number;
+    changes: Record<string, [unknown, unknown]>;
+    created_at: string;
+  }[];
+}
+
+export interface Burndown {
+  sprint: { id: number; name: string; state: Sprint["state"] };
+  total_points: number;
+  total_issues: number;
+  days: { date: string; ideal: number; remaining: number | null }[];
+}

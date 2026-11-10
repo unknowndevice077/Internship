@@ -78,7 +78,7 @@ test("plan, start and complete a sprint, then read its report", async ({ page })
   await expect(section(page, "Sprint 2").getByRole("button", { name: "Start sprint" })).toBeEnabled();
 
   await page.locator(".nav-project", { hasText: "Payments" }).getByRole("link", { name: "Reports" }).click();
-  const report = page.locator(".card", { hasText: "Sprint 1" });
+  const report = page.locator(".card", { has: page.getByRole("heading", { name: "Sprint 1" }) });
   await expect(report.locator(".stat").first()).toContainText("5 / 8");
   await expect(report).toContainText("62.5%");
   await expect(report).toContainText("1 / 2");
@@ -102,7 +102,7 @@ test("generate a report on demand", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Generate" })).toBeDisabled();
   await page.locator(".page-header select").selectOption({ label: "Sprint 1 (planned)" });
   await page.getByRole("button", { name: "Generate" }).click();
-  await expect(page.locator(".card", { hasText: "Sprint 1" })).toContainText("0 / 1");
+  await expect(page.locator(".card", { has: page.getByRole("heading", { name: "Sprint 1" }) })).toContainText("0 / 1");
 });
 
 test("create an issue straight into a sprint from the backlog", async ({ page }) => {

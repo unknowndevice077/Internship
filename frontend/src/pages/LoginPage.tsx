@@ -1,13 +1,17 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/useAuth";
+import { DEMO_ACCOUNT, DEMO_LOGIN } from "../platform";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // "Try the demo" on the landing page lands here with the seeded owner filled in
+  const [params] = useSearchParams();
+  const demo = DEMO_LOGIN && params.has("demo");
+  const [email, setEmail] = useState(demo ? DEMO_ACCOUNT.email : "");
+  const [password, setPassword] = useState(demo ? DEMO_ACCOUNT.password : "");
   const [otp, setOtp] = useState("");
   const [needsOtp, setNeedsOtp] = useState(false);
   const [error, setError] = useState("");
@@ -35,8 +39,11 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={submit}>
-        <div className="brand brand-lg">Sprintboard</div>
+        <Link className="brand brand-lg" to="/">
+          Sprintboard
+        </Link>
         <h1>Sign in</h1>
+        {demo && <p className="notice">Demo account filled in. Press Sign in to look around Acme Corp.</p>}
         <label>
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />

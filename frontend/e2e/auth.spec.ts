@@ -56,8 +56,9 @@ test("session survives a reload and sign out clears it", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
 
   await logout(page);
+  // signed out, "/" is the public landing page and everything else asks you to sign in
   await page.goto("/");
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: /Plan the sprint/ })).toBeVisible();
   await page.goto("/settings");
   await expect(page).toHaveURL(/\/login$/);
 });

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 import { useBoard } from "../api/queries";
 import { useCan } from "../auth/useAuth";
@@ -13,7 +13,10 @@ export default function BoardPage() {
   const projectId = Number(useParams().projectId);
   const { data: board, isLoading, error } = useBoard(projectId);
   const canEdit = useCan("member");
-  const [openIssue, setOpenIssue] = useState<number | null>(null);
+  // the open issue lives in the URL (?issue=12), so a link to it can be shared
+  const [params, setParams] = useSearchParams();
+  const openIssue = params.get("issue") ? Number(params.get("issue")) : null;
+  const setOpenIssue = (id: number | null) => setParams(id === null ? {} : { issue: String(id) }, { replace: true });
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState("");
   const [query, setQuery] = useState("");

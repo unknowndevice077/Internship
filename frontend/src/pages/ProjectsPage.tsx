@@ -6,6 +6,7 @@ import { api, ApiError, fieldErrors } from "../api/client";
 import { keys, useProjects } from "../api/queries";
 import type { Project } from "../api/types";
 import { useAuth, useCan } from "../auth/useAuth";
+import { OverviewPanels, OverviewStats } from "../components/Overview";
 import { GridSkeleton } from "../components/Skeleton";
 
 export default function ProjectsPage() {
@@ -30,6 +31,8 @@ export default function ProjectsPage() {
 
       {creating && <NewProjectForm onDone={() => setCreating(false)} />}
 
+      <OverviewStats />
+
       {isLoading ? (
         <GridSkeleton />
       ) : projects?.length ? (
@@ -49,6 +52,8 @@ export default function ProjectsPage() {
           {!canCreate && <p className="muted">Ask an admin to create one.</p>}
         </div>
       )}
+
+      <OverviewPanels />
     </div>
   );
 }

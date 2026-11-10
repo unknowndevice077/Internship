@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation, useParams } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../api/client";
 
@@ -16,6 +16,7 @@ export default function Layout() {
   const { me, workspace, switchWorkspace, logout } = useAuth();
   const { data: projects = [] } = useProjects();
   const { projectId } = useParams();
+  const navigate = useNavigate();
   const isAdmin = useCan("admin");
   const [menuOpen, setMenuOpen] = useState(false);
   const [palette, setPalette] = useState(false);
@@ -113,7 +114,13 @@ export default function Layout() {
             >
               <kbd>?</kbd>
             </button>
-            <button className="btn btn-ghost" onClick={logout}>
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+            >
               Sign out
             </button>
           </div>

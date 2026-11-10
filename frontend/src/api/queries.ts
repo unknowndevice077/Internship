@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./client";
-import type { Board, Issue, Member, Page, Project, Sprint } from "./types";
+import type { Board, Burndown, Issue, Member, Overview, Page, Project, Sprint } from "./types";
 
 export const keys = {
   projects: ["projects"] as const,
@@ -11,6 +11,8 @@ export const keys = {
   issues: (params: string) => ["issues", params] as const,
   sprints: (projectId: number) => ["sprints", projectId] as const,
   members: ["members"] as const,
+  overview: ["overview"] as const,
+  burndown: (sprintId: number) => ["burndown", sprintId] as const,
 };
 
 export function useProjects() {
@@ -48,6 +50,18 @@ export function useSprints(projectId: number) {
   });
 }
 
+export function useOverview() {
+  return useQuery({ queryKey: keys.overview, queryFn: () => api<Overview>("/overview/") });
+}
+
+export function useBurndown(sprintId: number | null) {
+  return useQuery({
+    queryKey: keys.burndown(sprintId ?? 0),
+    queryFn: () => api<Burndown>(`/sprints/${sprintId}/burndown/`),
+    enabled: sprintId !== null,
+  });
+}
+
 export function useMembers() {
   return useQuery({ queryKey: keys.members, queryFn: () => api<Member[]>("/members/") });
 }
@@ -62,6 +76,8 @@ export function useInvalidateProjectData() {
       qc.invalidateQueries({ queryKey: ["sprints"] }),
       qc.invalidateQueries({ queryKey: ["history"] }),
       qc.invalidateQueries({ queryKey: keys.projects }),
+      qc.invalidateQueries({ queryKey: keys.overview }),
+      qc.invalidateQueries({ queryKey: ["burndown"] }),
     ]);
 }
 

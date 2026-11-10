@@ -4,18 +4,9 @@ import { useRef, useState, type FormEvent } from "react";
 import { api, downloadFile, fieldErrors } from "../api/client";
 import type { Attachment, AuditEntry, Comment, Page, Status } from "../api/types";
 import { useAuth, useCan } from "../auth/useAuth";
+import { timeAgo } from "../time";
 
 const who = (u: { full_name: string; email: string } | null) => (u ? u.full_name || u.email : "Someone");
-
-function timeAgo(iso: string) {
-  const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return new Date(iso).toLocaleDateString();
-}
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;

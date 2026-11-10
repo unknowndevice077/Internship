@@ -3,9 +3,10 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { api, downloadFile } from "../api/client";
-import { useBoard, useSprints } from "../api/queries";
-import type { Page } from "../api/types";
+import { useBoard, useBurndown, useSprints } from "../api/queries";
+import type { Page, Sprint } from "../api/types";
 import { useCan } from "../auth/useAuth";
+import { LineChart } from "../components/charts";
 
 interface SprintData {
   sprint: { name: string; start_date: string; end_date: string; goal: string };
@@ -75,6 +76,8 @@ export default function ReportsPage() {
         )}
       </header>
 
+      <BurndownCard sprints={sprints} />
+
       {!reports?.results.length && (
         <div className="empty">Reports are created automatically when a sprint is completed.</div>
       )}
@@ -99,6 +102,48 @@ export default function ReportsPage() {
         </section>
       ))}
     </div>
+  );
+}
+
+function BurndownCard({ sprints }: { sprints: Sprint[] }) {
+  const dated = sprints.filter((s) => s.start_date);
+  const [picked, setPicked] = useState<number | null>(null);
+  // the running sprint is the interesting one, otherwise the latest that has dates
+  const current = picked ?? (dated.find((s) => s.state === "active") ?? dated[0])?.id ?? null;
+  const { data } = useBurndown(current);
+  if (current === null) return null;
+
+  const plotted = data?.days.filter((d) => d.remaining != null) ?? [];
+  const today = plotted[plotted.length - 1];
+  return (
+    <section className="card settings-section">
+      <div className="report-header">
+        <h2>Burndown</h2>
+        <select aria-label="Burndown sprint" value={current} onChange={(e) => setPicked(Number(e.target.value))}>
+          {dated.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.state})
+            </option>
+          ))}
+        </select>
+      </div>
+      {data && (
+        <>
+          <p className="muted small">
+            {data.total_points} points committed across {data.total_issues} issues
+            {today ? `, ${today.remaining} left` : ""}.
+          </p>
+          <LineChart
+            unit="Story points left"
+            dates={data.days.map((d) => d.date)}
+            series={[
+              { label: "Remaining", values: data.days.map((d) => d.remaining) },
+              { label: "Ideal", values: data.days.map((d) => d.ideal), reference: true },
+            ]}
+          />
+        </>
+      )}
+    </section>
   );
 }
 

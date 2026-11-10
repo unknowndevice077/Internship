@@ -3,6 +3,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# shows "Try the demo" on the landing page; only for stacks that run the seed
+ARG VITE_DEMO_LOGIN=
+ENV VITE_DEMO_LOGIN=$VITE_DEMO_LOGIN
 RUN npm run build
 
 FROM nginx:1.27-alpine

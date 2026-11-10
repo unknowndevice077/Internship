@@ -7,6 +7,8 @@ import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import "./styles.css";
 import "./motion.css";
+import "./insights.css";
+import "./landing.css";
 import { applyTheme, storedTheme } from "./theme";
 
 applyTheme(storedTheme());
