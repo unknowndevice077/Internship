@@ -96,7 +96,7 @@ services:
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://sprintboard-api.onrender.com/api/*
+        destination: https://sprintboard-api-vsnx.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html
