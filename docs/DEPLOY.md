@@ -71,8 +71,10 @@ From your machine, point the seed at production once:
 
 ```bash
 cd server
-MONGO_URI="mongodb+srv://..." REDIS_URL="rediss://..." ELASTICSEARCH_URL="" npm run seed
+MONGO_URI="mongodb+srv://..." REDIS_URL="rediss://..." ELASTICSEARCH_URL="" SEED_STRIPE_ACCOUNT="acct_..." npm run seed
 ```
+
+`SEED_STRIPE_ACCOUNT` is a connected account that has finished Stripe's onboarding (the one you get by connecting a vendor locally, under **Connect → Accounts** in the dashboard). Every seeded store is pointed at it, so a reviewer's purchase ends with a real transfer to the store instead of a payout stuck in the retry queue.
 
 On Windows PowerShell set them first with `$env:MONGO_URI="..."` and so on. If you set up Elasticsearch, include its URL so the index is built too.
 

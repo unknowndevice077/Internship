@@ -102,7 +102,8 @@ async function main() {
         slug: store.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         description: `Official ${store.storeName} store on Vendora.`,
         status: 'approved',
-        stripeAccountId: `mock_acct_${i}`,
+        // on a live demo, point every store at one real connected test account so transfers work
+        stripeAccountId: process.env.SEED_STRIPE_ACCOUNT || `mock_acct_${i}`,
         payoutsEnabled: true,
         shippingFee: 4.99,
         freeShippingOver: 50,

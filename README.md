@@ -66,6 +66,26 @@ MongoDB is the source of truth. Elasticsearch holds a copy of each product for s
 | Final presentation | [docs/PRESENTATION.md](docs/PRESENTATION.md) |
 | Reflection | [docs/REFLECTION.md](docs/REFLECTION.md) |
 
+## Trying it
+
+Payments run in Stripe **test mode**, so nothing is really charged. Pay with card `4242 4242 4242 4242`, any future
+date and any CVC. The password for every demo account is `demo-pass-123`, and the login page has one-click buttons
+for each.
+
+The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it.
+
+1. **As a customer** (`customer@vendora.test`): search (typos work, try "lipstik"), add items from two different
+   stores, apply coupon `WELCOME10`, and pay with the test card. You get one order per store, each with its own
+   tracking and PDF invoice.
+2. **As the seller** (`vendor@vendora.test`, Glow Beauty Co): open **Orders**, move your order to packed, shipped and
+   delivered, or refund one item. **Payouts** shows what the store was paid after commission.
+3. **As the admin** (`admin@vendora.test`): **Analytics** shows sales, commission and top sellers, and **Payouts**
+   shows every transfer to the stores. Approve the pending store under **Vendors**.
+4. Back as the customer, review the delivered product. It's marked "verified purchase".
+
+To see the payment split in Stripe itself, the test-mode dashboard shows one charge for the customer and a separate
+transfer to the store's connected account, minus the 10% commission.
+
 ## Running it
 
 You need Node 20+. Docker is optional.
