@@ -47,6 +47,11 @@ services:
       # no paid worker on the free plan, so background jobs run inside the API
       - key: INLINE_TASKS
         value: "1"
+      - key: SEED_DEMO
+        value: "1"
+      # no email service on the demo, so new sign-ups can still upgrade and invite
+      - key: REQUIRE_VERIFIED_EMAIL
+        value: "0"
       - key: DJANGO_ALLOWED_HOSTS
         sync: false
       - key: CSRF_TRUSTED_ORIGINS
@@ -71,6 +76,10 @@ services:
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    envVars:
+      # shows the "Try the demo" button on the live site
+      - key: VITE_DEMO_LOGIN
+        value: "1"
     headers:
       - path: /*
         name: X-Content-Type-Options
