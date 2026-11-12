@@ -154,6 +154,7 @@ npm run test:coverage
 
 cd ../client
 npm run test:e2e      # Playwright, starts its own API and web server
+npm run test:e2e:services  # the same tests against the real MongoDB, Redis and Elasticsearch from docker compose
 ```
 
 The API tests cover auth, products, search, checkout and commission math, shipping, stock holds, payout retries, refunds, coupons, the order lifecycle, emails, reviews and admin. Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exact calls the API makes to them. The Playwright tests click through the app in Chrome, including one long test that walks a new seller from sign-up to their first delivered order and payout.

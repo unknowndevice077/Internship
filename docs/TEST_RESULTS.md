@@ -84,6 +84,12 @@ Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exa
 
 Testing against the real index found two bugs the mocks couldn't: `@elastic/elasticsearch` 9.x refuses to talk to an 8.x server (the client is now pinned to 8.x), and stock changes after a purchase weren't pushed to the index (fixed, with a test).
 
+## Browser tests against the real databases
+
+`npm run test:e2e:services` runs all 32 browser tests against MongoDB 7, Redis 7 and Elasticsearch 8.15 from docker compose, instead of the in-memory stand-ins. All 32 pass. This run caught one bug the stand-ins couldn't: Elasticsearch makes new writes searchable about a second later, so a seller who saved a product and searched straight away didn't see it. Index writes now wait for that refresh.
+
+A separate crawl signed in as the customer, the vendor and the admin, opened every page it could reach (42 pages) and clicked every button that doesn't delete or pay for something (128 clicks), watching for console errors, crashes and failed API calls. It found none. The delete, cancel, refund and payment buttons are covered by the browser tests and the real Stripe run below.
+
 ## Real Stripe test mode
 
 Run on 12 November 2026 against the local stack (MongoDB, Redis, Elasticsearch in Docker) with real Stripe test keys and a vendor connected to a real Stripe test account:
