@@ -86,9 +86,19 @@ Run against a real Stripe test account with the Stripe CLI forwarding webhooks t
 | Subscription created with Stripe's test payment method `pm_card_visa` | `customer.subscription.created` forwarded, webhook answered 200, workspace became Pro, limits read 25 projects |
 | Subscription cancelled | `customer.subscription.deleted` forwarded, 200, workspace back on Free |
 
-The card form on Stripe's hosted page wasn't driven by the script, so that part is checked by hand with `4242 4242 4242 4242`.
+The card form on Stripe's hosted page was also filled in by hand on 12 November 2026 with `4242 4242 4242 4242` for a
+new Free workspace: Stripe sent `checkout.session.completed` and `customer.subscription.created`, both answered 200,
+the workspace switched to Pro, and **Manage billing** opened Stripe's customer portal.
 
 The whole suite also passes with animations switched on (`E2E_MOTION=1`), and the e2e API is started with blank Stripe keys so tests never reach a real account.
+
+## Every page and button
+
+A crawl on 12 November 2026 signed in as the owner, a member and a viewer of Acme, and the owner of the Free-plan
+Initech workspace. It opened every page it could reach (41 visits across board, backlog, reports, project settings,
+workspace settings, account and billing) and clicked every button that doesn't delete, pay or sign out (214 clicks),
+watching for console errors, crashes and failed API calls. It found none. Those destructive buttons are covered by the
+end-to-end tests and the Stripe run above.
 
 Also checked by hand: the full Docker stack (`docker compose --profile full up`) with health check, register, create
 project and issue through nginx, and jobs processed by the containerised worker.
