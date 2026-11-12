@@ -63,6 +63,17 @@ def test_failed_delivery_is_retried_then_marked_failed(api, owner, project, endp
 
 
 @responses.activate
+def test_inline_mode_gives_up_after_one_attempt(api, owner, project, endpoint, commit, settings):
+    settings.INLINE_TASKS = True
+    responses.post(HOOK_URL, status=500)
+    with commit():
+        api.as_member(owner).post("/api/issues/", {"project": project.id, "title": "x"})
+    delivery = WebhookDelivery.objects.get()
+    assert delivery.state == "failed"
+    assert len(responses.calls) == 1
+
+
+@responses.activate
 def test_endpoint_event_filter(api, owner, project, endpoint, commit):
     endpoint.events = ["comment.commented"]
     endpoint.save()

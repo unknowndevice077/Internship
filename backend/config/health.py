@@ -23,6 +23,9 @@ def health(request):
     healthy = all(v == "ok" for v in checks.values())
     # informational: a stopped worker doesn't make the API unhealthy
     beat = cache.get("worker:heartbeat")
-    worker = "ok" if beat and time.time() - beat < 180 else "no heartbeat"
+    if settings.INLINE_TASKS:
+        worker = "inline"
+    else:
+        worker = "ok" if beat and time.time() - beat < 180 else "no heartbeat"
     status = {"status": "ok" if healthy else "degraded", **checks, "worker": worker}
     return JsonResponse(status, status=200 if healthy else 503)

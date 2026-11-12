@@ -12,6 +12,11 @@ def test_health_reports_database_and_redis(client):
     assert body["worker"] == "no heartbeat"
 
 
+def test_health_says_inline_when_jobs_run_in_the_api(client, settings):
+    settings.INLINE_TASKS = True
+    assert client.get("/api/health/").json()["worker"] == "inline"
+
+
 def test_health_degrades_when_redis_is_down(client, settings):
     settings.REDIS_URL = "redis://localhost:1/0"
     res = client.get("/api/health/")

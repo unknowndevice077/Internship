@@ -67,6 +67,9 @@ def deliver_webhook(delivery_id):
         delivery.last_error = str(exc)[:500]
 
     delivery.duration_ms = int((time.monotonic() - started) * 1000)
+    if not ok and settings.INLINE_TASKS:
+        # no worker to back off with, and retrying here would hold up the request
+        delivery.attempts = MAX_ATTEMPTS
     if ok:
         delivery.state = WebhookDelivery.State.SUCCESS
         delivery.delivered_at = timezone.now()

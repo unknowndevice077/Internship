@@ -231,7 +231,10 @@ CACHES = {
 }
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", False)
+# INLINE_TASKS runs background jobs inside the API request, for hosts without a worker (Render free tier).
+# Scheduled jobs (weekly summaries, pruning) don't run in this mode.
+INLINE_TASKS = env_bool("INLINE_TASKS", False)
+CELERY_TASK_ALWAYS_EAGER = INLINE_TASKS or env_bool("CELERY_TASK_ALWAYS_EAGER", False)
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BEAT_SCHEDULE = {

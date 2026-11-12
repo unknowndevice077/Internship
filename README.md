@@ -153,8 +153,11 @@ Dependabot opens update PRs for pip, npm, the Docker base images and the workflo
 
 ## Deploying
 
-`render.yaml` sets up the API, worker, static frontend, Postgres and Redis on Render. The API and worker read the
-same env var group, since both need the same secret key to sign and check reset and verification links.
+`render.yaml` sets up the API, static frontend, Postgres and Redis on Render, all on the free plan. Render's free
+plan has no background workers, so the API runs with `INLINE_TASKS=1`: emails, notifications, reports and webhooks run
+inside the request instead of on Celery. A failed webhook isn't retried in that mode (redeliver it from the webhooks
+page), and the scheduled jobs (weekly summaries, pruning old records) don't run. For the full setup, add a worker
+service running `celery -A config worker -B` with the same env vars and drop `INLINE_TASKS`.
 
 With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and HSTS, and won't start without
 `DJANGO_SECRET_KEY`. Optional production settings:
