@@ -471,6 +471,21 @@
   }
 }
 
+/* sidebar still showing, so two panels side by side get too narrow */
+@media (max-width: 960px) {
+  .overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-wide {
+    grid-column: auto;
+  }
+
+  .feed p {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 720px) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));

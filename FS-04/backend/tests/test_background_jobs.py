@@ -63,6 +63,17 @@ def test_failed_delivery_is_retried_then_marked_failed(api, owner, project, endp
 
 
 @responses.activate
+def test_inline_mode_gives_up_after_one_attempt(api, owner, project, endpoint, commit, settings):
+    settings.INLINE_TASKS = True
+    responses.post(HOOK_URL, status=500)
+    with commit():
+        api.as_member(owner).post("/api/issues/", {"project": project.id, "title": "x"})
+    delivery = WebhookDelivery.objects.get()
+    assert delivery.state == "failed"
+    assert len(responses.calls) == 1
+
+
+@responses.activate
 def test_endpoint_event_filter(api, owner, project, endpoint, commit):
     endpoint.events = ["comment.commented"]
     endpoint.save()
@@ -165,6 +176,22 @@ def test_completing_sprint_builds_report(api, owner, project, commit):
     assert report.data["completion_rate"] == 62.5
     csv_text = b"".join(api.get(f"/api/reports/{report.id}/download/").streaming_content).decode()
     assert csv_text.splitlines()[0] == "Key,Title,Type,Status,Done,Points,Assignee"
+
+
+def test_report_download_rebuilds_a_lost_file(api, owner, project, commit):
+    # Render wipes local media on redeploy; the row still says ready
+    api.as_member(owner)
+    sprint_id = api.post("/api/sprints/", {"project": project.id, "name": "Sprint 1"}).data["id"]
+    IssueFactory(project=project, sprint_id=sprint_id, story_points=3)
+    api.post(f"/api/sprints/{sprint_id}/start/")
+    with commit():
+        api.post(f"/api/sprints/{sprint_id}/complete/")
+    report = Report.objects.get(sprint_id=sprint_id)
+    report.file.storage.delete(report.file.name)
+
+    res = api.get(f"/api/reports/{report.id}/download/")
+    assert res.status_code == 200
+    assert b"".join(res.streaming_content).decode().startswith("Key,Title")
 
 
 def test_weekly_summary_emails_admins(owner, project):

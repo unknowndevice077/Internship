@@ -201,7 +201,7 @@ label {
 
 .app {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -1096,7 +1096,7 @@ code {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 140px 1fr 80px;
+  grid-template-columns: 160px minmax(0, 1fr) 80px;
   gap: 10px;
   align-items: center;
 }
@@ -1309,5 +1309,35 @@ code {
 
   .drawer {
     width: 100vw;
+  }
+}
+
+/* wide tables scroll sideways on phones instead of pushing the page out */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table.members select {
+  min-width: 96px;
+}
+
+/* phones: title gets the first line, status / sprint / points go underneath */
+@media (max-width: 600px) {
+  .issue-list li {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .issue-list li .grow {
+    flex: 1 1 calc(100% - 110px);
+    min-width: 0;
+  }
+
+  .issue-list li .status-pill {
+    margin-left: 28px;
+  }
+
+  .issue-list li .points {
+    margin-left: auto;
   }
 }

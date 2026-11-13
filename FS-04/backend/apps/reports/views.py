@@ -1,3 +1,4 @@
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.http import FileResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -12,6 +13,7 @@ from apps.tenancy.models import Role
 from apps.tenancy.permissions import WorkspaceRolePermission
 
 from . import insights
+from .builders import BUILDERS
 from .models import Report
 from .tasks import build_report
 
@@ -59,6 +61,10 @@ class ReportViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Cre
         report = self.get_object()
         if report.state != Report.State.READY or not report.file:
             raise exceptions.NotFound("Report isn't ready yet.")
+        if not report.file.storage.exists(report.file.name):
+            # local disk got wiped (Render redeploys do this), so build the csv again
+            _, csv_text = BUILDERS[report.kind](report)
+            report.file.save(f"{report.kind}-{report.pk}.csv", ContentFile(csv_text.encode()))
         return FileResponse(
             report.file.open("rb"), as_attachment=True, filename=f"{report.kind}-report-{report.pk}.csv"
         )

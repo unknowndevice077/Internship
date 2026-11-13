@@ -30,6 +30,9 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-m
 # default off so a missing env var can't turn on debug in prod
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# Render sets this to the service's own host, which can get a random suffix
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -231,7 +234,10 @@ CACHES = {
 }
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", False)
+# INLINE_TASKS runs background jobs inside the API request, for hosts without a worker (Render free tier).
+# Scheduled jobs (weekly summaries, pruning) don't run in this mode.
+INLINE_TASKS = env_bool("INLINE_TASKS", False)
+CELERY_TASK_ALWAYS_EAGER = INLINE_TASKS or env_bool("CELERY_TASK_ALWAYS_EAGER", False)
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BEAT_SCHEDULE = {

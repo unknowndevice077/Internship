@@ -33,6 +33,24 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 Django 5.2 + DRF, PostgreSQL 16, Celery and Redis on the backend; React 18 + TypeScript (Vite, TanStack Query,
 dnd-kit) on the frontend. Runs in Docker behind nginx and gunicorn, with CI/CD on GitHub Actions.
 
+## Trying it
+
+Press **Try the demo** on the landing page, or sign in as `owner@acme-corp.test` / `demo-pass-123`. The demo
+workspace has three projects with sprints, about 150 issues each, and a team of members.
+
+The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it.
+
+1. **Board:** drag issues between columns, open one to comment, mention a teammate or attach a file. Press `?`
+   for keyboard shortcuts and `Ctrl+K` for the command palette.
+2. **Sprints:** plan a sprint from the backlog, start it, and watch the burndown on the home overview.
+3. **Workspaces are separate:** sign out and sign in as `owner@initech.test` (same password). Initech is another
+   company on the same server, and nothing from Acme shows up there.
+4. **Billing (Stripe test mode, nothing is really charged):** Initech is on the Free plan. Open **Billing** and
+   upgrade to Pro with card `4242 4242 4242 4242`, any future date and any CVC. The plan switches to Pro as soon as
+   Stripe confirms, and **Manage billing** opens Stripe's customer portal. If someone already upgraded Initech,
+   sign up with a new account instead: it gets its own Free workspace.
+5. **Roles:** members can't change settings, and viewers can only read. Invite someone from workspace **Settings** to see it.
+
 ## Quick start
 
 The fastest way to try it is the full Docker stack:
@@ -153,8 +171,18 @@ Dependabot opens update PRs for pip, npm, the Docker base images and the workflo
 
 ## Deploying
 
-`render.yaml` sets up the API, worker, static frontend, Postgres and Redis on Render. The API and worker read the
-same env var group, since both need the same secret key to sign and check reset and verification links.
+`render.yaml` sets up the API, static frontend, Postgres and Redis on Render, all on the free plan. Render's free
+plan has no background workers, so the API runs with `INLINE_TASKS=1`: emails, notifications, reports and webhooks run
+inside the request instead of on Celery. A failed webhook isn't retried in that mode (redeliver it from the webhooks
+page), and the scheduled jobs (weekly summaries, pruning old records) don't run. For the full setup, add a worker
+service running `celery -A config worker -B` with the same env vars and drop `INLINE_TASKS`.
+
+On the live demo:
+
+- `SEED_DEMO=1` loads the demo workspaces when the API starts. It skips any that already exist, so restarts keep whatever reviewers changed.
+- `VITE_DEMO_LOGIN=1` on the static site shows the **Try the demo** button.
+- In the Stripe dashboard (test mode) add a webhook endpoint at `https://YOUR-API.onrender.com/api/billing/webhook/` for `checkout.session.completed` and `customer.subscription.created`, `.updated` and `.deleted`, and put its `whsec_...` in `STRIPE_WEBHOOK_SECRET`. Without it, payments go through but the plan never changes.
+- If Render gives the API a different URL than `sprintboard-api.onrender.com`, change the `/api/*` rewrite in `render.yaml` to match.
 
 With `DJANGO_DEBUG` unset the app turns on HTTPS redirects, secure cookies and HSTS, and won't start without
 `DJANGO_SECRET_KEY`. Optional production settings:
