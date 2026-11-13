@@ -178,6 +178,22 @@ def test_completing_sprint_builds_report(api, owner, project, commit):
     assert csv_text.splitlines()[0] == "Key,Title,Type,Status,Done,Points,Assignee"
 
 
+def test_report_download_rebuilds_a_lost_file(api, owner, project, commit):
+    # Render wipes local media on redeploy; the row still says ready
+    api.as_member(owner)
+    sprint_id = api.post("/api/sprints/", {"project": project.id, "name": "Sprint 1"}).data["id"]
+    IssueFactory(project=project, sprint_id=sprint_id, story_points=3)
+    api.post(f"/api/sprints/{sprint_id}/start/")
+    with commit():
+        api.post(f"/api/sprints/{sprint_id}/complete/")
+    report = Report.objects.get(sprint_id=sprint_id)
+    report.file.storage.delete(report.file.name)
+
+    res = api.get(f"/api/reports/{report.id}/download/")
+    assert res.status_code == 200
+    assert b"".join(res.streaming_content).decode().startswith("Key,Title")
+
+
 def test_weekly_summary_emails_admins(owner, project):
     from apps.reports.tasks import send_weekly_summaries
 
