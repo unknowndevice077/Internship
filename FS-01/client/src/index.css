@@ -226,7 +226,7 @@ button:disabled {
 }
 .two {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
 }
 .row {
@@ -710,7 +710,7 @@ button:disabled {
 /* dashboards */
 .dash {
   display: grid;
-  grid-template-columns: 200px 1fr;
+  grid-template-columns: 200px minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
 }
@@ -962,6 +962,8 @@ fieldset.role-pick {
 }
 .table-wrap {
   overflow-x: auto;
+  /* keeps the hidden header labels inside the scroll box */
+  position: relative;
 }
 .page-head {
   display: flex;
@@ -1543,7 +1545,8 @@ textarea:focus {
   .cart-page,
   .dash,
   .two-col {
-    grid-template-columns: 1fr;
+    /* minmax(0, ...) so a wide table scrolls instead of stretching the page */
+    grid-template-columns: minmax(0, 1fr);
   }
   .filters,
   .summary,
@@ -1905,4 +1908,10 @@ textarea:focus {
 }
 .stats + .card {
   margin-bottom: 1rem;
+}
+
+@media (max-width: 480px) {
+  .two {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

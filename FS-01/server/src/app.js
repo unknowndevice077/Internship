@@ -30,7 +30,7 @@ export function createApp() {
 
   app.set('trust proxy', 1);
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  app.use(cors({ origin: config.clientUrl.split(','), credentials: true }));
+  app.use(cors({ origin: config.clientUrls, credentials: true }));
   app.use(
     pinoHttp({
       logger,

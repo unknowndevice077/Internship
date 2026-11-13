@@ -3,6 +3,7 @@ services:
   - type: web
     name: vendora-api
     runtime: node
+    plan: free
     rootDir: server
     buildCommand: npm ci --omit=dev
     startCommand: node src/server.js

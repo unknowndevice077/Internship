@@ -84,6 +84,24 @@ Stripe and Elasticsearch are mocked at the SDK level, so the tests check the exa
 
 Testing against the real index found two bugs the mocks couldn't: `@elastic/elasticsearch` 9.x refuses to talk to an 8.x server (the client is now pinned to 8.x), and stock changes after a purchase weren't pushed to the index (fixed, with a test).
 
+## Browser tests against the real databases
+
+`npm run test:e2e:services` runs all 32 browser tests against MongoDB 7, Redis 7 and Elasticsearch 8.15 from docker compose, instead of the in-memory stand-ins. All 32 pass. This run caught one bug the stand-ins couldn't: Elasticsearch makes new writes searchable about a second later, so a seller who saved a product and searched straight away didn't see it. Index writes now wait for that refresh.
+
+A separate crawl signed in as the customer, the vendor and the admin, opened every page it could reach (42 pages) and clicked every button that doesn't delete or pay for something (128 clicks), watching for console errors, crashes and failed API calls. It found none. The delete, cancel, refund and payment buttons are covered by the browser tests and the real Stripe run below.
+
+## Real Stripe test mode
+
+Run on 12 November 2026 against the local stack (MongoDB, Redis, Elasticsearch in Docker) with real Stripe test keys and a vendor connected to a real Stripe test account:
+
+| Check | Result |
+| --- | --- |
+| Checkout | a real PaymentIntent for $30.97 (2 × $12.99 lipstick + $4.99 shipping) |
+| Pay with Stripe's test card | `succeeded` |
+| Order after payment | `placed` |
+| Vendor transfer | $28.37 to the vendor's connected account, which is the total minus the 10% commission on goods ($2.60) |
+| Vendor refunds one item | $12.99 refunded to the card, and $11.69 (the vendor's share) reversed from their transfer |
+
 ## Manual end-to-end check
 
 Run against the seeded demo (`npm run dev:memory` plus the client):
@@ -124,7 +142,7 @@ With Elasticsearch, filtered browsing has about 30% lower p50 latency and handle
 
 - The Mongo fallback search doesn't do fuzzy or partial-word matching (`phone` doesn't match `iPhone`). Elasticsearch does.
 - Search results can lag a write by up to a second (Elasticsearch refresh interval). Product pages read from MongoDB, so they're always current.
-- Not run with live Stripe test keys or a real S3 bucket. Both are covered by SDK-level tests, and the README lists the steps to turn them on.
+- Not run against a real S3 bucket. That path is covered by SDK-level tests, and the README lists the steps to turn it on.
 - Emails aren't sent anywhere until `SMTP_URL` is set. Without it they're written to the log.
 - The background jobs run inside the API process. That's fine for one or a few instances (a Redis lock stops them doubling up), but a busy deployment would want a separate worker.
 - Shipping is a flat rate per store, not by weight or destination.

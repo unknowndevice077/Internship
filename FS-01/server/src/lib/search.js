@@ -82,6 +82,8 @@ export async function indexProduct(product) {
       index: config.elasticIndex,
       id: product._id.toString(),
       document: toDoc(product, vendor.storeName),
+      // so a seller who saves and then searches sees their change
+      refresh: 'wait_for',
     });
   } catch (err) {
     logger.warn({ err: err.message }, 'search index failed');
@@ -92,7 +94,7 @@ export async function removeProduct(id) {
   const client = getElastic();
   if (!client) return;
   try {
-    await client.delete({ index: config.elasticIndex, id: id.toString() });
+    await client.delete({ index: config.elasticIndex, id: id.toString(), refresh: 'wait_for' });
   } catch (err) {
     if (err.meta?.statusCode !== 404) logger.warn({ err: err.message }, 'search delete failed');
   }

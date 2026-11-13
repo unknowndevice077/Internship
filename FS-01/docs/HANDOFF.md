@@ -11,7 +11,7 @@ Where the project stands, how to pick it up, and what's left before the 20 Nov 2
 | 3. Vendor onboarding, product CRUD, S3 upload | Done. Tested with local storage. S3 path covered by code, not yet run against a real bucket |
 | 4. Elasticsearch search, filters, sorting | Done, verified on Elasticsearch 8.15 |
 | 5. Cart, checkout, order lifecycle, Redis | Done, verified on Redis 7 |
-| 6. Stripe Connect split payments | Done. Verified with SDK-level tests and mock mode. Not yet run with real test keys |
+| 6. Stripe Connect split payments | Done. Verified with SDK-level tests, mock mode, and a real Stripe test mode run (charge, vendor transfer, partial refund) |
 | 7. Reviews, coupons, PDF invoices, admin analytics, separate deploys | Done. Deploy config ready, not deployed yet |
 
 Also done beyond the brief: stock held during checkout, automatic retries for failed vendor payouts, partial refunds, per-store shipping, order and account emails, password reset and email verification, wishlist and recently viewed, vendor order filters and CSV export, partial-word search without Elasticsearch, Swagger docs, structured logs with request ids, optional Sentry, a TypeScript front end, dark mode, keyboard and screen reader support, and a phone layout for the filters.

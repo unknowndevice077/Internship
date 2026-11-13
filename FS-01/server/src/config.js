@@ -2,11 +2,18 @@ import 'dotenv/config';
 
 const env = process.env;
 
+// "https://shop.app/" and "https://shop.app" must both match the browser's Origin header
+const clientUrls = (env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((u) => u.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 const config = {
   env: env.NODE_ENV || 'development',
   port: Number(env.PORT) || 4000,
   mongoUri: env.MONGO_URI || 'mongodb://127.0.0.1:27017/vendora',
-  clientUrl: env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: clientUrls[0],
+  clientUrls,
 
   jwtSecret: env.JWT_SECRET || 'dev-only-secret-change-me',
   jwtExpiresIn: env.JWT_EXPIRES_IN || '7d',

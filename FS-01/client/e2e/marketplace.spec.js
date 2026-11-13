@@ -197,7 +197,9 @@ test.describe.serial('seller to customer to admin', () => {
     await expect(page.locator('.product-card', { hasText: productTitle })).toHaveCount(0);
 
     await page.goto('/admin/vendors');
-    await page.locator('tr', { hasText: storeName }).getByRole('button', { name: 'Approve' }).click();
+    const again = page.locator('tr', { hasText: storeName });
+    await again.getByRole('button', { name: 'Approve' }).click();
+    await expect(again.locator('.badge')).toHaveText('approved');
     await page.goto(`/?q=${encodeURIComponent(productTitle)}`);
     await expect(page.locator('.product-card', { hasText: productTitle })).toHaveCount(1);
   });
