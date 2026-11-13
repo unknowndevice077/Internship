@@ -61,7 +61,14 @@ const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
 async function main() {
   await mongoose.connect(config.mongoUri);
-  await mongoose.connection.dropDatabase();
+  try {
+    await mongoose.connection.dropDatabase();
+  } catch (err) {
+    // Atlas "readWrite" users can't drop a database, but can drop its collections
+    if (err.code !== 8000 && err.codeName !== 'Unauthorized') throw err;
+    const cols = await mongoose.connection.db.listCollections().toArray();
+    for (const c of cols) await mongoose.connection.db.dropCollection(c.name);
+  }
   await getRedis().flushdb();
   await Promise.all([User, Vendor, Product, Review, Order, Coupon].map((m) => m.syncIndexes()));
 
