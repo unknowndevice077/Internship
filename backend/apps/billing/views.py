@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import require_verified_email
-from apps.tenancy.models import Membership, Role
+from apps.tenancy.models import Membership, Role, Workspace
 from apps.tenancy.permissions import WorkspaceRolePermission
 
 from . import stripe_sync
@@ -130,6 +130,12 @@ class StripeWebhookView(APIView):
     def handle(self, event):
         obj = stripe_sync.as_dict(event["data"]["object"])
         kind = event["type"]
+        # the Stripe account can be shared (other apps, local test runs, deleted workspaces):
+        # skip what isn't ours instead of failing, or Stripe keeps retrying and can disable the endpoint
+        workspace_id = (obj.get("metadata") or {}).get("workspace_id")
+        if workspace_id and not Workspace.objects.filter(pk=workspace_id).exists():
+            log.info("stripe event %s is for unknown workspace %s, skipped", event["id"], workspace_id)
+            return
         if kind in ("customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"):
             stripe_sync.apply_subscription(obj)
         elif kind == "checkout.session.completed" and obj.get("subscription"):

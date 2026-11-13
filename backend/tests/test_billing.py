@@ -124,6 +124,33 @@ def test_subscription_webhook_upgrades_workspace(api, owner):
     assert sub.current_period_end.year == 2030
 
 
+def test_webhook_skips_events_for_unknown_workspaces(api, owner, monkeypatch):
+    # same Stripe account as another app or a local test run: answer 200 so Stripe stops retrying
+    def boom(*a, **k):
+        raise AssertionError("should not call Stripe for someone else's checkout")
+
+    monkeypatch.setattr(stripe.Subscription, "retrieve", boom)
+    ghost = SimpleNamespace(id=999999)
+    assert signed_post(api, subscription_event(ghost, event_id="evt_ghost_sub")).status_code == 200
+    checkout = {
+        "id": "evt_ghost_co",
+        "object": "event",
+        "type": "checkout.session.completed",
+        "data": {
+            "object": {
+                "id": "cs_1",
+                "customer": "cus_9",
+                "subscription": "sub_9",
+                "metadata": {"workspace_id": "999999"},
+            }
+        },
+    }
+    assert signed_post(api, checkout).status_code == 200
+    assert not Subscription.objects.exists()
+    owner.workspace.refresh_from_db()
+    assert owner.workspace.plan == "free"
+
+
 def test_webhook_events_are_processed_once(api, owner):
     event = subscription_event(owner.workspace)
     signed_post(api, event)

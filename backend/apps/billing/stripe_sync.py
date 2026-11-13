@@ -5,6 +5,8 @@ import stripe
 from django.conf import settings
 from django.db import transaction
 
+from apps.tenancy.models import Workspace
+
 from .models import Subscription
 from .plans import PAID_PLANS, plan_by_lookup_key
 
@@ -114,7 +116,7 @@ def apply_subscription(data):
     )
     if sub is None:
         workspace_id = (data.get("metadata") or {}).get("workspace_id")
-        if not workspace_id:
+        if not workspace_id or not Workspace.objects.filter(pk=workspace_id).exists():
             return None
         sub, _ = Subscription.objects.select_for_update().get_or_create(workspace_id=workspace_id)
         sub.stripe_customer_id = data["customer"]
