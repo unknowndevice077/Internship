@@ -201,7 +201,7 @@ label {
 
 .app {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -1310,4 +1310,13 @@ code {
   .drawer {
     width: 100vw;
   }
+}
+
+/* wide tables scroll sideways on phones instead of pushing the page out */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table.members select {
+  min-width: 96px;
 }

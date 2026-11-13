@@ -68,44 +68,46 @@ function Members() {
     <section className="card settings-section">
       <h2>Members</h2>
       {error && <p className="form-error">{error}</p>}
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {members.map((m) => (
-            <tr key={m.id}>
-              <td>{m.user.full_name || <span className="muted">Invited</span>}</td>
-              <td>{m.user.email}</td>
-              <td>
-                {isAdmin && m.user.id !== me?.id && (isOwner || m.role !== "owner") ? (
-                  <select value={m.role} onChange={(e) => update.mutate({ id: m.id, role: e.target.value as Role })}>
-                    {roles.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  m.role
-                )}
-              </td>
-              <td className="actions">
-                {isAdmin && m.user.id !== me?.id && (isOwner || m.role !== "owner") && (
-                  <button className="btn btn-ghost btn-danger" onClick={() => remove.mutate(m.id)}>
-                    Remove
-                  </button>
-                )}
-              </td>
+      <div className="table-scroll">
+        <table className="table members">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {members.map((m) => (
+              <tr key={m.id}>
+                <td>{m.user.full_name || <span className="muted">Invited</span>}</td>
+                <td>{m.user.email}</td>
+                <td>
+                  {isAdmin && m.user.id !== me?.id && (isOwner || m.role !== "owner") ? (
+                    <select value={m.role} onChange={(e) => update.mutate({ id: m.id, role: e.target.value as Role })}>
+                      {roles.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    m.role
+                  )}
+                </td>
+                <td className="actions">
+                  {isAdmin && m.user.id !== me?.id && (isOwner || m.role !== "owner") && (
+                    <button className="btn btn-ghost btn-danger" onClick={() => remove.mutate(m.id)}>
+                      Remove
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {isAdmin && (
         <form className="inline-form compact" onSubmit={submit}>
           <input
