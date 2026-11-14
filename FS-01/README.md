@@ -4,6 +4,8 @@ A multi-vendor marketplace I built for my Nexvia internship (project FS-01). Thi
 
 The hardest part was the money side. One checkout has to become one order per seller, coupons have to be split fairly between them, and payment confirmation has to be safe to run twice (Stripe's webhook and the browser can both confirm the same payment). Most of my time went into getting that right and testing it.
 
+**Live demo:** https://vendora-kappa-nine.vercel.app (one-click demo logins on the sign-in page, test card `4242 4242 4242 4242`) · **Walkthrough video:** [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)
+
 **Built with:** React (Vite, TypeScript), Node.js + Express, MongoDB, Elasticsearch, Redis, Stripe Connect (test mode), AWS S3
 
 ![The shop home page](docs/screenshots/home.png)
