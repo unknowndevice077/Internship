@@ -142,6 +142,14 @@ class IssueSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"sprint": "Sprint is closed."})
         return attrs
 
+    def update(self, instance, validated_data):
+        # write only the fields this request changed: the drawer fires a PATCH per field, and saving the
+        # whole row let a slower request put back a value another one had just changed
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save(update_fields=[*validated_data, "updated_at"])
+        return instance
+
 
 class IssueMoveSerializer(serializers.Serializer):
     status = WorkspaceRelatedField(queryset=Status.objects.all())
