@@ -14,6 +14,9 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 There's a 3 minute narrated video of the main flows, billing included, in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
 What was hard and what I learned is in [docs/REFLECTION.md](docs/REFLECTION.md).
 
+All 18 screenshots in [docs/screenshots](docs/screenshots) come from `node frontend/scripts/screenshots.mjs` against a
+seeded local copy, so they're easy to redo after a UI change.
+
 ## What it does
 
 - Workspaces with owner, admin, member and viewer roles, invites and workspace switching
