@@ -49,7 +49,7 @@ Same steps work on the live site or locally (see "Running it" in the README). Th
 2. Sign in as `vendor@vendora.test` and ship that order from **Orders**.
 3. Sign in as `admin@vendora.test` and look at **Analytics** and **Payouts**.
 
-The live API sleeps on Render's free plan, so outside 8am to 8pm Philippine time the first page can take up to a
+The live API sleeps on Render's free plan, so after a quiet spell (a scheduled ping helps from 8am to 8pm Philippine time, but isn't guaranteed) the first page can take up to a
 minute. There's a "waking up the
 server" note at the top while that happens.
 
