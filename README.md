@@ -11,7 +11,7 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 
 ![Workspace overview](docs/screenshots/02-projects.png)
 
-There's a 2.5 minute video of the main flows, billing included, in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
+There's a 3 minute narrated video of the main flows, billing included, in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
 What was hard and what I learned is in [docs/REFLECTION.md](docs/REFLECTION.md).
 
 ## What it does
