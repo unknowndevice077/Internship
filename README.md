@@ -14,8 +14,7 @@ Both projects from my Nexvia full-stack internship (batch starting 20 October 20
 | Sprintboard | https://sprintboard-web.onrender.com | press **Try the demo**, or `owner@acme-corp.test` |
 | Vendora | https://vendora-kappa-nine.vercel.app | one-click buttons on the login page, or `customer@vendora.test`, `vendor@vendora.test`, `admin@vendora.test` |
 
-Password for every demo account: `demo-pass-123`. Payments are Stripe test mode, so use card `4242 4242 4242 4242`
-with any future date and any CVC.
+Password for every demo account: `demo-pass-123`.
 
 Both use Stripe test mode, so pay with card `4242 4242 4242 4242`, any future date and any CVC. Nothing is charged.
 
