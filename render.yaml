@@ -19,6 +19,8 @@ services:
         sync: false
       - key: ELASTICSEARCH_URL
         sync: false
+      - key: ELASTICSEARCH_API_KEY
+        sync: false
       - key: CLIENT_URL
         sync: false
       - key: S3_BUCKET

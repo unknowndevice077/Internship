@@ -9,7 +9,8 @@ let es;
 
 export function getElastic() {
   if (!config.elasticUrl) return null;
-  if (!es) es = new Client({ node: config.elasticUrl });
+  // Elastic Cloud hands out API keys; a local cluster needs no auth
+  if (!es) es = new Client({ node: config.elasticUrl, ...(config.elasticApiKey && { auth: { apiKey: config.elasticApiKey } }) });
   return es;
 }
 
@@ -131,7 +132,14 @@ export async function searchProducts(params) {
   const page = Math.max(1, Number(params.page) || 1);
   const limit = Math.min(60, Math.max(1, Number(params.limit) || 20));
   const client = getElastic();
-  return client ? searchElastic(client, params, page, limit) : searchMongo(params, page, limit);
+  if (!client) return searchMongo(params, page, limit);
+  try {
+    return await searchElastic(client, params, page, limit);
+  } catch (err) {
+    // a down or expired cluster shouldn't take the shop with it
+    logger.warn({ err: err.message }, 'elasticsearch search failed, using mongo');
+    return searchMongo(params, page, limit);
+  }
 }
 
 async function searchElastic(client, p, page, limit) {
