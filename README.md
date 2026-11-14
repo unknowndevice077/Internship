@@ -33,7 +33,7 @@ Some details under the hood:
 - Logins use JWTs, but every token is tied to a session in Redis, so logging out (or an admin disabling someone) kills it immediately instead of waiting for it to expire.
 - The cart lives in Redis. Prices are always re-read from the database, so a stale cart can't check out at an old price.
 - Product pages are cached in Redis for 5 minutes and cleared on edit.
-- Search runs on Elasticsearch when it's available and falls back to MongoDB text search when it isn't, so the app still works without it.
+- Search runs on Elasticsearch when it's available and falls back to MongoDB text search when it isn't, so the app still works without it. The live demo uses the MongoDB fallback, because I couldn't find a hosted Elasticsearch with a permanent free plan. The Elasticsearch path is tested against a real server (see [TEST_RESULTS](docs/TEST_RESULTS.md)).
 - Payments use Stripe's "separate charges and transfers": the customer is charged once, then each vendor gets a transfer for their order. If a transfer fails it's retried automatically with backoff. Without a Stripe key there's a mock provider, so the whole flow works offline.
 - Stock is held for 15 minutes from checkout, so nobody pays for something that sold out while they were typing their card number. A small job runner (with a Redis lock so only one server runs it) releases holds that expire.
 - Refunding part of an order also takes back the vendor's share of that part from their payout, with a Stripe transfer reversal.
@@ -64,7 +64,7 @@ MongoDB is the source of truth. Elasticsearch holds a copy of each product for s
 | Working demo | Run it locally with the steps below, no accounts needed. Deploy steps are in [docs/DEPLOY.md](docs/DEPLOY.md) |
 | README and setup instructions | This file |
 | Architecture diagram, data and API docs | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md), Swagger UI at `/api/docs` |
-| Test results and performance numbers | [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md): 94 API tests, 32 browser tests, latency with and without Elasticsearch |
+| Test results and performance numbers | [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md): 95 API tests, 32 browser tests, latency with and without Elasticsearch |
 | Screenshots | [docs/screenshots](docs/screenshots) |
 | Final presentation | [docs/PRESENTATION.md](docs/PRESENTATION.md) |
 | Reflection | [docs/REFLECTION.md](docs/REFLECTION.md) |
@@ -149,7 +149,7 @@ Coupons to try: `WELCOME10` (10% off over $20), `FLAT5` ($5 off over $30), `GLOW
 
 ### Using S3 for images
 
-Set `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. The bucket needs public read on `vendors/` (or put CloudFront in front and set `S3_PUBLIC_URL`). Without these, uploads go to `server/uploads/`.
+Set `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. The bucket needs public read (`s3:GetObject`) and the key only needs `s3:PutObject`. You can put CloudFront in front and set `S3_PUBLIC_URL`. Without these, uploads go to `server/uploads/`.
 
 ## Tests
 

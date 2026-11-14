@@ -21,13 +21,11 @@ That's `REDIS_URL`. It's required in production: the in-memory mock is dev-only 
 
 ## 3. Elasticsearch (optional)
 
-Without it, search uses MongoDB with partial-word matching, which is fine for a demo. To use it:
+Without it, search uses MongoDB with partial-word matching, which is fine for a demo. The live demo runs this way, because I couldn't find a hosted Elasticsearch with a permanent free plan. To use it:
 
 1. Elastic Cloud has a 14-day trial (https://cloud.elastic.co), or Bonsai has a free sandbox (https://bonsai.io).
 2. Use an **8.x** cluster (the client is pinned to 8.x).
-3. Copy the URL with the credentials in it: `https://USER:PASS@host:443`
-
-That's `ELASTICSEARCH_URL`.
+3. Copy the endpoint URL into `ELASTICSEARCH_URL`. For Elastic Cloud, create an API key and put it in `ELASTICSEARCH_API_KEY`. (A `https://USER:PASS@host:443` URL also works.)
 
 ## 4. S3 for product images
 
@@ -41,7 +39,7 @@ That's `ELASTICSEARCH_URL`.
          "Effect": "Allow",
          "Principal": "*",
          "Action": "s3:GetObject",
-         "Resource": "arn:aws:s3:::vendora-images-yourname/products/*"
+         "Resource": "arn:aws:s3:::vendora-images-yourname/*"
        }
      ]
    }

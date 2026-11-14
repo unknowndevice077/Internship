@@ -4,10 +4,11 @@
 
 | Suite | Result |
 | --- | --- |
-| API tests (`cd server && npm test`) | 94 passed |
+| API tests (`cd server && npm test`) | 95 passed |
 | Browser end-to-end tests (`cd client && npm run test:e2e`) | 32 passed |
 | Live site crawl (customer, seller and admin, every non-destructive button) | 43 pages, 139 clicks, 0 errors |
 | Layout check (every page at 375, 768, 1024, 1280 and 1440 px wide, light and dark) | no overflow, no clipped text, contrast OK |
+| Real S3, live site | upload as the seller stores the file in the bucket, and the URL loads |
 | Real Stripe test mode, local | charge, transfer to the seller after commission, partial refund with transfer reversal |
 
 All of this was run again after the calm slate redesign, with the same results.
@@ -24,7 +25,7 @@ Measured on 28 Oct 2026, Windows 11, Node 22.14.
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| API tests | `cd server && npm test` | 94 passed |
+| API tests | `cd server && npm test` | 95 passed |
 | Browser end-to-end tests | `cd client && npm run test:e2e` | 32 passed |
 | Type check (client) | `cd client && npm run typecheck` | 0 errors, `strict` on |
 | Lint | `npm run lint` in each package | 0 errors, 0 warnings |
@@ -60,7 +61,7 @@ All of these run in GitHub Actions on every push.
 
 ```
 Test Files  9 passed (9)
-     Tests  94 passed (94)
+     Tests  95 passed (95)
 ```
 
 | File | What it covers |
@@ -107,6 +108,10 @@ Testing against the real index found two bugs the mocks couldn't: `@elastic/elas
 `npm run test:e2e:services` runs all 32 browser tests against MongoDB 7, Redis 7 and Elasticsearch 8.15 from docker compose, instead of the in-memory stand-ins. All 32 pass. This run caught one bug the stand-ins couldn't: Elasticsearch makes new writes searchable about a second later, so a seller who saved a product and searched straight away didn't see it. Index writes now wait for that refresh.
 
 A separate crawl signed in as the customer, the vendor and the admin, opened every page it could reach (42 pages) and clicked every button that doesn't delete or pay for something (128 clicks), watching for console errors, crashes and failed API calls. It found none. The delete, cancel, refund and payment buttons are covered by the browser tests and the real Stripe run below.
+
+## Real S3
+
+Checked on 15 November 2026 against a real bucket (`vendora-images-dc2026`, ap-southeast-1) with an upload-only IAM key. Uploading a png through `uploadImage()` on a laptop, and through `POST /api/products/images` on the live API as the demo vendor, each stored the file and returned an S3 URL that loads (HTTP 200, `image/png`).
 
 ## Real Stripe test mode
 
@@ -158,9 +163,9 @@ With Elasticsearch, filtered browsing has about 30% lower p50 latency and handle
 
 ## Known limits
 
+- The live site doesn't run Elasticsearch (no free permanent hosted plan), so live search uses the MongoDB fallback. Elasticsearch was tested against a real 8.15 server locally, as described above.
 - The Mongo fallback search doesn't do fuzzy or partial-word matching (`phone` doesn't match `iPhone`). Elasticsearch does.
 - Search results can lag a write by up to a second (Elasticsearch refresh interval). Product pages read from MongoDB, so they're always current.
-- Not run against a real S3 bucket. That path is covered by SDK-level tests, and the README lists the steps to turn it on.
 - Emails aren't sent anywhere until `SMTP_URL` is set. Without it they're written to the log.
 - The background jobs run inside the API process. That's fine for one or a few instances (a Redis lock stops them doubling up), but a busy deployment would want a separate worker.
 - Shipping is a flat rate per store, not by weight or destination.
