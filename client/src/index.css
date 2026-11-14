@@ -490,12 +490,17 @@ button:disabled {
   margin: 0.5rem 0;
 }
 .stars {
-  color: #f59e0b;
+  color: #c2610c;
   letter-spacing: 1px;
   font-size: 0.9rem;
 }
+/* bright amber washes out on white, so it's dark mode only */
+:root[data-theme='dark'] .stars {
+  color: #f59e0b;
+}
 .stars-empty {
-  color: var(--line-strong);
+  /* faint, but still readable as "out of five" in both themes */
+  color: color-mix(in srgb, var(--muted) 80%, var(--card));
 }
 .pager {
   display: flex;
@@ -1854,7 +1859,7 @@ textarea:focus {
   padding: 0 0.15rem;
   font-size: 1.7rem;
   line-height: 1;
-  color: var(--line-strong);
+  color: color-mix(in srgb, var(--muted) 80%, var(--card));
   transition:
     color var(--fast),
     transform var(--fast) var(--ease);
