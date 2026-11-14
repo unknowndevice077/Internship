@@ -83,6 +83,7 @@ test.describe('search, theme and layout', () => {
     await expect(toggle).toBeVisible();
     await expect(page.getByRole('complementary', { name: 'Filters' })).toBeHidden();
     await toggle.click();
+    await page.getByRole('button', { name: /^Show all/ }).click();
     await page.getByRole('button', { name: /^laptops/ }).click();
     await expect(toggle).toHaveText('Filters (1)');
   });

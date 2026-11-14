@@ -1,11 +1,44 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { API_URL, api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { ScrollTop } from './motion';
 import SearchBox from './SearchBox';
 import ThemeToggle from './ThemeToggle';
+
+// the free API host sleeps when idle and takes up to a minute to wake,
+// so say so instead of leaving people staring at skeletons
+function WakingBanner() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    let done = false;
+    const timer = setTimeout(() => !done && setSlow(true), 3000);
+    const ping = () =>
+      fetch(`${API_URL}/api/health`)
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          done = true;
+          clearTimeout(timer);
+          setSlow(false);
+        })
+        .catch(() => !done && setTimeout(ping, 3000));
+    ping();
+    return () => {
+      done = true;
+      clearTimeout(timer);
+    };
+  }, []);
+  if (!slow) return null;
+  return (
+    <div className="banner waking" role="status">
+      <div className="container">
+        <span className="spinner" aria-hidden="true" /> Waking up the server, this takes up to a minute on the
+        first visit…
+      </div>
+    </div>
+  );
+}
 
 function VerifyBanner() {
   const [sent, setSent] = useState(false);
@@ -86,6 +119,7 @@ export default function Layout() {
           </nav>
         </div>
       </header>
+      <WakingBanner />
       {user && !user.emailVerified && <VerifyBanner />}
       <main id="main" className="container page" tabIndex={-1}>
         <div key={location.pathname} className="page-enter">

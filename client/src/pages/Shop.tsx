@@ -109,6 +109,7 @@ export default function Shop() {
     [query],
   );
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [allCats, setAllCats] = useState(false);
   const search = params.get('q');
   useTitle(search ? `Results for "${search}"` : undefined);
 
@@ -128,6 +129,9 @@ export default function Shop() {
   };
   const page = Number(params.get('page')) || 1;
   const pages = data ? Math.ceil(data.total / data.limit) : 1;
+  // a long category list pushed price and rating out of sight, so show the biggest few first
+  const cats = [...(data?.facets.categories ?? [])].sort((a, b) => b.count - a.count);
+  const shownCats = allCats ? cats : cats.filter((c, i) => i < 8 || c.value === params.get('category'));
   const activeFilters = ['category', 'minPrice', 'maxPrice', 'minRating', 'inStock'].filter((k) =>
     params.get(k),
   ).length;
@@ -152,73 +156,84 @@ export default function Shop() {
           Filters{activeFilters ? ` (${activeFilters})` : ''}
         </button>
         <aside id="filters" className={`filters card ${filtersOpen ? 'open' : ''}`} aria-label="Filters">
-          <h3>Category</h3>
-          <button
-            className={`facet ${!params.get('category') ? 'active' : ''}`}
-            aria-pressed={!params.get('category')}
-            onClick={() => set('category', '')}
-          >
-            All
-          </button>
-          {data?.facets.categories.map((c) => (
+          <div className="filter-group">
+            <h3>Category</h3>
             <button
-              key={c.value}
-              className={`facet ${params.get('category') === c.value ? 'active' : ''}`}
-              aria-pressed={params.get('category') === c.value}
-              onClick={() => set('category', c.value)}
+              className={`facet ${!params.get('category') ? 'active' : ''}`}
+              aria-pressed={!params.get('category')}
+              onClick={() => set('category', '')}
             >
-              {c.value.replace(/-/g, ' ')} <span className="muted">{c.count}</span>
+              All
             </button>
-          ))}
+            {shownCats.map((c) => (
+              <button
+                key={c.value}
+                className={`facet ${params.get('category') === c.value ? 'active' : ''}`}
+                aria-pressed={params.get('category') === c.value}
+                onClick={() => set('category', c.value)}
+              >
+                {c.value.replace(/-/g, ' ')} <span className="muted">{c.count}</span>
+              </button>
+            ))}
+            {cats.length > 8 && (
+              <button type="button" className="link show-more" onClick={() => setAllCats((v) => !v)}>
+                {allCats ? 'Show fewer' : `Show all ${cats.length}`}
+              </button>
+            )}
+          </div>
 
-          <h3>Price</h3>
-          <form
-            className="price-range"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const f = new FormData(e.currentTarget);
-              const next = new URLSearchParams(params);
-              for (const k of ['minPrice', 'maxPrice']) {
-                const v = f.get(k);
-                if (typeof v === 'string' && v) next.set(k, v);
-                else next.delete(k);
-              }
-              next.delete('page');
-              setParams(next);
-            }}
-          >
-            <input
-              name="minPrice"
-              type="number"
-              min="0"
-              placeholder="Min"
-              aria-label="Minimum price"
-              defaultValue={params.get('minPrice') || ''}
-            />
-            <input
-              name="maxPrice"
-              type="number"
-              min="0"
-              placeholder="Max"
-              aria-label="Maximum price"
-              defaultValue={params.get('maxPrice') || ''}
-            />
-            <button type="submit">Go</button>
-          </form>
-
-          <h3>Rating</h3>
-          {[4, 3].map((r) => (
-            <button
-              key={r}
-              className={`facet ${params.get('minRating') === String(r) ? 'active' : ''}`}
-              aria-pressed={params.get('minRating') === String(r)}
-              onClick={() => set('minRating', params.get('minRating') === String(r) ? '' : String(r))}
+          <div className="filter-group">
+            <h3>Price</h3>
+            <form
+              className="price-range"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const f = new FormData(e.currentTarget);
+                const next = new URLSearchParams(params);
+                for (const k of ['minPrice', 'maxPrice']) {
+                  const v = f.get(k);
+                  if (typeof v === 'string' && v) next.set(k, v);
+                  else next.delete(k);
+                }
+                next.delete('page');
+                setParams(next);
+              }}
             >
-              <Stars value={r} /> & up
-            </button>
-          ))}
+              <input
+                name="minPrice"
+                type="number"
+                min="0"
+                placeholder="Min"
+                aria-label="Minimum price"
+                defaultValue={params.get('minPrice') || ''}
+              />
+              <input
+                name="maxPrice"
+                type="number"
+                min="0"
+                placeholder="Max"
+                aria-label="Maximum price"
+                defaultValue={params.get('maxPrice') || ''}
+              />
+              <button type="submit">Go</button>
+            </form>
+          </div>
 
-          <label className="check">
+          <div className="filter-group">
+            <h3>Rating</h3>
+            {[4, 3].map((r) => (
+              <button
+                key={r}
+                className={`facet ${params.get('minRating') === String(r) ? 'active' : ''}`}
+                aria-pressed={params.get('minRating') === String(r)}
+                onClick={() => set('minRating', params.get('minRating') === String(r) ? '' : String(r))}
+              >
+                <Stars value={r} /> & up
+              </button>
+            ))}
+          </div>
+
+          <label className="stock-check">
             <input
               type="checkbox"
               checked={params.get('inStock') === 'true'}
