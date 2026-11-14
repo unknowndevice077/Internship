@@ -24,6 +24,7 @@ const config = {
   // leave ELASTICSEARCH_URL empty to fall back to plain MongoDB queries
   elasticUrl: env.ELASTICSEARCH_URL || '',
   elasticIndex: env.ELASTICSEARCH_INDEX || 'products',
+  elasticApiKey: env.ELASTICSEARCH_API_KEY || '',
 
   s3: {
     bucket: env.S3_BUCKET || '',

@@ -8,15 +8,15 @@ Where the project stands and how to pick it up.
 | --- | --- |
 | 1. Roles, schema, API list | Done: [ARCHITECTURE.md](ARCHITECTURE.md), [API.md](API.md) |
 | 2. JWT auth and role-based access | Done |
-| 3. Vendor onboarding, product CRUD, S3 upload | Done. Tested with local storage. S3 path covered by code, not yet run against a real bucket |
-| 4. Elasticsearch search, filters, sorting | Done, verified on Elasticsearch 8.15 |
+| 3. Vendor onboarding, product CRUD, S3 upload | Done. Images upload to a real S3 bucket on the live site (checked 15 Nov) |
+| 4. Elasticsearch search, filters, sorting | Built and verified on a real Elasticsearch 8.15 server (all 32 browser tests pass against it). Not running on the live site, see below |
 | 5. Cart, checkout, order lifecycle, Redis | Done, verified on Redis 7 |
 | 6. Stripe Connect split payments | Done. Verified with SDK-level tests, mock mode, and a real Stripe test mode run (charge, vendor transfer, partial refund) |
 | 7. Reviews, coupons, PDF invoices, admin analytics, separate deploys | Done. Web on Vercel, API on Render with MongoDB Atlas and Upstash Redis |
 
 Also done beyond the brief: stock held during checkout, automatic retries for failed vendor payouts, partial refunds, per-store shipping, order and account emails, password reset and email verification, wishlist and recently viewed, vendor order filters and CSV export, partial-word search without Elasticsearch, Swagger docs, structured logs with request ids, optional Sentry, a TypeScript front end, dark mode, keyboard and screen reader support, and a phone layout for the filters.
 
-Verified: 94 API tests (97% line, 81% branch coverage), 32 browser end-to-end tests covering every flow, strict type check, clean lint and formatting, plus a crawl of every page and button on the live site and a layout check in light and dark mode. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
+Verified: 95 API tests (97% line, 81% branch coverage), 32 browser end-to-end tests covering every flow, strict type check, clean lint and formatting, plus a crawl of every page and button on the live site and a layout check in light and dark mode. Details are in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 Live: https://vendora-kappa-nine.vercel.app. A narrated walkthrough is in [WALKTHROUGH.md](WALKTHROUGH.md), and the reflection is in [REFLECTION.md](REFLECTION.md).
 
@@ -62,11 +62,10 @@ Open http://localhost:5173 and use the demo login buttons (password `demo-pass-1
 
 ## What the live site runs without
 
-Everything in the brief is deployed, but three services are switched off on the free hosting. Each one has a working fallback, and turning it on is only environment variables:
+Everything in the brief is deployed. S3 is live (bucket `vendora-images-dc2026`, Singapore). Two services are switched off on the free hosting. Each one has a working fallback, and turning it on is only environment variables:
 
-1. **Elasticsearch:** the live API uses the MongoDB search fallback (`/api/health` shows `search: mongo-fallback`). Point `ELASTICSEARCH_URL` at an Elastic Cloud deployment and call `POST /api/admin/search/reindex` once.
-2. **S3:** product photos come from the seed data's image URLs, and an image a vendor uploads is saved on the API's disk, which Render wipes on redeploy. Set `S3_BUCKET` and the AWS keys, and allow public read on `vendors/*`.
-3. **SMTP:** emails are written to the server log instead of sent. Set `SMTP_URL` and `MAIL_FROM` (a free Resend or Brevo account works).
+1. **Elasticsearch:** not running on the live site. I couldn't find a hosted Elasticsearch with a permanent free plan: Elastic Cloud is a 14-day trial and the free sandbox on Bonsai only runs Elasticsearch 7 or OpenSearch, which the 8.x client can't talk to. So the live API uses the MongoDB search fallback (`/api/health` shows `search: mongo-fallback`). The Elasticsearch code, its tests and the real-server results are all in the repo. To switch it on, set `ELASTICSEARCH_URL` (and `ELASTICSEARCH_API_KEY` for Elastic Cloud) on an 8.x cluster and call `POST /api/admin/search/reindex` once. If a cluster goes down, search falls back to MongoDB by itself.
+2. **SMTP:** emails are written to the server log instead of sent. Set `SMTP_URL` and `MAIL_FROM` (a free Resend or Brevo account works).
 
 The free Render API also sleeps after 15 minutes idle. A scheduled ping in the Internship repo keeps it awake from 8am to 8pm Philippine time.
 

@@ -196,6 +196,16 @@ describe('with Elasticsearch enabled', () => {
     expect(query.sort).toEqual([{ price: 'asc' }]);
   });
 
+  it('falls back to mongo when the cluster is unreachable', async () => {
+    const v = await approvedVendor();
+    await makeProduct(v.vendorId, { title: 'Fallback Lamp' });
+    es.search.mockRejectedValueOnce(new Error('connect ECONNREFUSED'));
+    const res = await api().get('/api/products?q=lamp');
+    expect(res.status).toBe(200);
+    expect(res.body.engine).toBe('mongo');
+    expect(res.body.items.map((p) => p.title)).toContain('Fallback Lamp');
+  });
+
   it('drops products from the index when a vendor is suspended', async () => {
     const v = await approvedVendor();
     await makeProduct(v.vendorId);
