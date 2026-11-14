@@ -1,6 +1,6 @@
 # Walkthrough
 
-A 3.5 minute recording of the main flows: [video/walkthrough.mp4](video/walkthrough.mp4)
+A 3.5 minute narrated recording of the main flows: [video/walkthrough.mp4](video/walkthrough.mp4)
 
 I recorded it on my local copy with Stripe in test mode, so the payment in the middle is a real Stripe test payment
 with the `4242` card, not a mock. Captions in the video say what's going on, the notes below are the same thing in
