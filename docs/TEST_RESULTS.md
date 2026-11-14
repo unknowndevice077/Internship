@@ -4,16 +4,21 @@
 
 | Suite | Result |
 |---|---|
-| Backend (`pytest --cov`) | 129 passed, 93% coverage |
+| Backend (`pytest --cov`) | 130 passed, 93% coverage |
 | Frontend unit (`npm test`) | 6 passed |
 | Playwright end-to-end (`npm run e2e`) | 46 passed |
 | Live site crawl (every page, every non-destructive button, demo account) | 12 pages, 68 clicks, 0 errors |
 | Layout check (every page at 375, 768, 1024, 1280 and 1440 px wide, light and dark) | no overflow, no clipped text, contrast OK |
 
 The layout check also caught a few things on phones that I fixed: the members table broke emails over two lines and
-the workflow page cut off status names. The four backend tests added since the run below cover the Stripe webhook
-ignoring events for workspaces it doesn't have, the CSV download rebuilding a report file after a redeploy, and
-running background jobs inside the API on Render's free plan.
+the workflow page cut off status names.
+
+A full re-run also caught a lost update. The issue drawer saves each field with its own request, and the API saved the
+whole row, so two quick edits could undo each other. It now saves only the fields in the request.
+
+The five backend tests added since the run below cover that lost update, the Stripe webhook ignoring events for
+workspaces it doesn't have, the CSV download rebuilding a report file after a redeploy, and running background jobs
+inside the API on Render's free plan.
 
 The detailed run below is from 10 Nov.
 
