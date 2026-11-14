@@ -25,8 +25,8 @@ repository is the combined copy for the submission, with the same code and full 
 
 ## Walkthrough videos
 
-- [Sprintboard, 2.5 minutes](FS-04/docs/WALKTHROUGH.md): demo workspace, board, sprints, reports, settings, upgrading a plan with Stripe
-- [Vendora, 3 minutes](FS-01/docs/WALKTHROUGH.md): shopping from two stores, paying with a Stripe test card, the seller shipping it, the admin side
+- [Sprintboard, 3 minutes, narrated](FS-04/docs/WALKTHROUGH.md): demo workspace, board, sprints, reports, settings, upgrading a plan with Stripe
+- [Vendora, 3.5 minutes, narrated](FS-01/docs/WALKTHROUGH.md): shopping from two stores, paying with a Stripe test card, the seller shipping it, the admin side
 
 ## Where to start
 
