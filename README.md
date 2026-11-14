@@ -18,9 +18,9 @@ Password for every demo account: `demo-pass-123`.
 
 Both use Stripe test mode, so pay with card `4242 4242 4242 4242`, any future date and any CVC. Nothing is charged.
 
-The APIs are on Render's free plan. They're kept awake from 8am to 8pm Philippine time by a small scheduled job in
-[.github/workflows/keep-awake.yml](.github/workflows/keep-awake.yml). Outside those hours the first page can take up
-to a minute while the server wakes up, and the sites say so.
+The APIs are on Render's free plan. A small scheduled job in [.github/workflows/keep-awake.yml](.github/workflows/keep-awake.yml)
+pings them every 10 minutes from 8am to 8pm Philippine time. GitHub runs scheduled jobs when it has spare capacity, so
+the pings can lag, and a first page can still take up to a minute while the server wakes up. The sites say so.
 
 The live sites deploy from each project's own repository (that's where Render and Vercel are connected). This
 repository is the combined copy for the submission, with the same code and full history.

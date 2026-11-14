@@ -1,5 +1,6 @@
 # Render's free plan puts both APIs to sleep after 15 minutes with no traffic, and waking up takes
 # up to a minute. This pings them every 10 minutes from 8am to 8pm Philippine time (00:00-12:00 UTC).
+# GitHub runs scheduled jobs on a best-effort basis and can delay or skip them, so it helps but isn't a guarantee.
 # Two services awake 12 hours a day is about 744 instance hours a month, just under Render's 750 free hours,
 # so don't widen the window without upgrading one of them.
 name: Keep the demo APIs awake
