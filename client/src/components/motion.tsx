@@ -87,7 +87,7 @@ export function flyToCart(from: Element | null) {
     .finished.finally(() => ghost.remove());
 }
 
-const CONFETTI = ['#ea580c', '#f59e0b', '#16a34a', '#2563eb', '#db2777'];
+const CONFETTI = ['#4f5bd5', '#8b7cf6', '#16a34a', '#2563eb', '#db2777'];
 
 // one burst when an order goes through, then it removes itself
 export function Confetti() {
