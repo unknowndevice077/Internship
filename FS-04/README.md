@@ -5,11 +5,14 @@ board, sprints, custom workflows and a paid plan through Stripe.
 
 Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 
+**Live demo:** https://sprintboard-web.onrender.com (press **Try the demo**) · **Walkthrough video:** [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)
+
 ![Board](docs/screenshots/03-board.png)
 
 ![Workspace overview](docs/screenshots/02-projects.png)
 
 There's a 2.5 minute video of the main flows, billing included, in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
+What was hard and what I learned is in [docs/REFLECTION.md](docs/REFLECTION.md).
 
 ## What it does
 
