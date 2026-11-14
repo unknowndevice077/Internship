@@ -11,6 +11,8 @@ test.describe('browsing as a guest', () => {
 
   test('filters by category, price and rating, and sorts', async ({ page }) => {
     await page.goto('/');
+    // smaller categories sit behind "Show all"
+    await page.getByRole('button', { name: /^Show all/ }).click();
     await page.locator('.facet', { hasText: 'laptops' }).click();
     await expect(page).toHaveURL(/category=laptops/);
     await expect(page.getByText('5 items')).toBeVisible();

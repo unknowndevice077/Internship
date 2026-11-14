@@ -1,5 +1,21 @@
 # Test and performance results
 
+## Latest full run, 14 Nov 2026
+
+| Suite | Result |
+| --- | --- |
+| API tests (`cd server && npm test`) | 94 passed |
+| Browser end-to-end tests (`cd client && npm run test:e2e`) | 32 passed |
+| Live site crawl (customer, seller and admin, every non-destructive button) | 43 pages, 125 clicks, 0 errors |
+| Layout check (every page at 375, 768, 1024, 1280 and 1440 px wide, light and dark) | no overflow, no clipped text, contrast OK |
+| Real Stripe test mode, local | charge, transfer to the seller after commission, partial refund with transfer reversal |
+
+Fixed along the way: the shop filter box was too narrow (the price inputs pushed out sideways and "In stock only"
+wrapped one word per line), tables squeezed order numbers onto three lines on phones, the empty rating stars were too
+faint in light mode, and dashboard numbers could flash negative for one frame while counting up.
+
+The numbers below are from the 28 Oct run.
+
 Measured on 28 Oct 2026, Windows 11, Node 22.14.
 
 ## Summary
