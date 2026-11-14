@@ -39,7 +39,8 @@ export function CountUp({ value, format = String }: { value: number; format?: (n
     const whole = Number.isInteger(value);
     let frame = 0;
     const step = (now: number) => {
-      const t = Math.min(1, (now - start) / 700);
+      // the first frame can be stamped a hair before start, which made numbers flash negative
+      const t = Math.min(1, Math.max(0, (now - start) / 700));
       const eased = 1 - (1 - t) ** 3;
       setShown(whole ? Math.round(value * eased) : value * eased);
       if (t < 1) frame = requestAnimationFrame(step);
