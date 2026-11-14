@@ -58,6 +58,7 @@ MongoDB is the source of truth. Elasticsearch holds a copy of each product for s
 
 | What the brief asks for | Where it is |
 | --- | --- |
+| Walkthrough video | [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md), a 3 minute recording of the shopper, seller and admin flows with a Stripe test payment |
 | Working demo | Run it locally with the steps below, no accounts needed. Deploy steps are in [docs/DEPLOY.md](docs/DEPLOY.md) |
 | README and setup instructions | This file |
 | Architecture diagram, data and API docs | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md), Swagger UI at `/api/docs` |
@@ -73,6 +74,9 @@ date and any CVC. The password for every demo account is `demo-pass-123`, and th
 for each.
 
 The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it.
+The site shows a "waking up the server" note while that happens.
+
+If you'd rather watch first, [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) has a 3 minute video of everything below.
 
 1. **As a customer** (`customer@vendora.test`): search (typos work, try "lipstik"), add items from two different
    stores, apply coupon `WELCOME10`, and pay with the test card. You get one order per store, each with its own
