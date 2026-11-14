@@ -1,6 +1,7 @@
 import pytest
 
 from apps.projects.models import Issue, Sprint
+from apps.projects.serializers import IssueSerializer
 from tests.factories import IssueFactory
 
 pytestmark = pytest.mark.django_db
@@ -96,3 +97,19 @@ def test_project_key_validation(api, owner, project):
     api.as_member(owner)
     assert api.post("/api/projects/", {"name": "Dup", "key": "web"}).status_code == 400
     assert api.post("/api/projects/", {"name": "Bad", "key": "1AB"}).status_code == 400
+
+
+def test_quick_edits_to_different_fields_dont_undo_each_other(project):
+    # two requests that loaded the issue before either saved, like the drawer's back-to-back PATCHes
+    issue = IssueFactory(project=project, priority="medium", type="task")
+    first, second = Issue.objects.get(pk=issue.pk), Issue.objects.get(pk=issue.pk)
+
+    s1 = IssueSerializer(first, data={"priority": "high"}, partial=True)
+    assert s1.is_valid(), s1.errors
+    s1.save()
+    s2 = IssueSerializer(second, data={"type": "story"}, partial=True)
+    assert s2.is_valid(), s2.errors
+    s2.save()
+
+    issue.refresh_from_db()
+    assert (issue.priority, issue.type) == ("high", "story")

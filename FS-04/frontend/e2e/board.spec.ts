@@ -114,6 +114,8 @@ test("issue drawer edits every field and saves", async ({ page }) => {
   await drawer.getByLabel("Priority").selectOption("high");
   await drawer.getByLabel("Assignee").selectOption({ label: "Board Owner" });
   await expect(column(page, "In Review")).toContainText("Renamed issue");
+  // each field saves on its own request; let them all land before the reload below cancels one
+  await page.waitForLoadState("networkidle");
 
   // a focused native select keeps the Escape key, so move focus first
   await drawer.locator(".drawer-key").click();

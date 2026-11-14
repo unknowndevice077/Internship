@@ -43,7 +43,7 @@ dnd-kit) on the frontend. Runs in Docker behind nginx and gunicorn, with CI/CD o
 Press **Try the demo** on the landing page, or sign in as `owner@acme-corp.test` / `demo-pass-123`. The demo
 workspace has three projects with sprints, about 150 issues each, and a team of members.
 
-The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it.
+The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it. It's kept awake from 8am to 8pm Philippine time.
 
 1. **Board:** drag issues between columns, open one to comment, mention a teammate or attach a file. Press `?`
    for keyboard shortcuts and `Ctrl+K` for the command palette.
@@ -138,7 +138,7 @@ test cards and troubleshooting.
 ## Tests
 
 ```bash
-cd backend && pytest --cov      # 129 tests, 93% coverage
+cd backend && pytest --cov      # 130 tests, 93% coverage
 cd frontend && npm test         # 6 unit tests
 cd frontend && npm run e2e      # 46 Playwright tests
 ```
