@@ -75,12 +75,12 @@ export default function AdminAnalytics() {
             <XAxis dataKey="date" tickFormatter={(d: string) => d.slice(5)} fontSize={12} />
             <YAxis fontSize={12} />
             <Tooltip formatter={asMoney} contentStyle={tooltipStyle} />
-            <Line type="monotone" dataKey="gmv" name="Sales" stroke="#ea580c" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="gmv" name="Sales" stroke="#4f5bd5" strokeWidth={2} dot={false} />
             <Line
               type="monotone"
               dataKey="commission"
               name="Commission"
-              stroke="#3b82f6"
+              stroke="#14b8a6"
               strokeWidth={2}
               dot={false}
             />
@@ -96,7 +96,7 @@ export default function AdminAnalytics() {
               <XAxis type="number" fontSize={12} />
               <YAxis type="category" dataKey="storeName" width={110} fontSize={12} />
               <Tooltip formatter={asMoney} contentStyle={tooltipStyle} cursor={{ fill: GRID }} />
-              <Bar dataKey="gmv" name="Sales" fill="#ea580c" />
+              <Bar dataKey="gmv" name="Sales" fill="#4f5bd5" />
             </BarChart>
           </ResponsiveContainer>
         </section>
