@@ -61,7 +61,10 @@ describe('reviews', () => {
 
 describe('S3 uploads', () => {
   it('puts the file in the bucket and returns its public url', async () => {
+    const region = config.s3.region;
     config.s3.bucket = 'vendora-test';
+    // pinned so a developer's own AWS_REGION in .env can't change the expected url
+    config.s3.region = 'ap-south-1';
     try {
       const url = await uploadImage({ mimetype: 'image/png', buffer: Buffer.from('x') }, 'vendors/1');
       expect(url).toMatch(/^https:\/\/vendora-test\.s3\.ap-south-1\.amazonaws\.com\/vendors\/1\/.+\.png$/);
@@ -77,6 +80,7 @@ describe('S3 uploads', () => {
     } finally {
       config.s3.bucket = '';
       config.s3.publicUrl = '';
+      config.s3.region = region;
     }
   });
 });
