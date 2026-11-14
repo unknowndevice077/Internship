@@ -15,7 +15,8 @@ export function CountUp({ value }: { value: number }) {
     const origin = from.current;
     let frame = 0;
     const tick = (now: number) => {
-      const t = Math.min((now - start) / 700, 1);
+      // rAF can hand us a timestamp from just before start, keep t from going negative
+      const t = Math.min(Math.max((now - start) / 700, 0), 1);
       const eased = 1 - Math.pow(1 - t, 3);
       const next = Math.round(origin + (value - origin) * eased);
       from.current = next;

@@ -97,60 +97,62 @@ export default function ProjectSettingsPage() {
       <section className="card settings-section">
         <h2>Statuses</h2>
         <p className="muted small">Each status is a column on the board.</p>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {statuses.map((s, i) => (
-              <tr key={s.id}>
-                <td>
-                  <input
-                    defaultValue={s.name}
-                    onBlur={(e) => e.target.value !== s.name && saveStatus.mutate({ id: s.id, name: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <select
-                    value={s.category}
-                    onChange={(e) => saveStatus.mutate({ id: s.id, category: e.target.value as StatusCategory })}
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="actions">
-                  <button
-                    className="btn btn-ghost icon-btn"
-                    disabled={i === 0}
-                    onClick={() => swap(i, -1)}
-                    aria-label="Move up"
-                  >
-                    <Chevron up />
-                  </button>
-                  <button
-                    className="btn btn-ghost icon-btn"
-                    disabled={i === statuses.length - 1}
-                    onClick={() => swap(i, 1)}
-                    aria-label="Move down"
-                  >
-                    <Chevron />
-                  </button>
-                  <button className="btn btn-ghost btn-danger" onClick={() => deleteStatus.mutate(s.id)}>
-                    Delete
-                  </button>
-                </td>
+        <div className="table-scroll">
+          <table className="table statuses">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {statuses.map((s, i) => (
+                <tr key={s.id}>
+                  <td>
+                    <input
+                      defaultValue={s.name}
+                      onBlur={(e) => e.target.value !== s.name && saveStatus.mutate({ id: s.id, name: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      value={s.category}
+                      onChange={(e) => saveStatus.mutate({ id: s.id, category: e.target.value as StatusCategory })}
+                    >
+                      {CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="actions">
+                    <button
+                      className="btn btn-ghost icon-btn"
+                      disabled={i === 0}
+                      onClick={() => swap(i, -1)}
+                      aria-label="Move up"
+                    >
+                      <Chevron up />
+                    </button>
+                    <button
+                      className="btn btn-ghost icon-btn"
+                      disabled={i === statuses.length - 1}
+                      onClick={() => swap(i, 1)}
+                      aria-label="Move down"
+                    >
+                      <Chevron />
+                    </button>
+                    <button className="btn btn-ghost btn-danger" onClick={() => deleteStatus.mutate(s.id)}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <NewStatus projectId={projectId} nextOrder={statuses.length} onDone={refresh} />
       </section>
 

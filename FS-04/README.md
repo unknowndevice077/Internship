@@ -9,6 +9,8 @@ Built for the Nexvia Technologies full-stack internship (FS-04), Oct-Nov 2026.
 
 ![Workspace overview](docs/screenshots/02-projects.png)
 
+There's a 2.5 minute video of the main flows, billing included, in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
+
 ## What it does
 
 - Workspaces with owner, admin, member and viewer roles, invites and workspace switching
@@ -133,7 +135,7 @@ test cards and troubleshooting.
 ## Tests
 
 ```bash
-cd backend && pytest --cov      # 125 tests, 93% coverage
+cd backend && pytest --cov      # 129 tests, 93% coverage
 cd frontend && npm test         # 6 unit tests
 cd frontend && npm run e2e      # 46 Playwright tests
 ```
