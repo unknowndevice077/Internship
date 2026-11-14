@@ -214,6 +214,8 @@ label {
   gap: 14px;
   position: sticky;
   top: 0;
+  /* sticky makes its own stacking layer; keep it above the page so the bell dropdown isn't covered */
+  z-index: 20;
   height: 100vh;
 }
 
