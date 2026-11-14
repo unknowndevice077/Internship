@@ -11,7 +11,8 @@
 | Layout check (every page at 375, 768, 1024, 1280 and 1440 px wide, light and dark) | no overflow, no clipped text, contrast OK |
 
 The layout check also caught a few things on phones that I fixed: the members table broke emails over two lines and
-the workflow page cut off status names.
+the workflow page cut off status names. Retaking the screenshots also showed the notification dropdown hiding behind the
+home page's overview cards, because the sticky sidebar sat in a lower stacking layer than the page. Fixed.
 
 A full re-run also caught a lost update. The issue drawer saves each field with its own request, and the API saved the
 whole row, so two quick edits could undo each other. It now saves only the fields in the request.
