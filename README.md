@@ -46,7 +46,7 @@ dnd-kit) on the frontend. Runs in Docker behind nginx and gunicorn, with CI/CD o
 Press **Try the demo** on the landing page, or sign in as `owner@acme-corp.test` / `demo-pass-123`. The demo
 workspace has three projects with sprints, about 150 issues each, and a team of members.
 
-The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it. It's kept awake from 8am to 8pm Philippine time.
+The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it. A scheduled job pings it from 8am to 8pm Philippine time, but GitHub can delay those, so a slow first load is normal.
 
 1. **Board:** drag issues between columns, open one to comment, mention a teammate or attach a file. Press `?`
    for keyboard shortcuts and `Ctrl+K` for the command palette.
