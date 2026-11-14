@@ -1320,6 +1320,17 @@ code {
 .table.members select {
   min-width: 96px;
 }
+/* keep names, emails and headers on one line; the wrapper scrolls on small screens */
+.table.members th,
+.table.members td,
+.table.statuses th,
+.matrix th {
+  white-space: nowrap;
+}
+.table.statuses input,
+.table.statuses select {
+  min-width: 130px;
+}
 
 /* phones: title gets the first line, status / sprint / points go underneath */
 @media (max-width: 600px) {
