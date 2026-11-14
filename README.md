@@ -30,8 +30,8 @@ repository is the combined copy for the submission, with the same code and full 
 
 ## Where to start
 
-- **Sprintboard:** [README](FS-04/README.md), [architecture](FS-04/docs/ARCHITECTURE.md), [API](FS-04/docs/API.md), [test results](FS-04/docs/TEST_RESULTS.md), [screenshots](FS-04/docs/screenshots)
-- **Vendora:** [README](FS-01/README.md), [architecture](FS-01/docs/ARCHITECTURE.md), [API](FS-01/docs/API.md), [test results](FS-01/docs/TEST_RESULTS.md), [screenshots](FS-01/docs/screenshots)
+- **Sprintboard:** [README](FS-04/README.md), [architecture](FS-04/docs/ARCHITECTURE.md), [API](FS-04/docs/API.md), [test results](FS-04/docs/TEST_RESULTS.md), [walkthrough](FS-04/docs/WALKTHROUGH.md), [reflection](FS-04/docs/REFLECTION.md), [screenshots](FS-04/docs/screenshots)
+- **Vendora:** [README](FS-01/README.md), [architecture](FS-01/docs/ARCHITECTURE.md), [API](FS-01/docs/API.md), [test results](FS-01/docs/TEST_RESULTS.md), [walkthrough](FS-01/docs/WALKTHROUGH.md), [reflection](FS-01/docs/REFLECTION.md), [screenshots](FS-01/docs/screenshots)
 
 Both run locally without any paid accounts. Payments use Stripe test mode, with a mock provider when no key is set.
 
