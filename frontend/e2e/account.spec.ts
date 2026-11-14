@@ -21,7 +21,12 @@ test("forgot password resets the password through the emailed link", async ({ pa
   await logout(page);
 
   await page.getByRole("link", { name: "Forgot password?" }).click();
-  await page.getByLabel("Email").fill(email);
+  await expect(page.getByRole("heading", { name: "Reset password" })).toBeVisible();
+  // on a slow runner the form can reset right after it appears, which empties the field and blocks the submit
+  await expect(async () => {
+    await page.getByLabel("Email").fill(email);
+    await expect(page.getByLabel("Email")).toHaveValue(email, { timeout: 1000 });
+  }).toPass();
   await page.getByRole("button", { name: "Send reset link" }).click();
   await expect(page.getByRole("status")).toContainText(`If an account exists for ${email}`);
 
