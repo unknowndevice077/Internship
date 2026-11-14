@@ -144,9 +144,13 @@ project and issue through nginx, and jobs processed by the containerised worker.
 | Dropping a card on a column the workflow blocks moved it into a column passed on the way | e2e `workflow.spec.ts` | blocked columns stay droppable and the drop is rejected |
 | Workflow checkboxes flickered back before the request finished and could send the wrong request | e2e `workflow.spec.ts` (flaky run) | action decided at click time, local pending state until refetch |
 | Workspace switcher order depended on join order | e2e `members.spec.ts` | workspaces sorted by name |
+| The API crashed on every Redis-backed Celery call on a clean install: `kombu` imports `packaging`, which `celery` doesn't install (my PC had it from pytest) | CI e2e job, 41 of 46 tests failing | added `packaging` to `requirements.txt` |
+| The forgot-password test typed the email before the form settled, so on a slow runner the field was empty and the browser blocked the submit | CI e2e job, first run after the fix | the test now waits for the heading and checks the field's value before submitting |
 
 ## CI
 
 `.github/workflows/ci.yml` runs all three suites on every push and pull request: backend (ruff, migrations check,
 pytest on Postgres and Redis), frontend (ESLint, Prettier, TypeScript, unit tests, build) and e2e (Playwright), then
-builds the Docker images. Each job was replayed locally from a clean install before pushing.
+builds the Docker images and triggers the Render deploy. All jobs pass on `main` (run #56, 15 Nov 2026: backend 49 s, frontend 1 m, e2e 3 m 41 s, security 36 s, images 2 m, deploy 4 s).
+
+Getting there took two fixes, both found by reading the CI logs. The first run on a clean machine showed the e2e job failing 41 of 46 tests, which my own PC never showed (see the bug table). Before that, every run I looked at (#38 to #54) had failed, because I'd been testing locally and not watching the pipeline.
