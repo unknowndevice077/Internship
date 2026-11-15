@@ -40,8 +40,8 @@ production.
 3. Sign out, sign in as `owner@initech.test` (same password) and upgrade from **Billing** with the test card.
    If someone already upgraded Initech, make a new account, it starts on Free.
 
-The live API sleeps on Render's free plan, so outside 8am to 8pm Philippine time the first request can take
-about 30 seconds.
+The live API sleeps on Render's free plan, so after a quiet spell (a scheduled ping helps from 8am to 8pm Philippine time, but isn't guaranteed) the first request can take
+about 30 seconds to a minute.
 
 ## Things worth noticing
 
