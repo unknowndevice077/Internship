@@ -75,7 +75,7 @@ Payments run in Stripe **test mode**, so nothing is really charged. Pay with car
 date and any CVC. The password for every demo account is `demo-pass-123`, and the login page has one-click buttons
 for each.
 
-The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it. It's kept awake from 8am to 8pm Philippine time.
+The live API is on Render's free plan, so the first request after a quiet spell can take about 30 seconds to wake it. A scheduled job pings it from 8am to 8pm Philippine time, but GitHub can delay those, so a slow first load is normal.
 The site shows a "waking up the server" note while that happens.
 
 If you'd rather watch first, [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) has a 3.5 minute video of everything below.

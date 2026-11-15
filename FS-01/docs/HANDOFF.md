@@ -67,7 +67,7 @@ Everything in the brief is deployed. S3 is live (bucket `vendora-images-dc2026`,
 1. **Elasticsearch:** not running on the live site. I couldn't find a hosted Elasticsearch with a permanent free plan: Elastic Cloud is a 14-day trial and the free sandbox on Bonsai only runs Elasticsearch 7 or OpenSearch, which the 8.x client can't talk to. So the live API uses the MongoDB search fallback (`/api/health` shows `search: mongo-fallback`). The Elasticsearch code, its tests and the real-server results are all in the repo. To switch it on, set `ELASTICSEARCH_URL` (and `ELASTICSEARCH_API_KEY` for Elastic Cloud) on an 8.x cluster and call `POST /api/admin/search/reindex` once. If a cluster goes down, search falls back to MongoDB by itself.
 2. **SMTP:** emails are written to the server log instead of sent. Set `SMTP_URL` and `MAIL_FROM` (a free Resend or Brevo account works).
 
-The free Render API also sleeps after 15 minutes idle. A scheduled ping in the Internship repo keeps it awake from 8am to 8pm Philippine time.
+The free Render API also sleeps after 15 minutes idle. A scheduled ping in the Internship repo tries to keep it awake from 8am to 8pm Philippine time, but GitHub can delay scheduled jobs, so a first request can still take up to a minute.
 
 ## Good next features
 

@@ -10,7 +10,11 @@ let es;
 export function getElastic() {
   if (!config.elasticUrl) return null;
   // Elastic Cloud hands out API keys; a local cluster needs no auth
-  if (!es) es = new Client({ node: config.elasticUrl, ...(config.elasticApiKey && { auth: { apiKey: config.elasticApiKey } }) });
+  if (!es)
+    es = new Client({
+      node: config.elasticUrl,
+      ...(config.elasticApiKey && { auth: { apiKey: config.elasticApiKey } }),
+    });
   return es;
 }
 
