@@ -2,6 +2,8 @@
 
 ## Latest full run, 14 Nov 2026
 
+The automated suites below were run again on 16 Nov 2026, all passing.
+
 | Suite | Result |
 |---|---|
 | Backend (`pytest --cov`) | 130 passed, 93% coverage |
