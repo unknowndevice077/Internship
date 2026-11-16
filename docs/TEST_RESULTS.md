@@ -2,6 +2,8 @@
 
 ## Latest full run, 14 Nov 2026
 
+The automated suites below were run again on 16 Nov 2026, all passing.
+
 | Suite | Result |
 | --- | --- |
 | API tests (`cd server && npm test`) | 95 passed |
